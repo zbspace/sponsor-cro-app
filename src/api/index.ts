@@ -1,0 +1,315 @@
+import { get, post } from '@/utils/request'
+import * as mock from '@/mock'
+import type {
+  UserInfo,
+  LoginResponse,
+  IndexInfoResponse,
+  EnglishQuestionResponse,
+  ChineseQuestionResponse,
+  WordDetailResponse,
+  PayParams,
+  PayQueryResponse,
+  CollectListResponse,
+  VipOption,
+  VirtualPayData,
+  VipRenewResponse
+} from '@/types/api'
+
+// #region 登录模块
+
+/**
+ * 小程序登录
+ * @param code 微信登录授权获取的 code
+ * @returns Promise<LoginResponse>
+ */
+export async function wechatLogin(code: string) {
+  return post<LoginResponse>('/word/wechat/login', { jsCode: code }, false, mock.mockLogin)
+}
+
+let loginPromise: Promise<void> | null = null
+
+/**
+ * 获取微信 code 并调用登录接口缓存 token（单例模式，确保只执行一次）
+ */
+export function ensureLogin(): Promise<void> {
+  if (loginPromise) {
+    return loginPromise
+  }
+
+  loginPromise = new Promise(async (resolve, reject) => {
+    try {
+      const { code } = await uni.login()
+
+      if (!code) {
+        console.error('微信登录失败：未获取到 code')
+        reject(new Error('未获取到 code'))
+        return
+      }
+      // return console.log(code);
+      const res = await wechatLogin(code)
+      if (res.data) {
+        // 存储用户信息对象
+        setUserInfo(res.data)
+      }
+      resolve()
+    } catch (err) {
+      console.error('登录失败', err)
+      loginPromise = null // 失败后重置，允许下次重试
+      reject(err)
+    }
+  })
+
+  return loginPromise
+}
+
+/**
+ * 重置登录状态，下次调用 ensureLogin 时会重新执行登录
+ */
+export function resetEnsureLogin() {
+  loginPromise = null
+}
+
+// #endregion
+
+// #region VIP支付模块
+
+/**
+ * 创建支付订单
+ * @returns Promise<PayParams>
+ */
+export async function createOrder() {
+  return post<PayParams>('/pay/createOrder', {}, true, mock.mockPayParams)
+}
+
+/**
+ * 查询支付结果
+ * @returns Promise<PayQueryResponse>
+ */
+export async function queryPayResult() {
+  return get<PayQueryResponse>('/pay/queryPayResult', {}, true, mock.mockPayQuery)
+}
+
+/**
+ * 获取VIP套餐列表
+ * @returns Promise<VipOption[]>
+ */
+export async function getVipList() {
+  return get<VipOption[]>('/word/vip/getVipList', {}, true)
+}
+
+/**
+ * 获取虚拟支付验签数据
+ * @param vipLevel VIP等级
+ * @param jsCode 微信登录code
+ * @param deviceType 设备类型
+ * @returns Promise<VirtualPayData>
+ */
+export async function getVirtualPayData(vipLevel: number, jsCode: string, deviceType: string) {
+  return post<VirtualPayData>('/word/wechat/getVirtualPayData', { vipLevel, jsCode, deviceType }, true)
+}
+
+/**
+ * 查询订单状态并续期VIP
+ * @param outTradeNo 订单号
+ * @param deviceType 设备类型（IOS/Android）
+ * @returns Promise<VipRenewResponse>
+ */
+export async function renewVipAndRecordOrder(outTradeNo: string, deviceType: string) {
+  return post<VipRenewResponse>('/word/wechat/renewVipAndRecordOrder', { outTradeNo, deviceType }, true)
+}
+
+// #endregion
+
+// #region 首页模块
+
+/**
+ * 获取首页信息
+ * @returns Promise<IndexInfoResponse>
+ */
+export async function getIndexInfo() {
+  return get<IndexInfoResponse>('/word/index/getIndexInfo', {}, true, mock.mockIndexInfo)
+}
+
+// #endregion
+
+// #region 单词背诵模块
+
+/**
+ * 获取英文题目详情
+ * @param wordId 单词 ID
+ * @returns Promise<EnglishQuestionResponse>
+ */
+export async function getEnglishQuestionDetailByWordId(wordId: number) {
+  return get<EnglishQuestionResponse>(
+    '/word/recite/getEnglishQuestionDetailByWordId',
+    { wordId },
+    true,
+    mock.mockEnglishQuestion
+  )
+}
+
+/**
+ * 提交单词背诵答题结果
+ * @param wordId 单词 ID
+ * @param answerResult 答题结果，true 正确，false 错误
+ * @returns Promise
+ */
+export async function reciteWord(wordId: number, answerResult: boolean) {
+  return post('/word/recite/reciteWord', { wordId, answerResult }, true, null)
+}
+
+// #endregion
+
+// #region 单词详情模块
+
+/**
+ * 获取已背诵单词列表
+ * @param pageNum 页码
+ * @param pageSize 每页条数
+ * @returns Promise<CollectListResponse>
+ */
+export async function getReciteWordList(pageNum: number = 1, pageSize: number = 20) {
+  return get<CollectListResponse>(
+    '/word/word/getReciteWordList',
+    { pageNum, pageSize },
+    true,
+    mock.mockCollectList
+  )
+}
+
+/**
+ * 获取待复习单词列表
+ * @param pageNum 页码
+ * @param pageSize 每页条数
+ * @returns Promise<CollectListResponse>
+ */
+export async function getReviewWordList(pageNum: number = 1, pageSize: number = 20) {
+  return get<CollectListResponse>(
+    '/word/word/getReviewWordList',
+    { pageNum, pageSize },
+    true,
+    mock.mockCollectList
+  )
+}
+
+/**
+ * 获取单词详情
+ * @param wordId 单词 ID
+  * @param wordType 单词场景类型，recite(背诵时)，recite(已背诵)，review(待复习)，collected(已收藏)
+ * @returns Promise<WordDetailResponse>
+ */
+export async function getWordDetailByWordId(wordId: number, wordType: string) {
+  return get<WordDetailResponse>(
+    '/word/word/getWordDetailByWordId',
+    { wordId, wordType },
+    true,
+    mock.mockWordDetail
+  )
+}
+
+// #endregion
+
+// #region 收藏模块
+
+/**
+ * 获取收藏列表
+ * @param pageNum 页码
+ * @param pageSize 每页条数
+ * @returns Promise<CollectListResponse>
+ */
+export async function getCollectList(pageNum: number = 1, pageSize: number = 20) {
+  return get<CollectListResponse>(
+    '/word/word/getCollectWordList',
+    { pageNum, pageSize },
+    true,
+    mock.mockCollectList
+  )
+}
+
+/**
+ * 确认单词收藏状态
+ * @param wordId 单词 ID
+ * @returns Promise<{ collectResult: boolean }>
+ */
+export async function confirmCollect(wordId: number) {
+  return get<{ collectResult: boolean }>('/word/collect/confirmCollectWord', { wordId }, true)
+}
+
+/**
+ * 取消单词收藏状态
+ * @param wordId 单词 ID
+ * @returns Promise<{ collectResult: boolean }>
+ */
+export async function cancelCollect(wordId: number) {
+  return get<{ collectResult: boolean }>('/word/collect/cancelCollectWord', { wordId }, true)
+}
+
+// #endregion
+
+// #region 复习详情模块
+
+/**
+ * 获取中文题目详情
+ * @param wordId 单词 ID
+ * @returns Promise<ChineseQuestionResponse>
+ */
+export async function getChineseQuestionDetail(wordId: number) {
+  return get<ChineseQuestionResponse>('/word/review/getChineseQuestionDetailByWordId', { wordId })
+}
+
+/**
+ * 提交单词复习答题结果
+ * @param wordId 单词 ID
+ * @param answerResult 答题结果，true 正确，false 错误
+ * @returns Promise
+ */
+export async function reviewWord(wordId: number, answerResult: boolean) {
+  return post('/word/review/reviewWord', { wordId, answerResult })
+}
+
+// #endregion
+
+// region Token 与用户信息管理
+
+/**
+ * 设置用户信息到本地存储
+ * @param userInfo 用户信息对象
+ */
+export function setUserInfo(userInfo: UserInfo) {
+  uni.setStorageSync('userInfo', userInfo)
+}
+
+/**
+ * 从本地存储获取用户信息
+ * @returns 用户信息对象或 null
+ */
+export function getUserInfo(): UserInfo | null {
+  return uni.getStorageSync('userInfo') || null
+}
+
+/**
+ * 从本地存储获取 Token (jwt token)
+ * @returns Token 字符串
+ */
+export function getToken(): string {
+  const userInfo = getUserInfo()
+  return userInfo ? userInfo.token : ''
+}
+
+/**
+ * 从本地存储获取 VIP 状态
+ * @returns VIP 状态码 1=是，0=否
+ */
+export function getVip(): number {
+  const userInfo = getUserInfo()
+  return userInfo ? (userInfo.vip ? 1 : 0) : 0
+}
+
+/**
+ * 从本地存储移除用户信息
+ */
+export function removeUserInfo() {
+  uni.removeStorageSync('userInfo')
+}
+
+// endregion
