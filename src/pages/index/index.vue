@@ -89,7 +89,8 @@
           <image src="../../static/icons/home.png" mode="aspectFit" />
         </view>
         <view class="float-btn star-btn" @click="toggleStar">
-          <image src="../../static/icons/star.png" mode="aspectFit" />
+          <!-- <image src="../../static/icons/收藏1.png" mode="aspectFit" /> -->
+          <image src="../../static/icons/收藏2.svg" mode="aspectFit" />
         </view>
       </view>
 
@@ -101,8 +102,6 @@
 
       <!-- 底部 -->
       <view class="footer">
-        <text class="footer-text">- 别让英文成为职业瓶颈 -</text>
-        <text class="footer-sub">吃透临研核心词汇，让专业能力与职业发展双向奔赴</text>
         <view class="footer-links">
           <button class="footer-link-item share-btn" open-type="share">
             <image class="footer-icon" src="/static/icons/分享.png" mode="aspectFit" />
@@ -425,20 +424,20 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+      // box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
 
       image {
-        width: 50rpx;
-        height: 50rpx;
+        width: 80rpx;
+        height: 80rpx;
       }
 
-      &.home-btn {
-        background-color: #499ae6;
-      }
+      // &.home-btn {
+      //   background-color: #499ae6;
+      // }
 
-      &.star-btn {
-        background-color: #ff8b8b;
-      }
+      // &.star-btn {
+      //   background-color: #ff8b8b;
+      // }
     }
   }
   /* #endregion */
