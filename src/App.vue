@@ -123,4 +123,13 @@
   .container {
     padding: 90rpx 30rpx 30rpx 30rpx;
   }
+
+  .arrow-right-icon {
+    width: 14rpx;
+    height: 14rpx;
+    border-top: 3rpx solid #cccccc;
+    border-right: 3rpx solid #cccccc;
+    transform: rotate(45deg);
+    margin-left: 10rpx;
+  }
 </style>

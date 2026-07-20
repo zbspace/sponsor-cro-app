@@ -30,93 +30,73 @@
         <text class="sub-title">Core Vocabulary for Clinical Research</text>
       </view>
 
-      <!-- 进度卡片 -->
-      <view class="progress-card">
-        <view class="progress-header">
-          <text class="progress-title">单词背诵进度</text>
-          <text class="progress-text">
-            {{ indexData.recitedWordsNum }}/{{ indexData.allWordsNum }}
-          </text>
-        </view>
-        <view class="progress-bar">
-          <view
-            class="progress-fill"
-            :style="{
-              width:
-                (indexData.allWordsNum > 0
-                  ? (indexData.recitedWordsNum / indexData.allWordsNum) * 100
-                  : 0) + '%'
-            }"
-          ></view>
-        </view>
-        <view class="stats-row">
-          <view class="stat-item">
-            <text class="stat-label">正确率（%）</text>
-            <circle-progress
-              canvas-id="accuracyCanvas"
-              :percent="accuracyPercent"
-              color="#10B981"
-              :text="indexData.accuracy"
-              text-color="#10B981"
-            />
+      <!-- 申办方 & CRO 查询区域 -->
+      <view class="search-section">
+        <view class="search-bar">
+          <view class="filter-dropdown" @click="toggleFilter">
+            <text>{{ currentFilter }}</text>
+            <view class="arrow-down"></view>
           </view>
-          <view class="stat-item">
-            <text class="stat-label">坚持天数</text>
-            <circle-progress
-              canvas-id="daysCanvas"
-              :percent="streakPercent"
-              color="#F59E0B"
-              :text="String(indexData.streak)"
-              text-color="#F59E0B"
+          <view class="divider"></view>
+          <view class="search-input-wrapper">
+            <icon type="search" size="18" color="#CCCCCC" class="search-icon" />
+            <input
+              type="text"
+              placeholder="输入申办方名称"
+              v-model="searchKeyword"
+              placeholder-style="color: #CCCCCC"
             />
-          </view>
-          <view class="stat-item">
-            <text class="stat-label">进度（%）</text>
-            <circle-progress
-              canvas-id="progressCanvas"
-              :percent="progressPercent"
-              color="#499AE6"
-              :text="indexData.progress"
-              text-color="#499AE6"
-            />
+            <view class="arrow-right-icon"></view>
           </view>
         </view>
-        <button class="start-btn" @click="goToLearn">开始背诵</button>
       </view>
 
-      <!-- 菜单列表 -->
-      <view class="record-title">背诵记录</view>
-      <view class="menu-list">
-        <view class="menu-item" @click="goTo('word/learned')">
-          <view class="menu-left">
-            <image class="icon-img" src="/static/icons/已背诵单词.png" mode="aspectFit" />
-            <text>已背诵单词</text>
-          </view>
-          <view class="menu-right">
-            <text class="count">{{ indexData.recitedWordsNum }}</text>
-            <text class="arrow">〉</text>
+      <!-- CRO 榜单 -->
+      <view class="ranking-card">
+        <view class="ranking-header">
+          <text class="ranking-title">中国临床CRO榜单</text>
+          <view class="view-all" @click="goTo('ranking/index')">
+            <text>查看全部</text>
+            <view class="arrow-right-icon"></view>
           </view>
         </view>
-        <view class="menu-item" @click="goTo('word/learned', 'tab=2')">
-          <view class="menu-left">
-            <image class="icon-img" src="/static/icons/待复习单词.png" mode="aspectFit" />
-            <text>待复习单词</text>
-          </view>
-          <view class="menu-right">
-            <text class="count">{{ indexData.toReviewWordsNum }}</text>
-            <text class="arrow">〉</text>
+        <view class="ranking-list">
+          <view class="ranking-item" v-for="(item, index) in rankingList" :key="index">
+            <view class="rank-badge" :class="'rank-' + (index + 1)">
+              <!-- <text>{{ index + 1 }}</text> -->
+              <image
+                class="rank-icon"
+                :src="`../../static/icons/${index + 1}.png`"
+                mode="aspectFit"
+              />
+            </view>
+            <view class="company-info">
+              <text class="company-name">{{ item.name }}</text>
+              <view class="company-stats">
+                <text>项目经验：{{ item.projects }}</text>
+                <text class="stat-divider">合作企业数：{{ item.partners }}</text>
+              </view>
+            </view>
           </view>
         </view>
-        <view class="menu-item" @click="goTo('word/learned', 'tab=1')">
-          <view class="menu-left">
-            <image class="icon-img" src="/static/icons/收藏单词.png" mode="aspectFit" />
-            <text>收藏单词</text>
-          </view>
-          <view class="menu-right">
-            <text class="count">{{ indexData.collectWordsNum }}</text>
-            <text class="arrow">〉</text>
-          </view>
+      </view>
+
+      <view class="data-source-note">注：合作记录数据来源遗传办国合审批公示数据</view>
+
+      <!-- 悬浮按钮 -->
+      <view class="side-floating-buttons">
+        <view class="float-btn home-btn" @click="goToHome">
+          <image src="../../static/icons/home.png" mode="aspectFit" />
         </view>
+        <view class="float-btn star-btn" @click="toggleStar">
+          <image src="../../static/icons/star.png" mode="aspectFit" />
+        </view>
+      </view>
+
+      <!-- 底部助手标语 -->
+      <view class="bd-assistant-section">
+        <text class="bd-name">临研商务(BD)助手</text>
+        <text class="bd-slogan">- 助力BD拿单 -</text>
       </view>
 
       <!-- 底部 -->
@@ -158,6 +138,13 @@
   // #region 状态
   const isVip = ref(0)
   const showDataStatement = ref(false)
+  const searchKeyword = ref('')
+  const currentFilter = ref('申办方')
+  const rankingList = ref([
+    { name: '泰格医药', projects: 654, partners: 654 },
+    { name: '艾昆玮', projects: 654, partners: 654 },
+    { name: '来博客', projects: 654, partners: 654 }
+  ])
   const indexData = reactive<IndexInfoResponse>({
     accuracy: '0%',
     streak: 0,
@@ -219,6 +206,18 @@
       uni.showToast({ title: '暂无待背诵单词', icon: 'none' })
     }
   }
+
+  function toggleFilter() {
+    currentFilter.value = currentFilter.value === '申办方' ? 'CRO' : '申办方'
+  }
+
+  function goToHome() {
+    uni.reLaunch({ url: '/pages/index/index' })
+  }
+
+  function toggleStar() {
+    uni.showToast({ title: '已收藏', icon: 'success' })
+  }
   // #endregion
 
   // 胶囊位置信息
@@ -236,6 +235,214 @@
 </script>
 
 <style lang="scss" scoped>
+  /* #region 申办方 & CRO 查询 */
+  .search-section {
+    margin-bottom: 30rpx;
+    .search-bar {
+      background: #ffffff;
+      border-radius: 24rpx;
+      height: 100rpx;
+      display: flex;
+      align-items: center;
+      padding: 0 30rpx;
+      box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+
+      .filter-dropdown {
+        display: flex;
+        align-items: center;
+        padding-right: 20rpx;
+        color: #666666;
+        font-size: 28rpx;
+
+        .arrow-down {
+          width: 0;
+          height: 0;
+          border-left: 8rpx solid transparent;
+          border-right: 8rpx solid transparent;
+          border-top: 10rpx solid #999999;
+          margin-left: 12rpx;
+        }
+      }
+
+      .divider {
+        width: 2rpx;
+        height: 40rpx;
+        background-color: #f0f0f0;
+        margin: 0 20rpx;
+      }
+
+      .search-input-wrapper {
+        flex: 1;
+        display: flex;
+        align-items: center;
+
+        .search-icon {
+          margin-right: 16rpx;
+        }
+
+        input {
+          flex: 1;
+          font-size: 28rpx;
+          color: #333333;
+        }
+      }
+    }
+  }
+  /* #endregion */
+
+  /* #region CRO 榜单 */
+  .ranking-card {
+    background: #ffffff;
+    border-radius: 32rpx;
+    padding: 30rpx;
+    margin-bottom: 30rpx;
+    box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.05);
+
+    .ranking-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40rpx;
+
+      .ranking-title {
+        font-weight: 400;
+        font-size: 28rpx;
+        color: #999999;
+        line-height: 52rpx;
+      }
+
+      .view-all {
+        display: flex;
+        align-items: center;
+        font-size: 24rpx;
+        color: #cccccc;
+
+        .arrow-right {
+          margin-left: 6rpx;
+        }
+      }
+    }
+
+    .ranking-list {
+      .ranking-item {
+        display: flex;
+        align-items: center;
+        padding: 30rpx 0;
+        border-bottom: 1rpx solid #f8f8f8;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .rank-badge {
+          width: 60rpx;
+          height: 60rpx;
+          border-radius: 8rpx;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-size: 32rpx;
+          font-weight: bold;
+          margin-right: 30rpx;
+          color: #cccccc;
+
+          &.rank-1 {
+            color: #ff6b6b;
+          }
+          &.rank-2 {
+            color: #499ae6;
+          }
+          &.rank-3 {
+            color: #8bc34a;
+          }
+        }
+
+        .company-info {
+          flex: 1;
+
+          .company-name {
+            font-size: 32rpx;
+            font-weight: 500;
+            color: #333333;
+            margin-bottom: 8rpx;
+            display: block;
+          }
+
+          .company-stats {
+            display: flex;
+            font-size: 24rpx;
+            color: #999999;
+
+            .stat-divider {
+              margin-left: 30rpx;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .data-source-note {
+    font-size: 24rpx;
+    color: #cccccc;
+    text-align: center;
+    margin-bottom: 60rpx;
+  }
+  /* #endregion */
+
+  /* #region 底部助手 */
+  .bd-assistant-section {
+    text-align: center;
+    margin-bottom: 40rpx;
+    .bd-name {
+      display: block;
+      font-size: 28rpx;
+      color: #999999;
+      margin-bottom: 12rpx;
+    }
+    .bd-slogan {
+      display: block;
+      font-size: 24rpx;
+      color: #cccccc;
+    }
+  }
+  /* #endregion */
+
+  /* #region 悬浮按钮 */
+  .side-floating-buttons {
+    position: fixed;
+    right: 30rpx;
+    bottom: 250rpx;
+    display: flex;
+    flex-direction: column;
+    gap: 20rpx;
+    z-index: 100;
+
+    .float-btn {
+      width: 80rpx;
+      height: 80rpx;
+      border-radius: 12rpx;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+
+      image {
+        width: 50rpx;
+        height: 50rpx;
+      }
+
+      &.home-btn {
+        background-color: #499ae6;
+      }
+
+      &.star-btn {
+        background-color: #ff8b8b;
+      }
+    }
+  }
+  /* #endregion */
+
   /* #region 标题 */
   .title-section {
     text-align: center;
