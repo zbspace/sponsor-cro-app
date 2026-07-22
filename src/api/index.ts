@@ -23,7 +23,8 @@ import type {
  * @returns Promise<LoginResponse>
  */
 export async function wechatLogin(code: string) {
-  return post<LoginResponse>('/word/wechat/login', { jsCode: code }, false, mock.mockLogin)
+  // return post<LoginResponse>('/word/wechat/login', { jsCode: code }, false, mock.mockLogin)
+  return post<LoginResponse>('/api/v1/wechat/searchComCRO/login', { code: code, serverId: 'searchComCRO' }, false, mock.mockLogin)
 }
 
 let loginPromise: Promise<void> | null = null
@@ -40,6 +41,7 @@ export function ensureLogin(): Promise<void> {
     try {
       const { code } = await uni.login()
 
+      console.log(11,code)
       if (!code) {
         console.error('微信登录失败：未获取到 code')
         reject(new Error('未获取到 code'))

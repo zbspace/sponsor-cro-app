@@ -14,6 +14,13 @@
       }
     },
     {
+      "path": "pages/cro-stat/index",
+      "style": {
+        "navigationBarTitleText": "合作CRO统计",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/contact/index",
       "style": {
         "navigationBarTitleText": "联系我们",
@@ -21,6 +28,12 @@
       }
     }
   ],
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
+    }
+  },
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "单词记忆",

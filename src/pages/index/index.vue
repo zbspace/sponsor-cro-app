@@ -55,15 +55,14 @@
       <view class="ranking-card">
         <view class="ranking-header">
           <text class="ranking-title">中国临床CRO榜单</text>
-          <view class="view-all" @click="goTo('ranking/index')">
-            <text>查看全部</text>
+          <view class="view-all">
+            <text @click="goTo('cro-stat/index')">查看全部</text>
             <view class="arrow-right-icon"></view>
           </view>
         </view>
         <view class="ranking-list">
           <view class="ranking-item" v-for="(item, index) in rankingList" :key="index">
             <view class="rank-badge" :class="'rank-' + (index + 1)">
-              <!-- <text>{{ index + 1 }}</text> -->
               <image
                 class="rank-icon"
                 :src="`../../static/icons/${index + 1}.png`"
@@ -128,7 +127,6 @@
   // #region 导入
   import { ref, reactive, computed } from 'vue'
   import { onShow, onShareAppMessage, onLoad } from '@dcloudio/uni-app'
-  import CircleProgress from '../../components/circle-progress/circle-progress.vue'
   import DataStatementPopup from '../../components/data-statement-popup/data-statement-popup.vue'
   import { getIndexInfo, getVip, ensureLogin } from '@/api'
   import type { IndexInfoResponse } from '@/types/api'
@@ -236,7 +234,7 @@
 <style lang="scss" scoped>
   /* #region 申办方 & CRO 查询 */
   .search-section {
-    margin-bottom: 30rpx;
+    margin-bottom: 60rpx;
     .search-bar {
       background: #ffffff;
       border-radius: 24rpx;
@@ -291,17 +289,14 @@
 
   /* #region CRO 榜单 */
   .ranking-card {
-    background: #ffffff;
     border-radius: 32rpx;
-    padding: 30rpx;
     margin-bottom: 30rpx;
-    box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.05);
 
     .ranking-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 40rpx;
+      margin-bottom: 24rpx;
 
       .ranking-title {
         font-weight: 400;
@@ -323,6 +318,10 @@
     }
 
     .ranking-list {
+      background: #ffffff;
+      border-radius: 32rpx;
+      padding: 0 30rpx;
+      box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.05);
       .ranking-item {
         display: flex;
         align-items: center;
@@ -385,7 +384,7 @@
     font-size: 24rpx;
     color: #cccccc;
     text-align: center;
-    margin-bottom: 60rpx;
+    margin-bottom: 120rpx;
   }
   /* #endregion */
 
