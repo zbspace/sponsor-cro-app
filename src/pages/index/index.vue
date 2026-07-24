@@ -56,7 +56,7 @@
         <view class="ranking-header">
           <text class="ranking-title">中国临床CRO榜单</text>
           <view class="view-all">
-            <text @click="goTo('cro-stat/index')">查看全部</text>
+            <text @click="goTo('cro-rank/index')">查看全部</text>
             <view class="arrow-right-icon"></view>
           </view>
         </view>

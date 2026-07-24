@@ -10,6 +10,8 @@
     <view class="nav-right"></view>
   </view>
 
+  <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
+
   <scroll-view
     scroll-y
     class="container-scroll-view"
@@ -35,7 +37,7 @@
           </view>
         </view>
         <view class="star-btn" :class="{ active: isStarred }" @click="toggleStar">
-          <view class="star-icon" :class="{ filled: isStarred }"></view>
+          <image src="../../static/icons/收藏3.png" mode="aspectFit" />
         </view>
       </view>
 
@@ -46,7 +48,7 @@
           :class="{ active: activeTab === 'stat' }"
           @click="activeTab = 'stat'"
         >
-          <text>合作CRO统计</text>
+          <text>申办方合作记录</text>
           <view class="active-line" v-if="activeTab === 'stat'"></view>
         </view>
         <view
@@ -69,51 +71,84 @@
         ></uni-data-select>
       </view>
 
-      <!-- 外包比例卡片 -->
-      <view class="card ratio-card">
-        <view class="card-title">外包比例</view>
-        <view class="ratio-content">
-          <view class="pie-chart-wrapper">
-            <view
-              class="pie-chart"
-              :style="{
-                background: `conic-gradient(#499AE6 0% ${outsourceRate.cro}%, #7ED321 ${outsourceRate.cro}% 100%)`
-              }"
-            ></view>
-          </view>
-          <view class="ratio-legend">
-            <view class="legend-item">
-              <view class="dot blue"></view>
-              <view class="legend-info">
-                <text class="label">外包CRO</text>
-                <text class="value">{{ outsourceRate.cro }}%</text>
+      <view class="time-filter-tip">
+        注：同一个项目可能存在多条HGR获批记录，时间按照HGR批准 时间统计
+      </view>
+
+      <!-- 统计内容 -->
+      <view v-if="activeTab === 'stat'">
+        <!-- 外包比例卡片 -->
+        <view class="card ratio-card">
+          <view class="card-title">外包比例</view>
+          <view class="ratio-content">
+            <view class="pie-chart-wrapper">
+              <view
+                class="pie-chart"
+                :style="{
+                  background: `conic-gradient(#499AE6 0% ${outsourceRate.cro}%, #7ED321 ${outsourceRate.cro}% 100%)`
+                }"
+              ></view>
+            </view>
+            <view class="ratio-legend">
+              <view class="legend-item">
+                <view class="dot blue"></view>
+                <view class="legend-info">
+                  <text class="label">外包CRO</text>
+                  <text class="value">{{ outsourceRate.cro }}%</text>
+                </view>
+              </view>
+              <view class="legend-item">
+                <view class="dot green"></view>
+                <view class="legend-info">
+                  <text class="label">自己申报</text>
+                  <text class="value">{{ outsourceRate.self }}%</text>
+                </view>
               </view>
             </view>
-            <view class="legend-item">
-              <view class="dot green"></view>
-              <view class="legend-info">
-                <text class="label">自己申报</text>
-                <text class="value">{{ outsourceRate.self }}%</text>
-              </view>
+          </view>
+        </view>
+
+        <!-- CRO合作名单卡片 -->
+        <view class="card list-card">
+          <view class="card-title">CRO合作名单</view>
+          <view class="table-header">
+            <text class="col-rank">排序</text>
+            <text class="col-name">CRO公司</text>
+            <text class="col-count">合作项目数</text>
+          </view>
+          <view class="table-body">
+            <view class="table-row" v-for="(item, index) in croList" :key="index">
+              <text class="col-rank">{{ index + 1 }}</text>
+              <text class="col-name">{{ item.name }}</text>
+              <text class="col-count highlight">{{ item.count }}</text>
             </view>
           </view>
         </view>
       </view>
 
-      <!-- CRO合作名单卡片 -->
-      <view class="card list-card">
-        <view class="card-title">CRO合作名单</view>
-        <view class="table-header">
-          <text class="col-rank">排序</text>
-          <text class="col-name">CRO公司</text>
-          <text class="col-count">合作项目数</text>
-        </view>
-        <view class="table-body">
-          <view class="table-row" v-for="(item, index) in croList" :key="index">
-            <text class="col-rank">{{ index + 1 }}</text>
-            <text class="col-name">{{ item.name }}</text>
-            <text class="col-count highlight">{{ item.count }}</text>
+      <!-- 项目列表内容 -->
+      <view v-else class="project-list">
+        <view class="project-card" v-for="(item, index) in projectList" :key="index">
+          <view class="project-title">{{ item.title }}</view>
+          <view class="info-list">
+            <view class="info-item">
+              <view class="info-icon time"></view>
+              <text class="info-text">批入时间：{{ item.approveTime }}</text>
+            </view>
+            <view class="info-item">
+              <view class="info-icon sponsor"></view>
+              <text class="info-text">申办方：{{ item.sponsor }}</text>
+            </view>
+            <view class="info-item">
+              <view class="info-icon no"></view>
+              <text class="info-text">审批号/备案号：{{ item.approveNo }}</text>
+            </view>
+            <view class="info-item">
+              <view class="info-icon cro"></view>
+              <text class="info-text">合作CRO：{{ item.cro }}</text>
+            </view>
           </view>
+          <view class="action-btn">{{ item.tag }}</view>
         </view>
       </view>
     </view>
@@ -126,7 +161,7 @@
 
   const activeTab = ref('stat')
   const currentCompany = ref('全部')
-  const currentTimeFilter = ref('历史所有')
+  const currentTimeFilter = ref('全部CRO')
   const isStarred = ref(false)
   const showCompanySelect = ref(false)
   const showTimeSelect = ref(false)
@@ -138,7 +173,7 @@
   ])
 
   const timeOptions = ref([
-    { value: '历史所有', text: '历史所有' },
+    { value: '全部CRO', text: '全部CRO' },
     { value: '近一年', text: '近一年' },
     { value: '近三年', text: '近三年' }
   ])
@@ -155,6 +190,27 @@
     { name: '圣方医药', count: 4 },
     { name: '圣方医药', count: 5 },
     { name: '圣方医药', count: 6 }
+  ])
+
+  const projectList = ref([
+    {
+      title:
+        '主方案：一项评价替雷利珠单抗联合过验用药物伴或不伴化疗用于治疗既往未经治疗的局部晚期、不可切除或转移性非小细胞肺癌患者的2期、开放...',
+      approveTime: '2025年07月',
+      sponsor: '百济神州(上海)生物科技有限公司',
+      approveNo: '2025GHOB04',
+      cro: '无(自己申报)',
+      tag: '国合审批'
+    },
+    {
+      title:
+        '主方案：一项评价替雷利珠单抗联合过验用药物伴或不伴化疗用于治疗既往未经治疗的局部晚期、不可切除或转移性非小细胞肺癌患者的2期、开放...',
+      approveTime: '2025年07月',
+      sponsor: '百济神州(上海)生物科技有限公司',
+      approveNo: '2025GHOB04',
+      cro: '无(自己申报)',
+      tag: '国合审批'
+    }
   ])
 
   const toggleStar = () => {
@@ -190,7 +246,7 @@
 
 <style lang="scss" scoped>
   .container {
-    padding: 50rpx;
+    padding: 30rpx;
   }
 
   /* 顶部筛选栏 */
@@ -198,7 +254,7 @@
     display: flex;
     align-items: center;
     gap: 20rpx;
-    margin-bottom: 40rpx;
+    margin-bottom: 30rpx;
 
     .filter-input-card {
       flex: 1;
@@ -209,6 +265,7 @@
       align-items: center;
       padding: 0 30rpx;
       box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.02);
+      border: 2rpx solid #eeeeee;
 
       .label {
         font-size: 28rpx;
@@ -249,7 +306,6 @@
       justify-content: center;
       align-items: center;
       box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.02);
-      border: 2rpx dashed #ccc;
 
       .star-icon {
         width: 40rpx;
@@ -270,17 +326,17 @@
   .tabs {
     display: flex;
     justify-content: space-around;
-    margin-bottom: 40rpx;
+    margin-bottom: 30rpx;
 
     .tab-item {
       position: relative;
       padding: 20rpx 0;
-      font-size: 30rpx;
-      color: #666;
+      font-size: 28rpx;
+      color: #999;
 
       &.active {
         color: #333;
-        font-weight: 500;
+        font-weight: bold;
       }
 
       .active-line {
@@ -298,28 +354,41 @@
 
   /* 时间筛选 */
   .time-filter-wrapper {
+    margin-bottom: 40rpx;
+    background: #ffffff;
+    height: 90rpx;
+    border-radius: 16rpx;
     display: flex;
-    justify-content: flex-start;
-    margin-bottom: 30rpx;
-    width: 220rpx;
+    align-items: center;
+    padding: 0 30rpx;
+    box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
+    margin-bottom: 24rpx;
 
     :deep(.uni-select) {
       border: none;
-      background: #ffffff;
-      height: 60rpx;
-      border-radius: 12rpx;
-      padding: 0 20rpx;
-      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.02);
+      padding: 0;
 
       .uni-select__input-text {
-        font-size: 26rpx;
-        color: #999;
-      }
-
-      .uni-select__selector {
-        z-index: 999;
+        font-size: 28rpx;
+        color: #333;
       }
     }
+
+    .filter-tip {
+      font-size: 24rpx;
+      color: #f38a8a; /* 更柔和的红色 */
+      line-height: 1.4;
+      padding: 0 10rpx;
+    }
+  }
+
+  /* 时间筛选提示 */
+  .time-filter-tip {
+    font-size: 24rpx;
+    color: #f38a8a; /* 更柔和的红色 */
+    line-height: 1.4;
+    padding: 0 10rpx;
+    margin-bottom: 30rpx;
   }
 
   /* 卡片通用样式 */
@@ -343,8 +412,9 @@
     .ratio-content {
       display: flex;
       align-items: center;
-      gap: 60rpx;
+      gap: 130rpx;
       padding: 20rpx 0;
+      justify-content: center;
 
       .pie-chart-wrapper {
         .pie-chart {
@@ -355,7 +425,6 @@
       }
 
       .ratio-legend {
-        flex: 1;
         display: flex;
         flex-direction: column;
         gap: 30rpx;
@@ -437,6 +506,80 @@
 
       &.highlight {
         color: #499ae6;
+      }
+    }
+  }
+
+  /* 项目列表卡片 */
+  .project-list {
+    .project-card {
+      background: #ffffff;
+      border-radius: 24rpx;
+      padding: 30rpx;
+      margin-bottom: 30rpx;
+      box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
+      position: relative;
+
+      .project-title {
+        font-size: 30rpx;
+        color: #333;
+        font-weight: 500;
+        line-height: 1.5;
+        margin-bottom: 30rpx;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        overflow: hidden;
+      }
+
+      .info-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20rpx;
+
+        .info-item {
+          display: flex;
+          align-items: center;
+          gap: 16rpx;
+
+          .info-icon {
+            width: 32rpx;
+            height: 32rpx;
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0.4;
+
+            &.time {
+              background-image: url('https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=clock+icon+thin+line+gray&image_size=square');
+            }
+            &.sponsor {
+              background-image: url('https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=building+icon+thin+line+gray&image_size=square');
+            }
+            &.no {
+              background-image: url('https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=id+card+icon+thin+line+gray&image_size=square');
+            }
+            &.cro {
+              background-image: url('https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=handshake+icon+thin+line+gray&image_size=square');
+            }
+          }
+
+          .info-text {
+            font-size: 26rpx;
+            color: #999;
+          }
+        }
+      }
+
+      .action-btn {
+        position: absolute;
+        right: 30rpx;
+        bottom: 30rpx;
+        background: #499ae6;
+        color: #ffffff;
+        font-size: 26rpx;
+        padding: 12rpx 30rpx;
+        border-radius: 40rpx;
+        box-shadow: 0 4rpx 12rpx rgba(73, 154, 230, 0.3);
       }
     }
   }

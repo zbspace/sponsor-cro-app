@@ -26,6 +26,13 @@
         "navigationBarTitleText": "联系我们",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/cro-rank/index",
+      "style": {
+        "navigationBarTitleText": "榜单",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "easycom": {
