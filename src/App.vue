@@ -1,18 +1,60 @@
+<template>
+  <!-- 手机号绑定弹窗 -->
+  <view class="phone-overlay">
+    <view class="phone-modal">
+      <text class="modal-title">绑定手机号</text>
+      <text class="modal-desc">为保障账号安全，请绑定手机号</text>
+      <button class="bind-btn" open-type="getPhoneNumber" @getphonenumber="onGetPhoneNumber">
+        授权手机号
+      </button>
+    </view>
+  </view>
+</template>
+
 <script setup lang="ts">
   // #region 导入
+  import { ref } from 'vue'
   import { onShow } from '@dcloudio/uni-app'
-  import { ensureLogin, resetEnsureLogin } from '@/api'
+  import { ensureLogin, resetEnsureLogin, getUserInfo, bandPhone } from '@/api'
+  // #endregion
+
+  // #region 状态
+  const needBindPhone = ref(false)
   // #endregion
 
   // #region 生命周期
   onShow(() => {
     resetEnsureLogin()
-    ensureLogin().catch((err) => {
-      console.error('App login error:', err)
-    })
+    ensureLogin()
+      .then(() => {
+        const userInfo = getUserInfo()
+        if (userInfo && !userInfo.phone) {
+          needBindPhone.value = true
+        }
+      })
+      .catch((err) => {
+        console.error('App login error:', err)
+      })
   })
   // #endregion
+
+  // #region 方法
+  async function onGetPhoneNumber(e: any) {
+    if (e.detail.code) {
+      try {
+        await bandPhone(e.detail.code)
+        needBindPhone.value = false
+        uni.showToast({ title: '手机号绑定成功', icon: 'success' })
+      } catch {
+        uni.showToast({ title: '绑定失败，请重试', icon: 'none' })
+      }
+    } else {
+      uni.showToast({ title: '已取消授权', icon: 'none' })
+    }
+  }
+  // #endregion
 </script>
+
 <style lang="scss">
   /* #region 全局样式 */
   view,
@@ -33,6 +75,61 @@
       BlinkMacSystemFont,
       'Helvetica Neue',
       sans-serif;
+  }
+  /* #endregion */
+
+  /* #region 手机号绑定弹窗 */
+  .phone-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+
+    .phone-modal {
+      width: 560rpx;
+      background: #fff;
+      border-radius: 24rpx;
+      padding: 60rpx 40rpx;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      .modal-title {
+        font-size: 36rpx;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 20rpx;
+      }
+
+      .modal-desc {
+        font-size: 28rpx;
+        color: #999;
+        margin-bottom: 60rpx;
+      }
+
+      .bind-btn {
+        width: 100%;
+        height: 88rpx;
+        background: #499ae6;
+        color: #fff;
+        font-size: 32rpx;
+        border-radius: 44rpx;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: none;
+
+        &::after {
+          border: none;
+        }
+      }
+    }
   }
   /* #endregion */
 

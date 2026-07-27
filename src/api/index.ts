@@ -74,6 +74,15 @@ export function resetEnsureLogin() {
   loginPromise = null
 }
 
+/**
+ * 绑定手机号
+ * @param code 微信获取的手机号 code
+ * @returns Promise
+ */
+export async function bandPhone(code: string) {
+  return post('/api/v1/wechat/searchComCRO/bandPhone', { code }, true)
+}
+
 // #endregion
 
 // #region VIP支付模块

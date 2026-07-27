@@ -34,6 +34,7 @@ export interface UserInfo {
   vip: boolean
   avatarUrl?: string
   nickname?: string
+  phone?: string
   vipExpirationTime?: string
 }
 
