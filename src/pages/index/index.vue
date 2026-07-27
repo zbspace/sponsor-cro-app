@@ -4,6 +4,7 @@
     <view class="vip-btn-wrapper" v-if="isVip !== 1" @click="goTo('vip/index')">
       <image class="vip-btn-img" src="/static/icons/vip.png" mode="aspectFit" />
       <text>开通VIP</text>
+      <view class="arrow-right-icon" style="border-color: #fff"></view>
     </view>
     <view class="vip-badge" v-else @click="goTo('vip/index')">
       <image class="vip-badge-icon" src="/static/vip-icon.svg" mode="aspectFit" />
@@ -25,9 +26,8 @@
     <view class="container">
       <!-- 标题 -->
       <view class="title-section">
-        <!-- <text class="main-title">临床研究核心词汇</text> -->
-        <image class="title-icon" src="../../static/icons/临床研究核心词汇.png" mode="aspectFit" />
-        <text class="sub-title">Core Vocabulary for Clinical Research</text>
+        <text class="main-title">申办方&CRO</text>
+        <text class="sub-title">试验合作记录查询</text>
       </view>
 
       <!-- 申办方 & CRO 查询区域 -->
@@ -133,7 +133,7 @@
   import { ref, reactive, computed } from 'vue'
   import { onShow, onShareAppMessage, onLoad } from '@dcloudio/uni-app'
   import DataStatementPopup from '../../components/data-statement-popup/data-statement-popup.vue'
-  import { getIndexInfo, getVip, ensureLogin } from '@/api'
+  import { getIndexInfo, getVip, ensureLogin, getCroRankList } from '@/api'
   import type { IndexInfoResponse } from '@/types/api'
   // #endregion
 
@@ -142,11 +142,7 @@
   const showDataStatement = ref(false)
   const searchKeyword = ref('')
   const currentFilter = ref('申办方')
-  const rankingList = ref([
-    { name: '泰格医药', projects: 654, partners: 654 },
-    { name: '艾昆玮', projects: 654, partners: 654 },
-    { name: '来博客', projects: 654, partners: 654 }
-  ])
+  const rankingList = ref<{ name: string; projects: number; partners: number }[]>([])
   const indexData = reactive<IndexInfoResponse>({
     accuracy: '0%',
     streak: 0,
@@ -172,7 +168,7 @@
     // 确保登录成功后再获取数据
     await ensureLogin()
     isVip.value = getVip()
-    fetchIndexInfo()
+    fetchCroRankList()
   })
 
   onShareAppMessage(() => {
@@ -185,12 +181,17 @@
   // #endregion
 
   // #region 方法
-  async function fetchIndexInfo() {
+
+  async function fetchCroRankList() {
     try {
-      const res = await getIndexInfo()
-      Object.assign(indexData, res.data)
-      // 缓存总单词数
-      uni.setStorageSync('allWordsNum', res.data.allWordsNum)
+      const res = await getCroRankList()
+      if (res.data?.list) {
+        rankingList.value = res.data.list.map((item) => ({
+          name: item.parentCompanyShortName,
+          projects: item.projectExperienceNum,
+          partners: item.cooperationEnterpriseNum
+        }))
+      }
     } catch {
       // 静默处理，保持默认值
     }

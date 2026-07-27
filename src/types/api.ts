@@ -1,4 +1,32 @@
 /**
+ * 外包比例响应
+ */
+export interface OutsourcingRatioResponse {
+  outsourcingCroRatio: number
+  selfRatio: number
+}
+
+/**
+ * CRO 榜单条目
+ */
+export interface CroRankItem {
+  cooperationEnterpriseNum: number
+  parentCompanyId: number
+  parentCompanyShortName: string
+  projectExperienceNum: number
+  rankNo: number
+}
+
+/**
+ * CRO 榜单分页响应
+ */
+export interface CroRankListResponse {
+  list: CroRankItem[]
+  pages: number
+  total: number
+}
+
+/**
  * 用户信息接口
  */
 export interface UserInfo {

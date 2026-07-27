@@ -166,6 +166,7 @@
 <script setup lang="ts">
   import { ref, reactive } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
+  import { getOutsourcingRatio } from '@/api'
 
   const activeTab = ref('stat')
   const currentCompany = ref('全部')
@@ -187,9 +188,22 @@
   ])
 
   const outsourceRate = reactive({
-    cro: 13,
-    self: 87
+    cro: 0,
+    self: 0
   })
+
+  async function fetchOutsourcingRatio() {
+    try {
+      // 需要 sponsorParentCompanyId，目前先传默认值，后续从路由参数获取
+      const res = await getOutsourcingRatio({ sponsorParentCompanyId: 0 })
+      if (res.data) {
+        outsourceRate.cro = res.data.outsourcingCroRatio
+        outsourceRate.self = res.data.selfRatio
+      }
+    } catch {
+      // 静默处理
+    }
+  }
 
   const croList = ref([
     { name: '圣方医药', count: 5 },
@@ -249,6 +263,7 @@
     // 获取胶囊位置信息（单位px）
     const info = uni.getMenuButtonBoundingClientRect()
     menu.value = info
+    fetchOutsourcingRatio()
   })
 </script>
 

@@ -138,6 +138,5 @@
     border-top: 3rpx solid #cccccc;
     border-right: 3rpx solid #cccccc;
     transform: rotate(45deg);
-    margin-left: 10rpx;
   }
 </style>

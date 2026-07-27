@@ -1,4 +1,5 @@
 import { get, post } from '@/utils/request'
+import { mockCroRankList, mockOutsourcingRatio } from '@/mock'
 import * as mock from '@/mock'
 import type {
   UserInfo,
@@ -12,7 +13,9 @@ import type {
   CollectListResponse,
   VipOption,
   VirtualPayData,
-  VipRenewResponse
+  VipRenewResponse,
+  CroRankListResponse,
+  OutsourcingRatioResponse
 } from '@/types/api'
 
 // #region 登录模块
@@ -130,6 +133,25 @@ export async function renewVipAndRecordOrder(outTradeNo: string, deviceType: str
  */
 export async function getIndexInfo() {
   return get<IndexInfoResponse>('/word/index/getIndexInfo', {}, true, mock.mockIndexInfo)
+}
+
+/**
+ * 获取中国临床CRO榜单
+ * @param pageNum 页码
+ * @param pageSize 每页条数
+ * @returns Promise<CroRankListResponse>
+ */
+export async function getCroRankList(pageNum: number = 1, pageSize: number = 3) {
+  return post<CroRankListResponse>('/api/v1/hgr/selectClinicalCroRankList', { pageNum, pageSize }, true, mockCroRankList)
+}
+
+/**
+ * 获取外包比例
+ * @param params { lastYear, sponsorParentCompanyId, sponsorStandardCompanyIdList }
+ * @returns Promise<OutsourcingRatioResponse>
+ */
+export async function getOutsourcingRatio(params: { lastYear?: number; sponsorParentCompanyId: number; sponsorStandardCompanyIdList?: number[] }) {
+  return post<OutsourcingRatioResponse>('/api/v1/hgr/selectOutsourcingRatio', params, true, mockOutsourcingRatio)
 }
 
 // #endregion

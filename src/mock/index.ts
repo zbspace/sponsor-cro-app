@@ -5,7 +5,9 @@ import type {
   WordDetailResponse,
   CollectListResponse,
   PayParams,
-  PayQueryResponse
+  PayQueryResponse,
+  CroRankListResponse,
+  OutsourcingRatioResponse
 } from '@/types/api'
 
 /**
@@ -123,6 +125,27 @@ export const mockCollectList: CollectListResponse = {
       definition: 'adj. 讨厌的，可恶的'
     }
   ]
+}
+
+/**
+ * 模拟中国临床CRO榜单数据
+ */
+export const mockCroRankList: CroRankListResponse = {
+  list: [
+    { cooperationEnterpriseNum: 654, parentCompanyId: 1, parentCompanyShortName: '泰格医药', projectExperienceNum: 654, rankNo: 1 },
+    { cooperationEnterpriseNum: 654, parentCompanyId: 2, parentCompanyShortName: '艾昆玮', projectExperienceNum: 654, rankNo: 2 },
+    { cooperationEnterpriseNum: 654, parentCompanyId: 3, parentCompanyShortName: '来博客', projectExperienceNum: 654, rankNo: 3 }
+  ],
+  pages: 1,
+  total: 3
+}
+
+/**
+ * 模拟外包比例数据
+ */
+export const mockOutsourcingRatio: OutsourcingRatioResponse = {
+  outsourcingCroRatio: 13,
+  selfRatio: 87
 }
 
 /**

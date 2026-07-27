@@ -89,6 +89,7 @@ export function request<T = any>(config: RequestConfig): Promise<ApiResponse<T>>
   if (needToken) {
     const token = getToken()
     if (token) {
+      header.Authorization = `Bearer_${token}`;
       header.token = token
     }
   }
