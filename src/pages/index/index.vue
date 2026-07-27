@@ -61,7 +61,12 @@
           </view>
         </view>
         <view class="ranking-list">
-          <view class="ranking-item" v-for="(item, index) in rankingList" :key="index">
+          <view
+            class="ranking-item"
+            v-for="(item, index) in rankingList"
+            :key="index"
+            @click="goTo('cro-stat/index')"
+          >
             <view class="rank-badge" :class="'rank-' + (index + 1)">
               <image
                 class="rank-icon"

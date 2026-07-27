@@ -29,7 +29,15 @@
         <text class="col-pharma">合作药企</text>
       </view>
 
-      <view class="table-body">
+      <scroll-view
+        scroll-y
+        class="scroll-view"
+        @scrolltolower="onScrollToLower"
+        :show-scrollbar="false"
+        :style="{
+          height: `calc(100vh - ${menu.top}px - ${menu.height}px - 350px)`
+        }"
+      >
         <view
           class="table-row"
           v-for="(item, index) in rankList"
@@ -42,13 +50,11 @@
           <text class="col-pharma">{{ item.partners }}</text>
         </view>
 
-        <!-- 加载状态 -->
-        <view class="load-more">
-          <text v-if="loading">加载中...</text>
-          <text v-else-if="noMore">没有更多了</text>
-          <text v-else>上滑加载更多</text>
+        <view class="loading-status" v-if="loading || noMore">
+          <text>{{ loading ? '加载中...' : '没有更多了' }}</text>
         </view>
-      </view>
+        <view class="empty-tip" v-if="rankList.length === 0 && !loading">暂无数据</view>
+      </scroll-view>
     </view>
   </view>
 
@@ -97,9 +103,11 @@
     }, 1000)
   }
 
-  onReachBottom(() => {
+  // #region 滚动加载逻辑
+  const onScrollToLower = () => {
     fetchRankData()
-  })
+  }
+  // #endregion
 
   const goBack = () => {
     uni.navigateBack()
@@ -172,7 +180,7 @@
 
   .content-body {
     padding: 0 30rpx;
-    margin-top: -10rpx;
+    margin-top: 216rpx;
 
     .filter-card {
       background: #ffffff;
@@ -247,7 +255,13 @@
         flex: 1;
       }
 
-      .load-more {
+      // #region 滚动列表样式
+      .scroll-view {
+        width: 100%;
+      }
+
+      .loading-status,
+      .empty-tip {
         padding: 40rpx 0;
         text-align: center;
         text {
@@ -255,6 +269,7 @@
           color: #999;
         }
       }
+      // #endregion
     }
   }
 

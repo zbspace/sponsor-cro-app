@@ -132,19 +132,27 @@
           <view class="project-title">{{ item.title }}</view>
           <view class="info-list">
             <view class="info-item">
-              <view class="info-icon time"></view>
+              <view class="info-icon time">
+                <image src="../../static/icons/time.png" mode="aspectFit" />
+              </view>
               <text class="info-text">批入时间：{{ item.approveTime }}</text>
             </view>
             <view class="info-item">
-              <view class="info-icon sponsor"></view>
+              <view class="info-icon sponsor">
+                <image src="../../static/icons/sponsor.png" mode="aspectFit" />
+              </view>
               <text class="info-text">申办方：{{ item.sponsor }}</text>
             </view>
             <view class="info-item">
-              <view class="info-icon no"></view>
+              <view class="info-icon no">
+                <image src="../../static/icons/no.png" mode="aspectFit" />
+              </view>
               <text class="info-text">审批号/备案号：{{ item.approveNo }}</text>
             </view>
             <view class="info-item">
-              <view class="info-icon cro"></view>
+              <view class="info-icon cro">
+                <image src="../../static/icons/cro.png" mode="aspectFit" />
+              </view>
               <text class="info-text">合作CRO：{{ item.cro }}</text>
             </view>
           </view>
@@ -545,21 +553,9 @@
           .info-icon {
             width: 32rpx;
             height: 32rpx;
-            background-size: contain;
-            background-repeat: no-repeat;
-            opacity: 0.4;
-
-            &.time {
-              background-image: url('https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=clock+icon+thin+line+gray&image_size=square');
-            }
-            &.sponsor {
-              background-image: url('https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=building+icon+thin+line+gray&image_size=square');
-            }
-            &.no {
-              background-image: url('https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=id+card+icon+thin+line+gray&image_size=square');
-            }
-            &.cro {
-              background-image: url('https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=handshake+icon+thin+line+gray&image_size=square');
+            image {
+              width: 100%;
+              height: 100%;
             }
           }
 

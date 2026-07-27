@@ -25,6 +25,14 @@
   page {
     height: 100%;
     background-color: #f5f7fa;
+    font-family:
+      'Microsoft YaHei',
+      '微软雅黑',
+      'PingFang SC',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Helvetica Neue',
+      sans-serif;
   }
   /* #endregion */
 
