@@ -11,13 +11,14 @@
   <image class="bg-img" src="../../static/icons/rank-bg.png" mode="aspectFit" />
 
   <view class="content-body">
-    <!-- 筛选下拉框 -->
+    <!-- 年份选择 -->
     <view class="filter-card">
       <uni-data-select
-        v-model="timeFilter"
-        :localdata="timeOptions"
+        v-model="selectedYear"
+        :localdata="yearOptions"
         :clear="false"
-      ></uni-data-select>
+        placeholder="选择年份"
+      />
     </view>
 
     <!-- 榜单表格 -->
@@ -62,52 +63,77 @@
   <view class="footer">
     <view class="share-btn">分享</view>
   </view>
-
-  <!-- 手机号绑定弹窗 -->
-  <phone-bind-popup />
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted } from 'vue'
-  import { onReachBottom, onLoad } from '@dcloudio/uni-app'
-  import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
+  import { ref, watch } from 'vue'
+  import { onLoad } from '@dcloudio/uni-app'
+  import { getCroRankList } from '@/api'
 
-  const timeFilter = ref('全部历史')
-  const timeOptions = [
-    { value: '全部历史', text: '全部历史' },
-    { value: '2024', text: '2024年度' },
-    { value: '2023', text: '2023年度' }
-  ]
+  // #region 筛选
+  const selectedYear = ref('')
 
-  const rankList = ref<any[]>([])
+  const yearOptions = (() => {
+    const currentYear = new Date().getFullYear()
+    const options = [{ value: '', text: '全部历史' }]
+    for (let y = currentYear; y >= 2016; y--) {
+      options.push({ value: String(y), text: `${y}年度` })
+    }
+    return options
+  })()
+  // #endregion
+
+  // #region 榜单数据
+  const rankList = ref<{ name: string; experience: number; partners: number }[]>([])
   const loading = ref(false)
   const noMore = ref(false)
   const page = ref(1)
+  const pageSize = 10
 
-  // 模拟获取数据
-  const fetchRankData = async () => {
+  const fetchRankData = async (reset = false) => {
     if (loading.value || noMore.value) return
 
+    if (reset) {
+      page.value = 1
+      rankList.value = []
+      noMore.value = false
+    }
+
     loading.value = true
-    // 模拟网络请求
-    setTimeout(() => {
-      const newData = Array.from({ length: 10 }, (_, i) => ({
-        name: '圣方医药',
-        experience: Math.floor(Math.random() * 100),
-        partners: Math.floor(Math.random() * 100)
-      }))
 
-      rankList.value = [...rankList.value, ...newData]
-      loading.value = false
+    try {
+      const res = await getCroRankList(page.value, pageSize, selectedYear.value)
+      if (res.data?.list) {
+        const mapped = res.data.list.map((item) => ({
+          name: item.parentCompanyShortName,
+          experience: item.projectExperienceNum,
+          partners: item.cooperationEnterpriseNum
+        }))
 
-      if (rankList.value.length >= 40) {
-        noMore.value = true
+        if (reset) {
+          rankList.value = mapped
+        } else {
+          rankList.value = [...rankList.value, ...mapped]
+        }
+
+        if (page.value >= res.data.pages) {
+          noMore.value = true
+        }
       }
+    } catch {
+      // 静默处理
+    } finally {
+      loading.value = false
       page.value++
-    }, 1000)
+    }
   }
 
-  // #region 滚动加载逻辑
+  watch(selectedYear, () => {
+    fetchRankData(true)
+  })
+  // #endregion
+
+  // #region 滚动加载
   const onScrollToLower = () => {
     fetchRankData()
   }
@@ -124,7 +150,7 @@
     const info = uni.getMenuButtonBoundingClientRect()
     menu.value = info
     // #endif
-    fetchRankData()
+    fetchRankData(true)
   })
 </script>
 
@@ -192,16 +218,21 @@
       border-radius: 16rpx;
       display: flex;
       align-items: center;
-      padding: 0 30rpx;
+      padding: 0;
       box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
       margin-bottom: 30rpx;
 
       :deep(.uni-select) {
-        border: none;
         flex: 1;
+        border: none;
         .uni-select__input-text {
           font-size: 28rpx;
           color: #adadad;
+        }
+        .uni-select__selector {
+          .uni-select__selector-item {
+            line-height: 40px;
+          }
         }
       }
     }

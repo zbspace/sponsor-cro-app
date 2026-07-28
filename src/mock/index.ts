@@ -130,14 +130,39 @@ export const mockCollectList: CollectListResponse = {
 /**
  * 模拟中国临床CRO榜单数据
  */
+const mockCroCompanies = [
+  { name: '泰格医药', projects: 654, partners: 320 },
+  { name: '艾昆玮', projects: 589, partners: 280 },
+  { name: '来博客', projects: 523, partners: 245 },
+  { name: '药明康德', projects: 487, partners: 230 },
+  { name: '康龙化成', projects: 432, partners: 198 },
+  { name: '昭衍新药', projects: 398, partners: 175 },
+  { name: '美迪西', projects: 356, partners: 160 },
+  { name: '博济医药', projects: 312, partners: 142 },
+  { name: '华威医药', projects: 287, partners: 130 },
+  { name: '百诚医药', projects: 256, partners: 118 },
+  { name: '阳光诺和', projects: 234, partners: 105 },
+  { name: '诺泰生物', projects: 210, partners: 95 },
+  { name: '皓元医药', projects: 189, partners: 82 },
+  { name: '成都先导', projects: 167, partners: 72 },
+  { name: '南模生物', projects: 145, partners: 60 },
+  { name: '和元生物', projects: 128, partners: 52 },
+  { name: '吉凯基因', projects: 110, partners: 45 },
+  { name: '华大基因', projects: 95, partners: 38 },
+  { name: '贝瑞基因', projects: 78, partners: 30 },
+  { name: '诺禾致源', projects: 62, partners: 24 }
+]
+
 export const mockCroRankList: CroRankListResponse = {
-  list: [
-    { cooperationEnterpriseNum: 654, parentCompanyId: 1, parentCompanyShortName: '泰格医药', projectExperienceNum: 654, rankNo: 1 },
-    { cooperationEnterpriseNum: 654, parentCompanyId: 2, parentCompanyShortName: '艾昆玮', projectExperienceNum: 654, rankNo: 2 },
-    { cooperationEnterpriseNum: 654, parentCompanyId: 3, parentCompanyShortName: '来博客', projectExperienceNum: 654, rankNo: 3 }
-  ],
-  pages: 1,
-  total: 3
+  list: mockCroCompanies.slice(0, 10).map((c, i) => ({
+    cooperationEnterpriseNum: c.partners,
+    parentCompanyId: i + 1,
+    parentCompanyShortName: c.name,
+    projectExperienceNum: c.projects,
+    rankNo: i + 1
+  })),
+  pages: 2,
+  total: 20
 }
 
 /**

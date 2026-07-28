@@ -44,7 +44,7 @@ export function ensureLogin(): Promise<void> {
     try {
       const { code } = await uni.login()
 
-      console.log(11,code)
+      console.log(11, code)
       if (!code) {
         console.error('微信登录失败：未获取到 code')
         reject(new Error('未获取到 code'))
@@ -148,10 +148,11 @@ export async function getIndexInfo() {
  * 获取中国临床CRO榜单
  * @param pageNum 页码
  * @param pageSize 每页条数
- * @returns Promise<CroRankListResponse>
+ * @param lastYear 最后一年份
+ * * @returns Promise<CroRankListResponse>
  */
-export async function getCroRankList(pageNum: number = 1, pageSize: number = 3) {
-  return post<CroRankListResponse>('/api/v1/hgr/selectClinicalCroRankList', { pageNum, pageSize }, true, mockCroRankList)
+export async function getCroRankList(pageNum: number = 1, pageSize: number = 3, lastYear?: string) {
+  return post<CroRankListResponse>('/api/v1/hgr/selectClinicalCroRankList', { pageNum, pageSize, lastYear }, true, mockCroRankList)
 }
 
 /**
