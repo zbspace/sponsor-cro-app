@@ -62,11 +62,15 @@
   <view class="footer">
     <view class="share-btn">分享</view>
   </view>
+
+  <!-- 手机号绑定弹窗 -->
+  <phone-bind-popup />
 </template>
 
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
   import { onReachBottom, onLoad } from '@dcloudio/uni-app'
+  import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
 
   const timeFilter = ref('全部历史')
   const timeOptions = [

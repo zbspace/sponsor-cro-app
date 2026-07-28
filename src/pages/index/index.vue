@@ -126,6 +126,9 @@
 
   <!-- 数据声明弹窗 -->
   <data-statement-popup v-model:visible="showDataStatement" />
+
+  <!-- 手机号绑定弹窗 -->
+  <phone-bind-popup />
 </template>
 
 <script setup lang="ts">
@@ -133,6 +136,7 @@
   import { ref, reactive, computed } from 'vue'
   import { onShow, onShareAppMessage, onLoad } from '@dcloudio/uni-app'
   import DataStatementPopup from '../../components/data-statement-popup/data-statement-popup.vue'
+  import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
   import { getIndexInfo, getVip, ensureLogin, getCroRankList } from '@/api'
   import type { IndexInfoResponse } from '@/types/api'
   // #endregion

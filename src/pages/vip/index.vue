@@ -103,11 +103,15 @@
       </view>
     </view>
   </view>
+
+  <!-- 手机号绑定弹窗 -->
+  <phone-bind-popup />
 </template>
 
 <script setup lang="ts">
   // #region 导入
   import { ref, onMounted } from 'vue'
+  import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
   import {
     getVipList,
     getVirtualPayData,

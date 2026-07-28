@@ -161,11 +161,15 @@
       </view>
     </view>
   </scroll-view>
+
+  <!-- 手机号绑定弹窗 -->
+  <phone-bind-popup />
 </template>
 
 <script setup lang="ts">
   import { ref, reactive } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
+  import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
   import { getOutsourcingRatio } from '@/api'
 
   const activeTab = ref('stat')
