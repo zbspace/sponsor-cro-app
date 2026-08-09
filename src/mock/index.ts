@@ -8,7 +8,9 @@ import type {
   PayQueryResponse,
   CroRankListResponse,
   OutsourcingRatioResponse,
-  CroProjectListResponse
+  CroProjectListResponse,
+  ParentCompanyListResponse,
+  SponsorRankListResponse
 } from '@/types/api'
 
 /**
@@ -172,6 +174,45 @@ export const mockCroRankList: CroRankListResponse = {
 export const mockOutsourcingRatio: OutsourcingRatioResponse = {
   outsourcingCroRatio: 13,
   selfRatio: 87
+}
+
+/**
+ * 模拟母公司简称列表数据
+ */
+export const mockParentShortNameList: ParentCompanyListResponse = {
+  list: [
+    { parentCompanyId: 1, parentCompanyShortName: '百济神州' },
+    { parentCompanyId: 2, parentCompanyShortName: '恒瑞医药' },
+    { parentCompanyId: 3, parentCompanyShortName: '泰格医药' },
+    { parentCompanyId: 4, parentCompanyShortName: '圣方医药' },
+    { parentCompanyId: 5, parentCompanyShortName: '易启医药' }
+  ],
+  pages: 1,
+  total: 5
+}
+
+/**
+ * 模拟sponsor合作名单数据
+ */
+export const mockSponsorRankList: SponsorRankListResponse = {
+  list: [
+    {
+      cooperationEnterpriseNum: 12,
+      parentCompanyId: 1,
+      parentCompanyShortName: '圣方医药',
+      projectExperienceNum: 5,
+      rankNo: 1
+    },
+    {
+      cooperationEnterpriseNum: 8,
+      parentCompanyId: 2,
+      parentCompanyShortName: '易启医药',
+      projectExperienceNum: 3,
+      rankNo: 2
+    }
+  ],
+  pages: 1,
+  total: 2
 }
 
 /**

@@ -1,5 +1,11 @@
 import { get, post } from '@/utils/request'
-import { mockCroRankList, mockOutsourcingRatio, mockCroProjectList } from '@/mock'
+import {
+  mockCroRankList,
+  mockOutsourcingRatio,
+  mockCroProjectList,
+  mockParentShortNameList,
+  mockSponsorRankList
+} from '@/mock'
 import * as mock from '@/mock'
 import type {
   UserInfo,
@@ -16,7 +22,9 @@ import type {
   VipRenewResponse,
   CroRankListResponse,
   OutsourcingRatioResponse,
-  CroProjectListResponse
+  CroProjectListResponse,
+  ParentCompanyListResponse,
+  SponsorRankListResponse
 } from '@/types/api'
 
 // #region 登录模块
@@ -212,6 +220,46 @@ export async function getCroProjectList(params: {
     params,
     true,
     mockCroProjectList
+  )
+}
+
+/**
+ * 查询母公司简称列表（搜索下拉）
+ * @param params { companyType, pageNum, pageSize, shortName }
+ * @returns Promise<ParentCompanyListResponse>
+ */
+export async function getParentShortNameList(params: {
+  companyType: string
+  pageNum: number
+  pageSize: number
+  shortName?: string
+}) {
+  return get<ParentCompanyListResponse>(
+    '/api/v1/hgr/selectParentShortNameOfHGRList',
+    params,
+    true,
+    mockParentShortNameList
+  )
+}
+
+/**
+ * 获取CRO/中心实验室sponsor合作名单
+ * @param params { companyType, lastYear, pageNum, pageSize, partnerParentCompanyId, partnerStandardCompanyIdList }
+ * @returns Promise<SponsorRankListResponse>
+ */
+export async function getClinicalSponsorRankList(params: {
+  companyType: string
+  lastYear?: number
+  pageNum?: number
+  pageSize?: number
+  partnerParentCompanyId?: number
+  partnerStandardCompanyIdList?: number[]
+}) {
+  return post<SponsorRankListResponse>(
+    '/api/v1/hgr/selectClinicalSponsorRankList',
+    params,
+    true,
+    mockSponsorRankList
   )
 }
 

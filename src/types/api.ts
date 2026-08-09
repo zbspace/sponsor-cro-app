@@ -29,6 +29,43 @@ export interface CroProjectListResponse {
 }
 
 /**
+ * 母公司简称条目
+ */
+export interface ParentCompanyItem {
+  parentCompanyId: number
+  parentCompanyShortName: string
+}
+
+/**
+ * 母公司简称列表响应
+ */
+export interface ParentCompanyListResponse {
+  list: ParentCompanyItem[]
+  pages: number
+  total: number
+}
+
+/**
+ * CRO/中心实验室 sponsor合作名单条目
+ */
+export interface SponsorRankItem {
+  cooperationEnterpriseNum: number
+  parentCompanyId: number
+  parentCompanyShortName: string
+  projectExperienceNum: number
+  rankNo: number
+}
+
+/**
+ * CRO/中心实验室 sponsor合作名单响应
+ */
+export interface SponsorRankListResponse {
+  list: SponsorRankItem[]
+  pages: number
+  total: number
+}
+
+/**
  * CRO 榜单条目
  */
 export interface CroRankItem {

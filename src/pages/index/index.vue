@@ -42,12 +42,33 @@
             <icon type="search" size="18" color="#CCCCCC" class="search-icon" />
             <input
               type="text"
-              placeholder="输入申办方名称"
+              :placeholder="currentFilter === '申办方' ? '输入申办方名称' : '输入CRO名称'"
               v-model="searchKeyword"
               placeholder-style="color: #CCCCCC"
+              @input="onSearchInput"
             />
             <view class="arrow-right-icon"></view>
           </view>
+        </view>
+
+        <!-- 搜索下拉 -->
+        <view class="search-dropdown" v-if="showDropdown">
+          <view class="dropdown-loading" v-if="searchLoading">
+            <text>加载中...</text>
+          </view>
+          <template v-else>
+            <view
+              class="dropdown-item"
+              v-for="item in searchResults"
+              :key="item.parentCompanyId"
+              @click="selectCompany(item)"
+            >
+              <text class="dropdown-name">{{ item.parentCompanyShortName }}</text>
+            </view>
+            <view class="dropdown-empty" v-if="searchResults.length === 0">
+              <text>未找到相关公司</text>
+            </view>
+          </template>
         </view>
       </view>
 
@@ -137,8 +158,8 @@
   import { onShow, onShareAppMessage, onLoad } from '@dcloudio/uni-app'
   import DataStatementPopup from '../../components/data-statement-popup/data-statement-popup.vue'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
-  import { getIndexInfo, getVip, ensureLogin, getCroRankList } from '@/api'
-  import type { IndexInfoResponse } from '@/types/api'
+  import { getIndexInfo, getVip, ensureLogin, getCroRankList, getParentShortNameList } from '@/api'
+  import type { IndexInfoResponse, ParentCompanyItem } from '@/types/api'
   // #endregion
 
   // #region 状态
@@ -146,6 +167,11 @@
   const showDataStatement = ref(false)
   const searchKeyword = ref('')
   const currentFilter = ref('申办方')
+  // 搜索下拉状态
+  const searchResults = ref<ParentCompanyItem[]>([])
+  const showDropdown = ref(false)
+  const searchLoading = ref(false)
+  let searchTimer: ReturnType<typeof setTimeout> | null = null
   const rankingList = ref<{ name: string; projects: number; partners: number }[]>([])
   const indexData = reactive<IndexInfoResponse>({
     accuracy: '0%',
@@ -214,8 +240,67 @@
     }
   }
 
+  // 当前筛选类型对应的接口 companyType
+  const currentCompanyType = computed(() => (currentFilter.value === '申办方' ? 'sponsor' : 'cro'))
+
   function toggleFilter() {
     currentFilter.value = currentFilter.value === '申办方' ? 'CRO' : '申办方'
+    // 切换类型时清空搜索
+    searchKeyword.value = ''
+    searchResults.value = []
+    showDropdown.value = false
+  }
+
+  /**
+   * 输入防抖触发搜索
+   */
+  function onSearchInput() {
+    if (searchTimer) clearTimeout(searchTimer)
+    const keyword = searchKeyword.value.trim()
+    if (!keyword) {
+      searchResults.value = []
+      showDropdown.value = false
+      return
+    }
+    searchTimer = setTimeout(() => {
+      fetchSearchResults()
+    }, 300)
+  }
+
+  /**
+   * 调用母公司简称列表接口获取搜索建议
+   */
+  async function fetchSearchResults() {
+    const keyword = searchKeyword.value.trim()
+    if (!keyword) return
+    searchLoading.value = true
+    showDropdown.value = true
+    try {
+      const res = await getParentShortNameList({
+        companyType: currentCompanyType.value,
+        pageNum: 1,
+        pageSize: 20,
+        shortName: keyword
+      })
+      searchResults.value = res.data?.list || []
+    } catch {
+      searchResults.value = []
+    } finally {
+      searchLoading.value = false
+    }
+  }
+
+  /**
+   * 选择搜索建议，跳转对应公司统计页
+   */
+  function selectCompany(item: ParentCompanyItem) {
+    searchKeyword.value = item.parentCompanyShortName
+    showDropdown.value = false
+    if (currentCompanyType.value === 'sponsor') {
+      goTo('sponsor-stat/index', `sponsorParentCompanyId=${item.parentCompanyId}`)
+    } else {
+      goTo('cro-stat/index', `partnerParentCompanyId=${item.parentCompanyId}`)
+    }
   }
 
   function goToHome() {
@@ -244,6 +329,7 @@
 <style lang="scss" scoped>
   /* #region 申办方 & CRO 查询 */
   .search-section {
+    position: relative;
     margin-bottom: 60rpx;
     .search-bar {
       background: #ffffff;
@@ -294,6 +380,50 @@
         }
       }
     }
+
+    // #region 搜索下拉
+    .search-dropdown {
+      position: absolute;
+      top: 100rpx;
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      border-radius: 16rpx;
+      box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.1);
+      z-index: 100;
+      max-height: 480rpx;
+      overflow-y: auto;
+
+      .dropdown-item {
+        padding: 26rpx 30rpx;
+        border-bottom: 2rpx solid #f5f5f5;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        &:active {
+          background: #f5f7fa;
+        }
+
+        .dropdown-name {
+          font-size: 28rpx;
+          color: #333333;
+        }
+      }
+
+      .dropdown-loading,
+      .dropdown-empty {
+        padding: 40rpx 0;
+        text-align: center;
+
+        text {
+          font-size: 26rpx;
+          color: #999999;
+        }
+      }
+    }
+    // #endregion
   }
   /* #endregion */
 

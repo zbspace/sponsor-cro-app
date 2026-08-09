@@ -72,6 +72,10 @@
         ></uni-data-select>
       </view>
 
+      <view class="time-filter-tip">
+        注：同一个项目可能存在多条HGR获批记录，时间按照HGR批准 时间统计
+      </view>
+
       <!-- 统计内容 -->
       <view v-if="activeTab === 'stat'">
         <!-- 外包比例卡片 -->
@@ -107,7 +111,7 @@
 
         <!-- CRO合作名单卡片 -->
         <view class="card list-card">
-          <view class="card-title">申办方合作名单</view>
+          <view class="card-title">CRO合作名单</view>
           <view class="table-header">
             <text class="col-rank">排序</text>
             <text class="col-name">CRO公司</text>
@@ -175,7 +179,7 @@
   import { ref, reactive, watch } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
-  import { getOutsourcingRatio, getCroProjectList, getClinicalSponsorRankList } from '@/api'
+  import { getOutsourcingRatio, getCroProjectList } from '@/api'
 
   const activeTab = ref('stat')
   const currentCompany = ref('全部')
@@ -222,28 +226,14 @@
     }
   }
 
-  const croList = ref<{ name: string; count: number }[]>([])
-
-  /**
-   * 获取申办方合作名单
-   */
-  async function fetchSponsorRankList() {
-    try {
-      // 接口必填参数：companyType(cro/thirdLab)；lastYear 与时间筛选联动
-      const res = await getClinicalSponsorRankList({
-        companyType: 'cro',
-        lastYear: currentTimeFilter.value ? Number(currentTimeFilter.value) : undefined
-      })
-      if (res.data?.list) {
-        croList.value = res.data.list.map((item) => ({
-          name: item.parentCompanyShortName,
-          count: item.projectExperienceNum
-        }))
-      }
-    } catch {
-      // 静默处理
-    }
-  }
+  const croList = ref([
+    { name: '圣方医药', count: 5 },
+    { name: '易启医药', count: 6 },
+    { name: '圣方医药', count: 7 },
+    { name: '圣方医药', count: 4 },
+    { name: '圣方医药', count: 5 },
+    { name: '圣方医药', count: 6 }
+  ])
 
   const projectList = ref<
     {
@@ -311,12 +301,10 @@
     fetchProjectList()
   }
 
-  // 时间筛选变化时自动重新请求列表数据
+  // 时间筛选变化时自动重新请求项目列表
   watch(currentTimeFilter, () => {
     projectPage.value = 1
     noMore.value = false
-    fetchOutsourcingRatio()
-    fetchSponsorRankList()
     fetchProjectList()
   })
 
@@ -353,7 +341,6 @@
       sponsorParentCompanyId.value = Number(options.sponsorParentCompanyId)
     }
     fetchOutsourcingRatio()
-    fetchSponsorRankList()
     fetchProjectList()
   })
 </script>
