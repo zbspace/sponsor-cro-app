@@ -20,6 +20,7 @@
     :style="{
       height: `calc(100vh - ${menu.top}px - ${menu.height}px)`
     }"
+    @scrolltolower="onScrollToLower"
   >
     <view class="container">
       <!-- 顶部筛选栏 -->
@@ -158,6 +159,14 @@
           </view>
           <view class="action-btn">{{ item.tag }}</view>
         </view>
+
+        <!-- 加载状态提示 -->
+        <view class="load-status" v-if="loading">
+          <text>加载中...</text>
+        </view>
+        <view class="load-status" v-else-if="noMore && projectList.length > 0">
+          <text>没有更多了</text>
+        </view>
       </view>
     </view>
   </scroll-view>
@@ -167,14 +176,14 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive } from 'vue'
+  import { ref, reactive, watch } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
-  import { getOutsourcingRatio } from '@/api'
+  import { getOutsourcingRatio, getCroProjectList } from '@/api'
 
   const activeTab = ref('stat')
   const currentCompany = ref('全部')
-  const currentTimeFilter = ref('全部CRO')
+  const currentTimeFilter = ref('')
   const isStarred = ref(false)
   const showCompanySelect = ref(false)
   const showTimeSelect = ref(false)
@@ -185,21 +194,29 @@
     { value: '恒瑞医药', text: '恒瑞医药' }
   ])
 
+  // 时间筛选选项：全部 + 最近三年，值对应接口 lastYear 参数
   const timeOptions = ref([
-    { value: '全部CRO', text: '全部CRO' },
-    { value: '近一年', text: '近一年' },
-    { value: '近三年', text: '近三年' }
+    { value: '', text: '全部' },
+    ...Array.from({ length: 3 }, (_, i) => {
+      const year = new Date().getFullYear() - i
+      return { value: String(year), text: `${year}年度` }
+    })
   ])
 
   const outsourceRate = reactive({
     cro: 0,
     self: 0
   })
+  // 申办方母公司ID，优先从路由参数获取，默认为 0
+  const sponsorParentCompanyId = ref(0)
 
   async function fetchOutsourcingRatio() {
     try {
-      // 需要 sponsorParentCompanyId，目前先传默认值，后续从路由参数获取
-      const res = await getOutsourcingRatio({ sponsorParentCompanyId: 0 })
+      // 接口必填参数：companyType(cro/thirdLab)、sponsorParentCompanyId
+      const res = await getOutsourcingRatio({
+        companyType: 'cro',
+        sponsorParentCompanyId: sponsorParentCompanyId.value
+      })
       if (res.data) {
         outsourceRate.cro = res.data.outsourcingCroRatio
         outsourceRate.self = res.data.selfRatio
@@ -218,26 +235,78 @@
     { name: '圣方医药', count: 6 }
   ])
 
-  const projectList = ref([
+  const projectList = ref<
     {
-      title:
-        '主方案：一项评价替雷利珠单抗联合过验用药物伴或不伴化疗用于治疗既往未经治疗的局部晚期、不可切除或转移性非小细胞肺癌患者的2期、开放...',
-      approveTime: '2025年07月',
-      sponsor: '百济神州(上海)生物科技有限公司',
-      approveNo: '2025GHOB04',
-      cro: '无(自己申报)',
-      tag: '国合审批'
-    },
-    {
-      title:
-        '主方案：一项评价替雷利珠单抗联合过验用药物伴或不伴化疗用于治疗既往未经治疗的局部晚期、不可切除或转移性非小细胞肺癌患者的2期、开放...',
-      approveTime: '2025年07月',
-      sponsor: '百济神州(上海)生物科技有限公司',
-      approveNo: '2025GHOB04',
-      cro: '无(自己申报)',
-      tag: '国合审批'
+      title: string
+      approveTime: string
+      sponsor: string
+      approveNo: string
+      cro: string
+      tag: string
+    }[]
+  >([])
+  // 项目列表分页参数
+  const projectPage = ref(1)
+  const projectPageSize = ref(10)
+  const projectTotal = ref(0)
+  // 加载状态
+  const loading = ref(false)
+  const noMore = ref(false)
+
+  async function fetchProjectList() {
+    if (loading.value) return
+    loading.value = true
+    try {
+      // 接口必填参数：companyType(cro/thirdLab)；lastYear 为筛选年份，空值表示全部
+      const res = await getCroProjectList({
+        companyType: 'cro',
+        lastYear: currentTimeFilter.value ? Number(currentTimeFilter.value) : undefined,
+        pageNum: projectPage.value,
+        pageSize: projectPageSize.value,
+        // 有申办方母公司ID时按申办方过滤
+        sponsorParentCompanyIdList: sponsorParentCompanyId.value
+          ? [sponsorParentCompanyId.value]
+          : undefined
+      })
+      if (res.data?.list) {
+        const newList = res.data.list.map((item) => ({
+          title: item.projectName,
+          approveTime: item.approvalRecordTime,
+          sponsor: item.sponsorStandardCompanyName,
+          approveNo: item.projectNo,
+          cro: item.partnerParentCompanyShortName,
+          tag: item.category
+        }))
+        // 第一页替换，后续页追加
+        projectList.value = projectPage.value === 1 ? newList : [...projectList.value, ...newList]
+        projectTotal.value = res.data.total
+        noMore.value = projectList.value.length >= res.data.total
+      } else {
+        noMore.value = true
+      }
+    } catch {
+      // 静默处理
+    } finally {
+      loading.value = false
     }
-  ])
+  }
+
+  /**
+   * 滚动到底部加载下一页
+   */
+  function onScrollToLower() {
+    // 仅项目列表 tab 生效，加载中或无更多数据时不再请求
+    if (activeTab.value !== 'list' || loading.value || noMore.value) return
+    projectPage.value += 1
+    fetchProjectList()
+  }
+
+  // 时间筛选变化时自动重新请求项目列表
+  watch(currentTimeFilter, () => {
+    projectPage.value = 1
+    noMore.value = false
+    fetchProjectList()
+  })
 
   const toggleStar = () => {
     isStarred.value = !isStarred.value
@@ -263,11 +332,16 @@
     height: 0
   })
 
-  onLoad(() => {
+  onLoad((options: any) => {
     // 获取胶囊位置信息（单位px）
     const info = uni.getMenuButtonBoundingClientRect()
     menu.value = info
+    // 读取路由参数中的申办方母公司ID
+    if (options?.sponsorParentCompanyId) {
+      sponsorParentCompanyId.value = Number(options.sponsorParentCompanyId)
+    }
     fetchOutsourcingRatio()
+    fetchProjectList()
   })
 </script>
 
@@ -597,5 +671,17 @@
         box-shadow: 0 4rpx 12rpx rgba(73, 154, 230, 0.3);
       }
     }
+
+    // #region 加载状态
+    .load-status {
+      padding: 40rpx 0;
+      text-align: center;
+
+      text {
+        font-size: 24rpx;
+        color: #999;
+      }
+    }
+    // #endregion
   }
 </style>

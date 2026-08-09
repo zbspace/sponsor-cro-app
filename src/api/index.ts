@@ -1,5 +1,5 @@
 import { get, post } from '@/utils/request'
-import { mockCroRankList, mockOutsourcingRatio } from '@/mock'
+import { mockCroRankList, mockOutsourcingRatio, mockCroProjectList } from '@/mock'
 import * as mock from '@/mock'
 import type {
   UserInfo,
@@ -15,7 +15,8 @@ import type {
   VirtualPayData,
   VipRenewResponse,
   CroRankListResponse,
-  OutsourcingRatioResponse
+  OutsourcingRatioResponse,
+  CroProjectListResponse
 } from '@/types/api'
 
 // #region 登录模块
@@ -27,7 +28,12 @@ import type {
  */
 export async function wechatLogin(code: string) {
   // return post<LoginResponse>('/word/wechat/login', { jsCode: code }, false, mock.mockLogin)
-  return post<LoginResponse>('/api/v1/wechat/searchComCRO/login', { code: code, serverId: 'searchComCRO' }, false, mock.mockLogin)
+  return post<LoginResponse>(
+    '/api/v1/wechat/searchComCRO/login',
+    { code: code, serverId: 'searchComCRO' },
+    false,
+    mock.mockLogin
+  )
 }
 
 let loginPromise: Promise<void> | null = null
@@ -108,7 +114,7 @@ export async function queryPayResult() {
  * @returns Promise<VipOption[]>
  */
 export async function getVipList() {
-  return get<VipOption[]>('/word/vip/getVipList', {}, true)
+  return get<VipOption[]>('/api/vip/getVipList', {}, true)
 }
 
 /**
@@ -119,7 +125,11 @@ export async function getVipList() {
  * @returns Promise<VirtualPayData>
  */
 export async function getVirtualPayData(vipLevel: number, jsCode: string, deviceType: string) {
-  return post<VirtualPayData>('/word/wechat/getVirtualPayData', { vipLevel, jsCode, deviceType }, true)
+  return post<VirtualPayData>(
+    '/api/wechat/getVirtualPayData',
+    { vipLevel, jsCode, deviceType },
+    true
+  )
 }
 
 /**
@@ -129,7 +139,11 @@ export async function getVirtualPayData(vipLevel: number, jsCode: string, device
  * @returns Promise<VipRenewResponse>
  */
 export async function renewVipAndRecordOrder(outTradeNo: string, deviceType: string) {
-  return post<VipRenewResponse>('/word/wechat/renewVipAndRecordOrder', { outTradeNo, deviceType }, true)
+  return post<VipRenewResponse>(
+    '/api/wechat/renewVipAndRecordOrder',
+    { outTradeNo, deviceType },
+    true
+  )
 }
 
 // #endregion
@@ -152,16 +166,53 @@ export async function getIndexInfo() {
  * * @returns Promise<CroRankListResponse>
  */
 export async function getCroRankList(pageNum: number = 1, pageSize: number = 3, lastYear?: string) {
-  return post<CroRankListResponse>('/api/v1/hgr/selectClinicalCroRankList', { pageNum, pageSize, lastYear }, true, mockCroRankList)
+  return post<CroRankListResponse>(
+    '/api/v1/hgr/selectClinicalCroRankList',
+    { pageNum, pageSize, lastYear },
+    true,
+    mockCroRankList
+  )
 }
 
 /**
  * 获取外包比例
- * @param params { lastYear, sponsorParentCompanyId, sponsorStandardCompanyIdList }
+ * @param params { companyType, lastYear, sponsorParentCompanyId, sponsorStandardCompanyIdList }
  * @returns Promise<OutsourcingRatioResponse>
  */
-export async function getOutsourcingRatio(params: { lastYear?: number; sponsorParentCompanyId: number; sponsorStandardCompanyIdList?: number[] }) {
-  return post<OutsourcingRatioResponse>('/api/v1/hgr/selectOutsourcingRatio', params, true, mockOutsourcingRatio)
+export async function getOutsourcingRatio(params: {
+  companyType: string
+  lastYear?: number
+  sponsorParentCompanyId: number
+  sponsorStandardCompanyIdList?: number[]
+}) {
+  return post<OutsourcingRatioResponse>(
+    '/api/v1/hgr/selectOutsourcingRatio',
+    params,
+    true,
+    mockOutsourcingRatio
+  )
+}
+
+/**
+ * 获取CRO/中心实验室项目列表
+ * @param params { companyType, lastYear, pageNum, pageSize, partnerParentCompanyId, partnerStandardCompanyIdList, sponsorParentCompanyIdList }
+ * @returns Promise<CroProjectListResponse>
+ */
+export async function getCroProjectList(params: {
+  companyType: string
+  lastYear?: number
+  pageNum?: number
+  pageSize?: number
+  partnerParentCompanyId?: number
+  partnerStandardCompanyIdList?: number[]
+  sponsorParentCompanyIdList?: number[]
+}) {
+  return post<CroProjectListResponse>(
+    '/api/v1/hgr/selectCroProjectList',
+    params,
+    true,
+    mockCroProjectList
+  )
 }
 
 // #endregion
@@ -229,7 +280,7 @@ export async function getReviewWordList(pageNum: number = 1, pageSize: number = 
 /**
  * 获取单词详情
  * @param wordId 单词 ID
-  * @param wordType 单词场景类型，recite(背诵时)，recite(已背诵)，review(待复习)，collected(已收藏)
+ * @param wordType 单词场景类型，recite(背诵时)，recite(已背诵)，review(待复习)，collected(已收藏)
  * @returns Promise<WordDetailResponse>
  */
 export async function getWordDetailByWordId(wordId: number, wordType: string) {

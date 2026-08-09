@@ -7,6 +7,28 @@ export interface OutsourcingRatioResponse {
 }
 
 /**
+ * CRO/中心实验室项目列表条目
+ */
+export interface CroProjectItem {
+  approvalRecordTime: string
+  category: string
+  geneticInfoId: number
+  partnerParentCompanyShortName: string
+  projectName: string
+  projectNo: string
+  sponsorStandardCompanyName: string
+}
+
+/**
+ * CRO/中心实验室项目列表响应
+ */
+export interface CroProjectListResponse {
+  list: CroProjectItem[]
+  pages: number
+  total: number
+}
+
+/**
  * CRO 榜单条目
  */
 export interface CroRankItem {

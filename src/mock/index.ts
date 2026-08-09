@@ -7,7 +7,8 @@ import type {
   PayParams,
   PayQueryResponse,
   CroRankListResponse,
-  OutsourcingRatioResponse
+  OutsourcingRatioResponse,
+  CroProjectListResponse
 } from '@/types/api'
 
 /**
@@ -171,6 +172,36 @@ export const mockCroRankList: CroRankListResponse = {
 export const mockOutsourcingRatio: OutsourcingRatioResponse = {
   outsourcingCroRatio: 13,
   selfRatio: 87
+}
+
+/**
+ * 模拟CRO/中心实验室项目列表数据
+ */
+export const mockCroProjectList: CroProjectListResponse = {
+  list: [
+    {
+      approvalRecordTime: '2025-07-01',
+      category: '国合审批',
+      geneticInfoId: 1,
+      partnerParentCompanyShortName: '圣方医药',
+      projectName:
+        '主方案：一项评价替雷利珠单抗联合过验用药物伴或不伴化疗用于治疗既往未经治疗的局部晚期、不可切除或转移性非小细胞肺癌患者的2期、开放...',
+      projectNo: '2025GHOB04',
+      sponsorStandardCompanyName: '百济神州(上海)生物科技有限公司'
+    },
+    {
+      approvalRecordTime: '2025-06-15',
+      category: '国合审批',
+      geneticInfoId: 2,
+      partnerParentCompanyShortName: '易启医药',
+      projectName:
+        '一项在成人受试者中评价重组人源化抗PD-1单克隆抗体注射液联合化疗治疗晚期实体瘤的有效性和安全性的多中心、开放、单臂临床研究',
+      projectNo: '2025GHOB03',
+      sponsorStandardCompanyName: '百济神州(上海)生物科技有限公司'
+    }
+  ],
+  pages: 1,
+  total: 2
 }
 
 /**
