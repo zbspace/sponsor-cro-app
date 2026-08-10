@@ -302,11 +302,14 @@
     console.log(2222, item)
 
     // 公司名称参数，用于跳转页面标题显示
-    const nameParam = `companyName=${encodeURIComponent(item.parentCompanyShortName)}`
     if (currentCompanyType.value === 'sponsor') {
+      const nameParam = `companyName=${encodeURIComponent(item.parentCompanyShortName)}`
       goTo('sponsor-stat/index', `sponsorParentCompanyId=${item.parentCompanyId}&${nameParam}`)
     } else {
-      goTo('cro-stat/index', `partnerParentCompanyId=${item.parentCompanyId}&${nameParam}`)
+      goTo(
+        'cro-stat/index',
+        `partnerParentCompanyId=${item.parentCompanyId}&parentCompanyShortName=${item.parentCompanyShortName}`
+      )
     }
   }
 

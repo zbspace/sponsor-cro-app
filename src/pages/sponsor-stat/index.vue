@@ -140,7 +140,13 @@
             <text class="col-count">合作项目数</text>
           </view>
           <view class="table-body">
-            <view class="table-row" v-for="(item, index) in croList" :key="index">
+            <view
+              class="table-row"
+              v-for="(item, index) in croList"
+              :key="index"
+              hover-class="row-hover"
+              @click="onCroClick(item)"
+            >
               <text class="col-rank">{{ index + 1 }}</text>
               <text class="col-name">{{ item.name }}</text>
               <text class="col-count highlight">{{ item.count }}</text>
@@ -357,7 +363,8 @@
       if (res.data?.list) {
         const newList = res.data.list.map((item) => ({
           name: item.parentCompanyShortName,
-          count: item.projectExperienceNum
+          count: item.projectExperienceNum,
+          parentCompanyId: item.parentCompanyId
         }))
         // 第一页替换，后续页追加
         croList.value = croPage.value === 1 ? newList : [...croList.value, ...newList]
@@ -371,6 +378,15 @@
     } finally {
       croLoading.value = false
     }
+  }
+  // #endregion
+
+  // #region 点击 CRO 合作名单行进入 CRO 主页
+  const onCroClick = (item: any) => {
+    if (!item.parentCompanyId) return
+    uni.navigateTo({
+      url: `/pages/cro-stat/index?partnerParentCompanyId=${item.parentCompanyId}&parentCompanyShortName=${encodeURIComponent(item.name)}`
+    })
   }
   // #endregion
 
@@ -764,6 +780,11 @@
 
       &:last-child {
         border-bottom: none;
+      }
+
+      // 点击反馈
+      &.row-hover {
+        background-color: #f2f7fc;
       }
     }
 

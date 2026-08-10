@@ -44,6 +44,8 @@
           v-for="(item, index) in rankList"
           :key="index"
           :class="{ zebra: index % 2 === 1 }"
+          hover-class="row-hover"
+          @click="onRowClick(item)"
         >
           <text class="col-rank">{{ index + 1 }}</text>
           <text class="col-name highlight">{{ item.name }}</text>
@@ -102,12 +104,17 @@
     loading.value = true
 
     try {
-      const res = await selectClinicalCroRankList(page.value, pageSize, selectedYear.value)
+      const res = await selectClinicalCroRankList({
+        pageNum: page.value,
+        pageSize,
+        lastYear: selectedYear.value
+      })
       if (res.data?.list) {
         const mapped = res.data.list.map((item) => ({
           name: item.parentCompanyShortName,
           experience: item.projectExperienceNum,
-          partners: item.cooperationEnterpriseNum
+          partners: item.cooperationEnterpriseNum,
+          parentCompanyId: item.parentCompanyId
         }))
 
         if (reset) {
@@ -136,6 +143,15 @@
   // #region 滚动加载
   const onScrollToLower = () => {
     fetchRankData()
+  }
+  // #endregion
+
+  // #region 点击行进入 CRO 主页
+  const onRowClick = (item: any) => {
+    if (!item.parentCompanyId) return
+    uni.navigateTo({
+      url: `/pages/cro-stat/index?partnerParentCompanyId=${item.parentCompanyId}&parentCompanyShortName=${encodeURIComponent(item.name)}`
+    })
   }
   // #endregion
 
@@ -262,6 +278,11 @@
 
         &.zebra {
           background-color: #fcfdfe;
+        }
+
+        // 点击反馈
+        &.row-hover {
+          background-color: #f2f7fc;
         }
 
         text {

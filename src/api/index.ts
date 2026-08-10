@@ -337,10 +337,14 @@ export async function cancelUserCollect(id: number) {
  * @param companyType 公司类型：1-sponsor, 2-cro, 3-thirdLab
  * @returns Promise
  */
-export async function getUserCollectList(pageNum: number = 1, pageSize: number = 20) {
+export async function getUserCollectList(
+  pageNum: number = 1,
+  pageSize: number = 20,
+  companyType?: number
+) {
   return get<UserCollectListResponse>(
     '/api/v1/userCollect/getCollectList',
-    { pageNum, pageSize },
+    { pageNum, pageSize, companyType },
     true
   )
 }
