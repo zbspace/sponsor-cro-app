@@ -18,6 +18,7 @@ import type {
   PayParams,
   PayQueryResponse,
   CollectListResponse,
+  UserCollectListResponse,
   VipOption,
   VirtualPayData,
   VipRenewResponse,
@@ -336,8 +337,12 @@ export async function cancelUserCollect(id: number) {
  * @param companyType 公司类型：1-sponsor, 2-cro, 3-thirdLab
  * @returns Promise
  */
-export async function getUserCollectList(pageNum: number = 1, pageSize: number = 20, companyType?: number) {
-  return get('/api/v1/userCollect/getCollectList', { pageNum, pageSize, companyType }, true)
+export async function getUserCollectList(pageNum: number = 1, pageSize: number = 20) {
+  return get<UserCollectListResponse>(
+    '/api/v1/userCollect/getCollectList',
+    { pageNum, pageSize },
+    true
+  )
 }
 
 // #endregion

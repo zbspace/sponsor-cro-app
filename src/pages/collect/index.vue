@@ -36,6 +36,8 @@
           v-for="(item, index) in rankList"
           :key="index"
           :class="{ zebra: index % 2 === 1 }"
+          hover-class="row-hover"
+          @click="onRowClick(item)"
         >
           <text class="col-rank">{{ index + 1 }}</text>
           <text class="col-name">{{ item.name }}</text>
@@ -59,6 +61,14 @@
   import { ref } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
+  import { getUserCollectList } from '@/api'
+
+  // 收藏的公司类型：1-sponsor, 2-cro, 3-thirdLab
+  const companyTypeMap: Record<number, string> = {
+    1: '申办方',
+    2: 'CRO',
+    3: '中心实验室'
+  }
 
   const rankList = ref<any[]>([])
   const loading = ref(false)
@@ -74,28 +84,47 @@
     })
   }
 
-  // 模拟获取数据
+  // 获取收藏列表
   const fetchRankData = async () => {
     if (loading.value || noMore.value) return
-
     loading.value = true
-    // 模拟网络请求
-    setTimeout(() => {
-      const newData = Array.from({ length: 20 }, (_, i) => ({
-        name: i % 2 === 0 ? '圣方医药' : '易启医药',
-        type: '申办方',
-        status: '已收藏'
-      }))
-
-      rankList.value = [...rankList.value, ...newData]
-      loading.value = false
-
-      if (rankList.value.length >= 40) {
-        noMore.value = true
-      }
+    try {
+      const res = await getUserCollectList(page.value, 20)
+      const list = res.data?.list || []
+      rankList.value = [
+        ...rankList.value,
+        ...list.map((item) => ({
+          name: item.parentCompanyShortName,
+          type: companyTypeMap[item.companyType] || '',
+          status: '已收藏',
+          companyType: item.companyType,
+          parentCompanyId: item.parentCompanyId
+        }))
+      ]
+      noMore.value = rankList.value.length >= (res.data?.total || 0)
       page.value++
-    }, 1000)
+    } catch {
+      // 静默处理
+    } finally {
+      loading.value = false
+    }
   }
+
+  // #region 点击行根据公司类型进入对应主页
+  const onRowClick = (item: any) => {
+    if (!item.parentCompanyId) return
+    // 1-申办方进入申办方主页；2-CRO、3-中心实验室进入 CRO/中心实验室主页
+    if (item.companyType === 1) {
+      uni.navigateTo({
+        url: `/pages/sponsor-stat/index?sponsorParentCompanyId=${item.parentCompanyId}&companyName=${encodeURIComponent(item.name)}`
+      })
+    } else if (item.companyType === 2 || item.companyType === 3) {
+      uni.navigateTo({
+        url: `/pages/cro-stat/index?partnerParentCompanyId=${item.parentCompanyId}&parentCompanyShortName=${encodeURIComponent(item.name)}`
+      })
+    }
+  }
+  // #endregion
 
   // #region 滚动加载逻辑
   const onScrollToLower = () => {
@@ -125,17 +154,37 @@
     padding: 20rpx;
     box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
 
+    // #region 表头样式
     .table-header {
       display: flex;
-      padding: 30rpx 0;
-      border-bottom: 2rpx solid #f8f8f8;
+      align-items: center;
+      padding: 24rpx 0;
+      margin-bottom: 12rpx;
+      background: #f6f9fc;
+      border-radius: 16rpx;
+      font-size: 26rpx;
+      color: #8a94a6;
+      font-weight: 500;
 
       text {
-        font-size: 26rpx;
-        color: #666;
         text-align: center;
       }
+
+      // 与数据行列宽保持一致，保证表头对齐
+      .col-rank {
+        width: 100rpx;
+      }
+      .col-name {
+        flex: 2;
+      }
+      .col-exp {
+        flex: 1;
+      }
+      .col-pharma {
+        flex: 1;
+      }
     }
+    // #endregion
 
     .table-row {
       display: flex;
@@ -144,6 +193,11 @@
 
       &.zebra {
         background-color: #fcfdfe;
+      }
+
+      // 点击反馈
+      &.row-hover {
+        background-color: #f2f7fc;
       }
 
       text {

@@ -324,7 +324,7 @@
   }
 
   function toggleStar() {
-    uni.showToast({ title: '已收藏', icon: 'success' })
+    goTo('collect/index')
   }
   // #endregion
 

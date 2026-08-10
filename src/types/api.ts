@@ -228,6 +228,31 @@ export interface CollectListResponse {
 }
 
 /**
+ * 用户收藏返回对象（公司收藏）
+ */
+export interface UserCollectItem {
+  /** 收藏的公司类型：1-sponsor, 2-cro, 3-thirdLab */
+  companyType: number
+  /** 收藏记录时间 */
+  createTime: string
+  /** 收藏记录id */
+  id: number
+  /** 收藏的母公司ID */
+  parentCompanyId: number
+  /** 收藏的母公司简称 */
+  parentCompanyShortName: string
+}
+
+/**
+ * 用户收藏列表响应
+ */
+export interface UserCollectListResponse {
+  list: UserCollectItem[]
+  pages: number
+  total: number
+}
+
+/**
  * VIP 套餐选项接口
  */
 export interface VipOption {
