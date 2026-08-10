@@ -2,8 +2,7 @@
   <!-- 头部 -->
   <view class="header" :style="{ paddingTop: `${menu.top}px` }">
     <view class="vip-btn-wrapper" v-if="isVip !== 1" @click="goTo('vip/index')">
-      <image class="vip-btn-img" src="/static/icons/vip.png" mode="aspectFit" />
-      <text>开通VIP</text>
+      <text>申请试用</text>
       <view class="arrow-right-icon" style="border-color: #fff"></view>
     </view>
     <view class="vip-badge" v-else @click="goTo('vip/index')">
@@ -12,7 +11,7 @@
     </view>
   </view>
 
-  <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
+  <image class="bg-img" src="../../static/home/head-bg.png" mode="aspectFit" />
 
   <scroll-view
     scroll-y
@@ -26,102 +25,57 @@
     <view class="container">
       <!-- 标题 -->
       <view class="title-section">
-        <text class="main-title">申办方&CRO</text>
-        <text class="sub-title">试验合作记录查询</text>
+        <text class="main-title">药研查-商务版</text>
+        <text class="sub-title">明熟客情 稳妥商机</text>
       </view>
 
-      <!-- 申办方 & CRO 查询区域 -->
-      <view class="search-section">
-        <view class="search-bar">
-          <view class="filter-dropdown" @click="toggleFilter">
-            <text>{{ currentFilter }}</text>
-            <view class="arrow-down"></view>
-          </view>
-          <view class="divider"></view>
-          <view class="search-input-wrapper">
-            <icon type="search" size="18" color="#CCCCCC" class="search-icon" />
-            <input
-              type="text"
-              :placeholder="currentFilter === '申办方' ? '输入申办方名称' : '输入CRO名称'"
-              v-model="searchKeyword"
-              placeholder-style="color: #CCCCCC"
-              @input="onSearchInput"
-            />
-            <view class="arrow-right-icon"></view>
-          </view>
-        </view>
-
-        <!-- 搜索下拉 -->
-        <view class="search-dropdown" v-if="showDropdown">
-          <view class="dropdown-loading" v-if="searchLoading">
-            <text>加载中...</text>
-          </view>
-          <template v-else>
-            <view
-              class="dropdown-item"
-              v-for="item in searchResults"
-              :key="item.parentCompanyId"
-              @click="selectCompany(item)"
-            >
-              <text class="dropdown-name">{{ item.parentCompanyShortName }}</text>
+      <!-- 内容 -->
+      <!-- #region 功能网格 -->
+      <view class="feature-grid">
+        <view
+          class="grid-item"
+          v-for="(item, index) in gridItems"
+          :key="index"
+          @click="goTo(item.path)"
+        >
+          <view class="item-content">
+            <text class="item-title">{{ item.title }}</text>
+            <view class="item-desc">
+              <text>{{ item.desc }}</text>
+              <view class="arrow-right-icon-white"></view>
             </view>
-            <view class="dropdown-empty" v-if="searchResults.length === 0">
-              <text>未找到相关公司</text>
-            </view>
-          </template>
+          </view>
+          <image class="item-icon" :src="item.icon" mode="aspectFit" />
         </view>
       </view>
+      <!-- #endregion -->
 
-      <!-- CRO 榜单 -->
-      <view class="ranking-card">
-        <view class="ranking-header">
-          <text class="ranking-title">中国临床CRO榜单</text>
-          <view class="view-all">
-            <text @click="goTo('cro-rank/index')">查看全部</text>
-            <view class="arrow-right-icon"></view>
-          </view>
+      <!-- #region 数据榜单 -->
+      <view class="rank-section">
+        <view class="section-header">
+          <view class="header-line"></view>
+          <text class="header-title">数据榜单</text>
         </view>
-        <view class="ranking-list">
+        <view class="rank-list">
           <view
-            class="ranking-item"
-            v-for="(item, index) in rankingList"
+            class="rank-item"
+            v-for="(item, index) in rankLists"
             :key="index"
-            @click="goToCroStat(item)"
+            @click="goTo(item.path)"
           >
-            <view class="rank-badge" :class="'rank-' + (index + 1)">
-              <image
-                class="rank-icon"
-                :src="`../../static/icons/${index + 1}.png`"
-                mode="aspectFit"
-              />
+            <view class="rank-icon-wrapper">
+              <view v-if="item.icon === 'CRO'" class="cro-icon">CRO</view>
+              <image v-else class="rank-icon" :src="item.iconUrl" mode="aspectFit" />
             </view>
-            <view class="company-info">
-              <text class="company-name">{{ item.parentCompanyShortName }}</text>
-              <view class="company-stats">
-                <text>项目经验：{{ item.projectExperienceNum }}</text>
-                <text class="stat-divider">合作企业数：{{ item.cooperationEnterpriseNum }}</text>
-              </view>
-            </view>
+            <text class="rank-title">{{ item.title }}</text>
+            <view class="arrow-right-icon"></view>
           </view>
         </view>
       </view>
-
-      <view class="data-source-note">注：合作记录数据来源遗传办国合审批公示数据</view>
-
-      <!-- 悬浮按钮 -->
-      <view class="side-floating-buttons">
-        <view class="float-btn home-btn" @click="goToHome">
-          <image src="../../static/icons/home.png" mode="aspectFit" />
-        </view>
-        <view class="float-btn star-btn" @click="toggleStar">
-          <!-- <image src="../../static/icons/收藏1.png" mode="aspectFit" /> -->
-          <image src="../../static/icons/收藏2.svg" mode="aspectFit" />
-        </view>
-      </view>
+      <!-- #endregion -->
 
       <!-- 底部助手标语 -->
       <view class="bd-assistant-section">
-        <text class="bd-name">临研商务(BD)助手</text>
         <text class="bd-slogan">- 助力BD拿单 -</text>
       </view>
 
@@ -154,181 +108,90 @@
 
 <script setup lang="ts">
   // #region 导入
-  import { ref, reactive, computed } from 'vue'
-  import { onShow, onShareAppMessage, onLoad } from '@dcloudio/uni-app'
+  import { ref } from 'vue'
+  import { onShow, onLoad } from '@dcloudio/uni-app'
   import DataStatementPopup from '../../components/data-statement-popup/data-statement-popup.vue'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
-  import {
-    getIndexInfo,
-    getVip,
-    ensureLogin,
-    selectClinicalCroRankList,
-    getParentShortNameList
-  } from '@/api'
-  import type { IndexInfoResponse, ParentCompanyItem, CroRankItem } from '@/types/api'
+  import { getVip, ensureLogin } from '@/api'
   // #endregion
 
   // #region 状态
   const isVip = ref(0)
   const showDataStatement = ref(false)
-  const searchKeyword = ref('')
-  const currentFilter = ref('申办方')
-  // 搜索下拉状态
-  const searchResults = ref<ParentCompanyItem[]>([])
-  const showDropdown = ref(false)
-  const searchLoading = ref(false)
-  let searchTimer: ReturnType<typeof setTimeout> | null = null
-  const rankingList = ref<CroRankItem[]>([])
-  const indexData = reactive<IndexInfoResponse>({
-    accuracy: '0%',
-    streak: 0,
-    allDays: 200,
-    progress: '0%',
-    nextWordId: 1,
-    allWordsNum: 0,
-    recitedWordsNum: 0,
-    toReviewWordsNum: 0,
-    collectWordsNum: 0
-  })
 
-  // 正确率百分比（去 % 转数字）
-  const accuracyPercent = computed(() => parseFloat(indexData.accuracy) || 0)
-  // 坚持天数百分比
-  const streakPercent = computed(() => (indexData.streak / indexData.allDays) * 100)
-  // 进度百分比（去 % 转数字）
-  const progressPercent = computed(() => parseFloat(indexData.progress) || 0)
+  // 功能网格数据
+  const gridItems = [
+    {
+      title: '查客户',
+      desc: '立即前往',
+      icon: '/static/home/1.png',
+      path: 'customer/search'
+    },
+    {
+      title: '找客户',
+      desc: '立即前往',
+      icon: '/static/home/2.png',
+      path: 'customer/find'
+    },
+    {
+      title: '查产品',
+      desc: '立即前往',
+      icon: '/static/home/3.png',
+      path: 'product/search'
+    },
+    {
+      title: '查药企&CRO\n合作关系',
+      desc: '立即前往',
+      icon: '/static/home/4.png',
+      path: 'cro-stat/index'
+    },
+    {
+      title: '查药企&中心实\n验室合作关系',
+      desc: '立即前往',
+      icon: '/static/home/5.png',
+      path: 'lab-stat/index'
+    },
+    {
+      title: '查药企&医院/研\n究者合作关系',
+      desc: '立即前往',
+      icon: '/static/home/6.png',
+      path: 'hospital-stat/index'
+    }
+  ]
+
+  // 数据榜单数据
+  const rankLists = [
+    {
+      title: '中国临床CRO公司榜单',
+      icon: 'CRO',
+      iconColor: '/static/home/10.png',
+      path: 'cro-rank/index'
+    },
+    {
+      title: '近5年附条件批准药品',
+      icon: 'med',
+      iconUrl: '/static/home/11.png',
+      path: 'medicine-rank/conditional'
+    },
+    {
+      title: '近5年1类新药获批名单',
+      icon: 'doc',
+      iconUrl: '/static/home/12.png',
+      path: 'medicine-rank/new-drug'
+    },
+    {
+      title: '中国药企临床试验榜单',
+      icon: 'building',
+      iconUrl: '/static/home/13.png',
+      path: 'sponsor-stat/index'
+    }
+  ]
   // #endregion
-
-  // #region 生命周期
   onShow(async () => {
     // 确保登录成功后再获取数据
     await ensureLogin()
     isVip.value = getVip()
-    fetchCroRankList()
   })
-
-  onShareAppMessage(() => {
-    return {
-      title: '临床研究核心词汇 - 攻克研究核心词汇',
-      path: '/pages/index/index',
-      imageUrl: '/static/icons/header-bg.png'
-    }
-  })
-  // #endregion
-
-  // #region 方法
-
-  async function fetchCroRankList() {
-    try {
-      const res = await selectClinicalCroRankList({
-        pageNum: 1,
-        pageSize: 3
-      })
-      rankingList.value = res.data?.list || []
-    } catch {
-      // 静默处理，保持默认值
-    }
-  }
-
-  function goTo(path: string, query?: string) {
-    const url = query ? `/pages/${path}?${query}` : `/pages/${path}`
-    uni.navigateTo({ url })
-  }
-
-  function goToLearn() {
-    if (indexData.nextWordId) {
-      uni.navigateTo({ url: `/pages/learn/question?wordId=${indexData.nextWordId}&learnedCount=1` })
-    } else {
-      uni.showToast({ title: '暂无待背诵单词', icon: 'none' })
-    }
-  }
-
-  // 当前筛选类型对应的接口 companyType
-  const currentCompanyType = computed(() => (currentFilter.value === '申办方' ? 'sponsor' : 'cro'))
-
-  function toggleFilter() {
-    currentFilter.value = currentFilter.value === '申办方' ? 'CRO' : '申办方'
-    // 切换类型时清空搜索
-    searchKeyword.value = ''
-    searchResults.value = []
-    showDropdown.value = false
-  }
-
-  /**
-   * 输入防抖触发搜索
-   */
-  function onSearchInput() {
-    if (searchTimer) clearTimeout(searchTimer)
-    const keyword = searchKeyword.value.trim()
-    if (!keyword) {
-      searchResults.value = []
-      showDropdown.value = false
-      return
-    }
-    searchTimer = setTimeout(() => {
-      fetchSearchResults()
-    }, 300)
-  }
-
-  /**
-   * 调用母公司简称列表接口获取搜索建议
-   */
-  async function fetchSearchResults() {
-    const keyword = searchKeyword.value.trim()
-    if (!keyword) return
-    searchLoading.value = true
-    showDropdown.value = true
-    try {
-      const res = await getParentShortNameList({
-        companyType: currentCompanyType.value,
-        pageNum: 1,
-        pageSize: 20,
-        shortName: keyword
-      })
-      searchResults.value = res.data?.list || []
-    } catch {
-      searchResults.value = []
-    } finally {
-      searchLoading.value = false
-    }
-  }
-
-  /**
-   * 选择搜索建议，跳转对应公司统计页
-   */
-  function selectCompany(item: ParentCompanyItem) {
-    searchKeyword.value = item.parentCompanyShortName
-    showDropdown.value = false
-    console.log(2222, item)
-
-    // 公司名称参数，用于跳转页面标题显示
-    if (currentCompanyType.value === 'sponsor') {
-      const nameParam = `companyName=${encodeURIComponent(item.parentCompanyShortName)}`
-      goTo('sponsor-stat/index', `sponsorParentCompanyId=${item.parentCompanyId}&${nameParam}`)
-    } else {
-      goTo(
-        'cro-stat/index',
-        `partnerParentCompanyId=${item.parentCompanyId}&parentCompanyShortName=${item.parentCompanyShortName}`
-      )
-    }
-  }
-
-  // 前往CRO统计页
-  function goToCroStat(item: CroRankItem) {
-    console.log(3333, item)
-    goTo(
-      'cro-stat/index',
-      `partnerParentCompanyId=${item.parentCompanyId}&parentCompanyShortName=${item.parentCompanyShortName}`
-    )
-  }
-
-  function goToHome() {
-    uni.reLaunch({ url: '/pages/index/index' })
-  }
-
-  function toggleStar() {
-    goTo('collect/index')
-  }
   // #endregion
 
   // 胶囊位置信息
@@ -338,6 +201,11 @@
     height: 0
   })
 
+  function goTo(path: string, query?: string) {
+    const url = query ? `/pages/${path}?${query}` : `/pages/${path}`
+    uni.navigateTo({ url })
+  }
+
   onLoad(() => {
     // 获取胶囊位置信息（单位px）
     const info = uni.getMenuButtonBoundingClientRect()
@@ -346,204 +214,27 @@
 </script>
 
 <style lang="scss" scoped>
-  /* #region 申办方 & CRO 查询 */
-  .search-section {
-    position: relative;
-    margin-bottom: 60rpx;
-    .search-bar {
-      background: #ffffff;
-      border-radius: 24rpx;
-      height: 100rpx;
-      display: flex;
-      align-items: center;
-      padding: 0 30rpx;
-      box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
-
-      .filter-dropdown {
-        display: flex;
-        align-items: center;
-        padding-right: 20rpx;
-        color: #666666;
-        font-size: 28rpx;
-
-        .arrow-down {
-          width: 0;
-          height: 0;
-          border-left: 8rpx solid transparent;
-          border-right: 8rpx solid transparent;
-          border-top: 10rpx solid #999999;
-          margin-left: 12rpx;
-        }
-      }
-
-      .divider {
-        width: 2rpx;
-        height: 40rpx;
-        background-color: #f0f0f0;
-        margin: 0 20rpx;
-      }
-
-      .search-input-wrapper {
-        flex: 1;
-        display: flex;
-        align-items: center;
-
-        .search-icon {
-          margin-right: 16rpx;
-        }
-
-        input {
-          flex: 1;
-          font-size: 28rpx;
-          color: #333333;
-        }
-      }
-    }
-
-    // #region 搜索下拉
-    .search-dropdown {
-      position: absolute;
-      top: 100rpx;
-      left: 0;
-      right: 0;
-      background: #ffffff;
-      border-radius: 16rpx;
-      box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.1);
-      z-index: 100;
-      max-height: 480rpx;
-      overflow-y: auto;
-
-      .dropdown-item {
-        padding: 26rpx 30rpx;
-        border-bottom: 2rpx solid #f5f5f5;
-
-        &:last-child {
-          border-bottom: none;
-        }
-
-        &:active {
-          background: #f5f7fa;
-        }
-
-        .dropdown-name {
-          font-size: 28rpx;
-          color: #333333;
-        }
-      }
-
-      .dropdown-loading,
-      .dropdown-empty {
-        padding: 40rpx 0;
-        text-align: center;
-
-        text {
-          font-size: 26rpx;
-          color: #999999;
-        }
-      }
-    }
-    // #endregion
-  }
-  /* #endregion */
-
-  /* #region CRO 榜单 */
-  .ranking-card {
-    border-radius: 32rpx;
-    margin-bottom: 30rpx;
-
-    .ranking-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24rpx;
-
-      .ranking-title {
-        font-weight: 400;
-        font-size: 28rpx;
-        color: #999999;
-        line-height: 52rpx;
-      }
-
-      .view-all {
-        display: flex;
-        align-items: center;
-        font-size: 24rpx;
-        color: #cccccc;
-
-        .arrow-right {
-          margin-left: 6rpx;
-        }
-      }
-    }
-
-    .ranking-list {
-      background: #ffffff;
-      border-radius: 32rpx;
-      padding: 0 30rpx;
-      box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.05);
-      .ranking-item {
-        display: flex;
-        align-items: center;
-        padding: 30rpx 0;
-        border-bottom: 1rpx solid #f8f8f8;
-
-        &:last-child {
-          border-bottom: none;
-        }
-
-        .rank-badge {
-          width: 60rpx;
-          height: 60rpx;
-          border-radius: 8rpx;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          font-size: 32rpx;
-          font-weight: bold;
-          margin-right: 30rpx;
-          color: #cccccc;
-
-          &.rank-1 {
-            color: #ff6b6b;
-          }
-          &.rank-2 {
-            color: #499ae6;
-          }
-          &.rank-3 {
-            color: #8bc34a;
-          }
-        }
-
-        .company-info {
-          flex: 1;
-
-          .company-name {
-            font-size: 32rpx;
-            font-weight: 500;
-            color: #333333;
-            margin-bottom: 8rpx;
-            display: block;
-          }
-
-          .company-stats {
-            display: flex;
-            font-size: 24rpx;
-            color: #999999;
-
-            .stat-divider {
-              margin-left: 30rpx;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  .data-source-note {
-    font-size: 24rpx;
-    color: #cccccc;
+  /* #region 标题 */
+  .title-section {
     text-align: center;
-    margin-bottom: 120rpx;
+    margin-bottom: 60rpx;
+
+    .main-title {
+      font-weight: 400;
+      font-size: 44rpx;
+      color: #293959;
+      line-height: 96rpx;
+      margin-bottom: 18rpx;
+    }
+
+    .sub-title {
+      font-weight: 400;
+      font-size: 28rpx;
+      color: #9199ae;
+      line-height: 52rpx;
+      margin-bottom: 60rpx;
+      display: block;
+    }
   }
   /* #endregion */
 
@@ -551,12 +242,6 @@
   .bd-assistant-section {
     text-align: center;
     margin-bottom: 40rpx;
-    .bd-name {
-      display: block;
-      font-size: 28rpx;
-      color: #999999;
-      margin-bottom: 12rpx;
-    }
     .bd-slogan {
       display: block;
       font-size: 24rpx;
@@ -565,201 +250,139 @@
   }
   /* #endregion */
 
-  /* #region 悬浮按钮 */
-  .side-floating-buttons {
-    position: fixed;
-    right: 30rpx;
-    bottom: 250rpx;
-    display: flex;
-    flex-direction: column;
-    gap: 20rpx;
-    z-index: 100;
-
-    .float-btn {
-      width: 80rpx;
-      height: 80rpx;
-      border-radius: 12rpx;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      // box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
-
-      image {
-        width: 80rpx;
-        height: 80rpx;
-      }
-
-      // &.home-btn {
-      //   background-color: #499ae6;
-      // }
-
-      // &.star-btn {
-      //   background-color: #ff8b8b;
-      // }
-    }
-  }
-  /* #endregion */
-
-  /* #region 标题 */
-  .title-section {
-    text-align: center;
-    margin-bottom: 60rpx;
-    .title-icon {
-      height: 76rpx;
-      margin-bottom: 8rpx;
-    }
-
-    .sub-title {
-      font-weight: 400;
-      font-size: 28rpx;
-      color: #999999;
-      line-height: 52rpx;
-      text-align: center;
-      font-style: normal;
-      text-transform: none;
-      margin-bottom: 40rpx;
-      display: block;
-    }
-  }
-  /* #endregion */
-
-  /* #region 进度卡片 */
-  .progress-card {
-    background-color: #ffffff;
-    border-radius: 32rpx;
-    padding: 30rpx;
+  /* #region 功能网格 */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30rpx;
     margin-bottom: 30rpx;
-    box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.05);
-    border: 2rpx solid #eeeeee;
 
-    .progress-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 28rpx;
-      color: #666;
-      margin-bottom: 30rpx;
-      .progress-title,
-      .progress-text {
-        font-weight: 400;
-        font-size: 28rpx;
-        color: #999999;
-        line-height: 52rpx;
-        text-align: left;
-        font-style: normal;
-        text-transform: none;
-      }
-    }
-
-    .progress-bar {
-      height: 36rpx;
-      background-color: #f3f4f6;
-      border-radius: 12rpx;
-      margin-bottom: 60rpx;
+    .grid-item {
+      position: relative;
+      width: 210rpx;
+      height: 142rpx;
+      padding: 20rpx;
       overflow: hidden;
-
-      .progress-fill {
-        height: 100%;
-        background-color: #499ae6;
-        border-radius: 12rpx;
-        transition: width 0.3s ease;
-      }
-    }
-
-    .stats-row {
       display: flex;
-      justify-content: space-around;
-      margin-bottom: 30rpx;
-      background: #fafbfc;
-      border-radius: 20rpx 20rpx 20rpx 20rpx;
-      padding: 30rpx 0;
+      flex-direction: column;
+      justify-content: center;
 
-      .stat-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+      .item-content {
+        position: relative;
+        z-index: 2;
 
-        .stat-label {
+        .item-title {
+          display: block;
+          font-size: 24rpx;
+          color: #ffffff;
           font-weight: 400;
-          font-size: 28rpx;
-          color: #999999;
-          line-height: 52rpx;
-          text-align: left;
-          font-style: normal;
-          text-transform: none;
-          margin-bottom: 20rpx;
+          margin-bottom: 10rpx;
+        }
+
+        .item-desc {
+          display: flex;
+          font-size: 16rpx;
+          color: #ffffff;
+          align-items: center;
+          opacity: 0.8;
+          .arrow-right-icon-white {
+            width: 10rpx;
+            height: 10rpx;
+            margin-left: 8rpx;
+          }
         }
       }
-    }
 
-    .start-btn {
-      background-color: #499ae6;
-      color: white;
-      border-radius: 48rpx;
-      width: 272rpx;
-      height: 80rpx;
-      font-size: 28rpx;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      .item-icon {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        left: 0;
+        top: 0;
+        z-index: 1;
+      }
     }
   }
   /* #endregion */
 
-  /* #region 菜单列表 */
-  .record-title {
-    font-weight: 400;
-    font-size: 28rpx;
-    color: #999999;
-    line-height: 52rpx;
-    text-align: left;
-    font-style: normal;
-    text-transform: none;
-    margin-bottom: 24rpx;
-  }
+  /* #region 数据榜单 */
+  .rank-section {
+    background: #ffffff;
+    border-radius: 20rpx;
+    padding: 30rpx 30rpx 0 30rpx;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    margin-bottom: 68rpx;
 
-  .menu-list {
-    background-color: #ffffff;
-    border-radius: 32rpx;
-    padding: 20rpx 30rpx;
-    margin-bottom: 56rpx;
-
-    .menu-item {
+    .section-header {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 30rpx 0;
-      border-bottom: 2rpx solid #f0f0f0;
+      margin-bottom: 10rpx;
 
-      &:last-child {
-        border-bottom: none;
+      .header-line {
+        width: 4px;
+        height: 16px;
+        background: #499ae6;
+        border-radius: 2px;
+        margin-right: 8px;
       }
 
-      .menu-left {
-        display: flex;
-        align-items: center;
-        font-weight: 400;
-        font-size: 28rpx;
+      .header-title {
+        font-size: 16px;
+        font-weight: bold;
         color: #333333;
-        line-height: 52rpx;
-        text-align: left;
-        font-style: normal;
-        text-transform: none;
-
-        .icon-img {
-          width: 48rpx;
-          height: 48rpx;
-          margin-right: 24rpx;
-        }
       }
+    }
 
-      .menu-right {
+    .rank-list {
+      .rank-item {
         display: flex;
         align-items: center;
-        color: #999;
-        font-size: 28rpx;
+        padding: 16px 0;
+        border-bottom: 1px solid #f5f5f5;
 
-        .count {
-          margin-right: 20rpx;
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .rank-icon-wrapper {
+          width: 32px;
+          height: 32px;
+          margin-right: 12px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+
+          .cro-icon {
+            width: 32px;
+            height: 32px;
+            background: #eef6ff;
+            color: #499ae6;
+            font-size: 10px;
+            font-weight: bold;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+          }
+
+          .rank-icon {
+            width: 32px;
+            height: 32px;
+          }
+        }
+
+        .rank-title {
+          flex: 1;
+          font-size: 15px;
+          color: #333333;
+        }
+
+        .arrow-right {
+          width: 8px;
+          height: 8px;
+          border-top: 2px solid #cccccc;
+          border-right: 2px solid #cccccc;
+          transform: rotate(45deg);
         }
       }
     }

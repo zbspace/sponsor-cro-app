@@ -109,7 +109,7 @@
 
   .bg-img {
     width: 100%;
-    height: 646rpx;
+    height: 666rpx;
     position: absolute;
     top: 0;
     left: 0;
@@ -118,7 +118,7 @@
   }
 
   .container {
-    padding: 90rpx 30rpx 30rpx 30rpx;
+    padding: 80rpx 30rpx 30rpx 30rpx;
   }
 
   .arrow-right-icon {
