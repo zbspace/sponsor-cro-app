@@ -66,6 +66,23 @@ export interface SponsorRankListResponse {
 }
 
 /**
+ * 相关公司条目
+ */
+export interface RelatedCompanyItem {
+  companyStandardName: string
+  standardCompanyId: number
+}
+
+/**
+ * 相关公司列表响应
+ */
+export interface RelatedCompanyListResponse {
+  list: RelatedCompanyItem[]
+  pages: number
+  total: number
+}
+
+/**
  * CRO 榜单条目
  */
 export interface CroRankItem {

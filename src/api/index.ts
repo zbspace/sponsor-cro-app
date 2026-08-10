@@ -4,7 +4,8 @@ import {
   mockOutsourcingRatio,
   mockCroProjectList,
   mockParentShortNameList,
-  mockSponsorRankList
+  mockSponsorRankList,
+  mockRelatedCompanyList
 } from '@/mock'
 import * as mock from '@/mock'
 import type {
@@ -24,7 +25,8 @@ import type {
   OutsourcingRatioResponse,
   CroProjectListResponse,
   ParentCompanyListResponse,
-  SponsorRankListResponse
+  SponsorRankListResponse,
+  RelatedCompanyListResponse
 } from '@/types/api'
 
 // #region 登录模块
@@ -173,10 +175,10 @@ export async function getIndexInfo() {
  * @param lastYear 最后一年份
  * * @returns Promise<CroRankListResponse>
  */
-export async function getCroRankList(pageNum: number = 1, pageSize: number = 3, lastYear?: string) {
+export async function selectClinicalCroRankList(data: any) {
   return post<CroRankListResponse>(
     '/api/v1/hgr/selectClinicalCroRankList',
-    { pageNum, pageSize, lastYear },
+    { ...data },
     true,
     mockCroRankList
   )
@@ -261,6 +263,59 @@ export async function getClinicalSponsorRankList(params: {
     true,
     mockSponsorRankList
   )
+}
+
+/**
+ * 获取相关公司列表
+ * @param params { companyType, pageNum, pageSize, parentCompanyId }
+ * @returns Promise<RelatedCompanyListResponse>
+ */
+export async function getRelatedCompanyList(params: {
+  companyType: string
+  pageNum: number
+  pageSize: number
+  parentCompanyId: number
+}) {
+  return get<RelatedCompanyListResponse>(
+    '/api/v1/hgr/selectRelatedCompanyList',
+    params,
+    true,
+    mockRelatedCompanyList
+  )
+}
+
+// #endregion
+
+// #region 用户收藏模块
+
+/**
+ * 收藏公司
+ * @param companyType 收藏的公司类型：1-sponsor, 2-cro, 3-thirdLab
+ * @param parentCompanyId 收藏的母公司ID
+ * @returns Promise
+ */
+export async function userCollect(companyType: number, parentCompanyId: number) {
+  return post('/api/v1/userCollect/collect', { companyType, parentCompanyId }, true)
+}
+
+/**
+ * 取消收藏
+ * @param id 收藏记录id
+ * @returns Promise
+ */
+export async function cancelUserCollect(id: number) {
+  return get('/api/v1/userCollect/cancelCollect', { id }, true)
+}
+
+/**
+ * 获取用户收藏列表
+ * @param pageNum 页码
+ * @param pageSize 每页条数
+ * @param companyType 公司类型：1-sponsor, 2-cro, 3-thirdLab
+ * @returns Promise
+ */
+export async function getUserCollectList(pageNum: number = 1, pageSize: number = 20, companyType?: number) {
+  return get('/api/v1/userCollect/getCollectList', { pageNum, pageSize, companyType }, true)
 }
 
 // #endregion

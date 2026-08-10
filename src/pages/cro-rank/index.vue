@@ -68,7 +68,7 @@
 <script setup lang="ts">
   import { ref, watch } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
-  import { getCroRankList } from '@/api'
+  import { selectClinicalCroRankList } from '@/api'
 
   // #region 筛选
   const selectedYear = ref('')
@@ -102,7 +102,7 @@
     loading.value = true
 
     try {
-      const res = await getCroRankList(page.value, pageSize, selectedYear.value)
+      const res = await selectClinicalCroRankList(page.value, pageSize, selectedYear.value)
       if (res.data?.list) {
         const mapped = res.data.list.map((item) => ({
           name: item.parentCompanyShortName,

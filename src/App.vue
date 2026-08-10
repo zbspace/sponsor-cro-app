@@ -128,4 +128,11 @@
     border-right: 3rpx solid #cccccc;
     transform: rotate(45deg);
   }
+  .arrow-right-icon-white {
+    width: 14rpx;
+    height: 14rpx;
+    border-top: 3rpx solid #fff;
+    border-right: 3rpx solid #fff;
+    transform: rotate(45deg);
+  }
 </style>

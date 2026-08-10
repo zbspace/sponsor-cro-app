@@ -6,7 +6,7 @@
         <view class="arrow"></view>
       </view>
     </view>
-    <text class="title">百济神州</text>
+    <text class="title">{{ companyName }}</text>
     <view class="nav-right"></view>
   </view>
 
@@ -209,6 +209,8 @@
   })
   // 申办方母公司ID，优先从路由参数获取，默认为 0
   const sponsorParentCompanyId = ref(0)
+  // 公司名称，从路由参数获取
+  const companyName = ref('')
 
   async function fetchOutsourcingRatio() {
     try {
@@ -336,6 +338,10 @@
     // 获取胶囊位置信息（单位px）
     const info = uni.getMenuButtonBoundingClientRect()
     menu.value = info
+    // 读取路由参数中的公司名称
+    if (options?.companyName) {
+      companyName.value = decodeURIComponent(options.companyName)
+    }
     // 读取路由参数中的申办方母公司ID
     if (options?.sponsorParentCompanyId) {
       sponsorParentCompanyId.value = Number(options.sponsorParentCompanyId)

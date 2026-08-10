@@ -10,7 +10,8 @@ import type {
   OutsourcingRatioResponse,
   CroProjectListResponse,
   ParentCompanyListResponse,
-  SponsorRankListResponse
+  SponsorRankListResponse,
+  RelatedCompanyListResponse
 } from '@/types/api'
 
 /**
@@ -213,6 +214,19 @@ export const mockSponsorRankList: SponsorRankListResponse = {
   ],
   pages: 1,
   total: 2
+}
+
+/**
+ * 模拟相关公司列表数据
+ */
+export const mockRelatedCompanyList: RelatedCompanyListResponse = {
+  list: [
+    { companyStandardName: '百济神州(上海)生物科技有限公司', standardCompanyId: 1 },
+    { companyStandardName: '百济神州(广州)生物科技有限公司', standardCompanyId: 2 },
+    { companyStandardName: '百济神州(苏州)生物科技有限公司', standardCompanyId: 3 }
+  ],
+  pages: 1,
+  total: 3
 }
 
 /**

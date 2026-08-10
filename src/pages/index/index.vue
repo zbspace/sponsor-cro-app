@@ -86,7 +86,7 @@
             class="ranking-item"
             v-for="(item, index) in rankingList"
             :key="index"
-            @click="goTo('cro-stat/index')"
+            @click="goToCroStat(item)"
           >
             <view class="rank-badge" :class="'rank-' + (index + 1)">
               <image
@@ -96,10 +96,10 @@
               />
             </view>
             <view class="company-info">
-              <text class="company-name">{{ item.name }}</text>
+              <text class="company-name">{{ item.parentCompanyShortName }}</text>
               <view class="company-stats">
-                <text>项目经验：{{ item.projects }}</text>
-                <text class="stat-divider">合作企业数：{{ item.partners }}</text>
+                <text>项目经验：{{ item.projectExperienceNum }}</text>
+                <text class="stat-divider">合作企业数：{{ item.cooperationEnterpriseNum }}</text>
               </view>
             </view>
           </view>
@@ -158,8 +158,14 @@
   import { onShow, onShareAppMessage, onLoad } from '@dcloudio/uni-app'
   import DataStatementPopup from '../../components/data-statement-popup/data-statement-popup.vue'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
-  import { getIndexInfo, getVip, ensureLogin, getCroRankList, getParentShortNameList } from '@/api'
-  import type { IndexInfoResponse, ParentCompanyItem } from '@/types/api'
+  import {
+    getIndexInfo,
+    getVip,
+    ensureLogin,
+    selectClinicalCroRankList,
+    getParentShortNameList
+  } from '@/api'
+  import type { IndexInfoResponse, ParentCompanyItem, CroRankItem } from '@/types/api'
   // #endregion
 
   // #region 状态
@@ -172,7 +178,7 @@
   const showDropdown = ref(false)
   const searchLoading = ref(false)
   let searchTimer: ReturnType<typeof setTimeout> | null = null
-  const rankingList = ref<{ name: string; projects: number; partners: number }[]>([])
+  const rankingList = ref<CroRankItem[]>([])
   const indexData = reactive<IndexInfoResponse>({
     accuracy: '0%',
     streak: 0,
@@ -214,14 +220,11 @@
 
   async function fetchCroRankList() {
     try {
-      const res = await getCroRankList()
-      if (res.data?.list) {
-        rankingList.value = res.data.list.map((item) => ({
-          name: item.parentCompanyShortName,
-          projects: item.projectExperienceNum,
-          partners: item.cooperationEnterpriseNum
-        }))
-      }
+      const res = await selectClinicalCroRankList({
+        pageNum: 1,
+        pageSize: 3
+      })
+      rankingList.value = res.data?.list || []
     } catch {
       // 静默处理，保持默认值
     }
@@ -296,11 +299,24 @@
   function selectCompany(item: ParentCompanyItem) {
     searchKeyword.value = item.parentCompanyShortName
     showDropdown.value = false
+    console.log(2222, item)
+
+    // 公司名称参数，用于跳转页面标题显示
+    const nameParam = `companyName=${encodeURIComponent(item.parentCompanyShortName)}`
     if (currentCompanyType.value === 'sponsor') {
-      goTo('sponsor-stat/index', `sponsorParentCompanyId=${item.parentCompanyId}`)
+      goTo('sponsor-stat/index', `sponsorParentCompanyId=${item.parentCompanyId}&${nameParam}`)
     } else {
-      goTo('cro-stat/index', `partnerParentCompanyId=${item.parentCompanyId}`)
+      goTo('cro-stat/index', `partnerParentCompanyId=${item.parentCompanyId}&${nameParam}`)
     }
+  }
+
+  // 前往CRO统计页
+  function goToCroStat(item: CroRankItem) {
+    console.log(3333, item)
+    goTo(
+      'cro-stat/index',
+      `partnerParentCompanyId=${item.parentCompanyId}&parentCompanyShortName=${item.parentCompanyShortName}`
+    )
   }
 
   function goToHome() {
