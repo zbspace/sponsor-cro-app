@@ -89,7 +89,10 @@
     if (loading.value || noMore.value) return
     loading.value = true
     try {
-      const res = await getUserCollectList(page.value, 20)
+      const res = await getUserCollectList({
+        pageNum: page.value,
+        pageSize: 20
+      })
       const list = res.data?.list || []
       rankList.value = [
         ...rankList.value,

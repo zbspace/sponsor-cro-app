@@ -334,19 +334,10 @@ export async function cancelUserCollect(id: number) {
  * 获取用户收藏列表
  * @param pageNum 页码
  * @param pageSize 每页条数
- * @param companyType 公司类型：1-sponsor, 2-cro, 3-thirdLab
  * @returns Promise
  */
-export async function getUserCollectList(
-  pageNum: number = 1,
-  pageSize: number = 20,
-  companyType?: number
-) {
-  return get<UserCollectListResponse>(
-    '/api/v1/userCollect/getCollectList',
-    { pageNum, pageSize, companyType },
-    true
-  )
+export async function getUserCollectList(data: any) {
+  return get<UserCollectListResponse>('/api/v1/userCollect/getCollectList', data, true)
 }
 
 // #endregion
