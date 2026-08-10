@@ -49,7 +49,7 @@
           :class="{ active: activeTab === 'stat' }"
           @click="activeTab = 'stat'"
         >
-          <text>申办方合作记录</text>
+          <text>合作CRO统计</text>
           <view class="active-line" v-if="activeTab === 'stat'"></view>
         </view>
         <view
@@ -63,7 +63,7 @@
       </view>
 
       <!-- 时间筛选 -->
-      <view class="time-filter-wrapper">
+      <view class="time-filter-wrapper" v-if="activeTab === 'stat'">
         <uni-data-select
           v-model="currentTimeFilter"
           :localdata="timeOptions"
@@ -72,7 +72,29 @@
         ></uni-data-select>
       </view>
 
-      <view class="time-filter-tip">
+      <view class="filter-wrapper" v-if="activeTab === 'list'">
+        <!-- CRO合作名单筛选 -->
+        <view class="time-filter-wrapper">
+          <uni-data-select
+            v-model="currentCroCompany"
+            :localdata="croCompanyOptions"
+            :clear="false"
+            placeholder="请选择"
+          ></uni-data-select>
+        </view>
+
+        <!-- 时间筛选 -->
+        <view class="time-filter-wrapper">
+          <uni-data-select
+            v-model="currentTimeFilterObj"
+            :localdata="timeOptions"
+            :clear="false"
+            placeholder="请选择"
+          ></uni-data-select>
+        </view>
+      </view>
+
+      <view class="time-filter-tip" v-if="activeTab === 'list'">
         注：同一个项目可能存在多条HGR获批记录，时间按照HGR批准 时间统计
       </view>
 
@@ -123,6 +145,17 @@
               <text class="col-name">{{ item.name }}</text>
               <text class="col-count highlight">{{ item.count }}</text>
             </view>
+          </view>
+
+          <!-- 加载状态提示 -->
+          <view class="load-status" v-if="croLoading">
+            <text>加载中...</text>
+          </view>
+          <view class="load-status" v-else-if="croNoMore && croList.length > 0">
+            <text>没有更多了</text>
+          </view>
+          <view class="load-status" v-if="!croList.length">
+            <text>暂无数据</text>
           </view>
         </view>
       </view>
@@ -179,25 +212,24 @@
   import { ref, reactive, watch } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
-  import { getOutsourcingRatio, getCroProjectList } from '@/api'
+  import {
+    getOutsourcingRatio,
+    getSponsorProjectList,
+    getRelatedCompanyList,
+    selectClinicalCroRankList
+  } from '@/api'
 
   const activeTab = ref('stat')
   const currentCompany = ref('全部')
   const currentTimeFilter = ref('')
+  const currentTimeFilterObj = ref('')
   const isStarred = ref(false)
-  const showCompanySelect = ref(false)
-  const showTimeSelect = ref(false)
-
-  const companyOptions = ref([
-    { value: '全部', text: '全部' },
-    { value: '百济神州', text: '百济神州' },
-    { value: '恒瑞医药', text: '恒瑞医药' }
-  ])
+  const companyOptions = ref<{ value: string; text: string }[]>([{ value: '', text: '全部' }])
 
   // 时间筛选选项：全部 + 最近三年，值对应接口 lastYear 参数
   const timeOptions = ref([
-    { value: '', text: '全部' },
-    ...Array.from({ length: 3 }, (_, i) => {
+    { value: '', text: '历史所有' },
+    ...Array.from({ length: 5 }, (_, i) => {
       const year = new Date().getFullYear() - i
       return { value: String(year), text: `${year}年度` }
     })
@@ -228,14 +260,119 @@
     }
   }
 
-  const croList = ref([
-    { name: '圣方医药', count: 5 },
-    { name: '易启医药', count: 6 },
-    { name: '圣方医药', count: 7 },
-    { name: '圣方医药', count: 4 },
-    { name: '圣方医药', count: 5 },
-    { name: '圣方医药', count: 6 }
-  ])
+  // #region 相关公司筛选下拉数据
+  /**
+   * 获取相关公司列表（顶部筛选下拉）
+   */
+  async function fetchRelatedCompanyList() {
+    const parentId = sponsorParentCompanyId.value
+    if (!parentId) return
+    try {
+      const res = await getRelatedCompanyList({
+        companyType: 'sponsor',
+        pageNum: 1,
+        pageSize: 50,
+        parentCompanyId: parentId
+      })
+      if (res.data?.list) {
+        companyOptions.value = [
+          { value: '', text: '全部' },
+          ...res.data.list.map((item) => ({
+            value: String(item.standardCompanyId),
+            text: item.companyStandardName
+          }))
+        ]
+      }
+    } catch {
+      // 静默处理
+    }
+  }
+  // #endregion
+
+  // #region CRO合作名单筛选
+  const currentCroCompany = ref('')
+  const croCompanyOptions = ref<{ value: string; text: string }[]>([{ value: '', text: '全部' }])
+
+  /**
+   * 查询该申办方合作的所有 CRO，用于 CRO 合作名单筛选下拉
+   */
+  async function fetchCroCompanyOptions() {
+    try {
+      const pageSize = 100
+      // 先取第一页，得到总页数
+      const firstRes = await selectClinicalCroRankList({
+        sponsorParentCompanyId: sponsorParentCompanyId.value,
+        pageNum: 1,
+        pageSize
+      })
+      let list = firstRes.data?.list || []
+      const pages = firstRes.data?.pages || 1
+      // 分页拉取全部 CRO
+      for (let page = 2; page <= pages; page++) {
+        const res = await selectClinicalCroRankList({
+          sponsorParentCompanyId: sponsorParentCompanyId.value,
+          pageNum: page,
+          pageSize
+        })
+        list = [...list, ...(res.data?.list || [])]
+      }
+      croCompanyOptions.value = [
+        { value: '', text: '全部' },
+        ...list.map((item) => ({
+          value: String(item.parentCompanyId),
+          text: item.parentCompanyShortName
+        }))
+      ]
+    } catch {
+      // 静默处理
+    }
+  }
+  // #endregion
+
+  // #region CRO合作名单
+  const croList = ref<{ name: string; count: number }[]>([])
+  // CRO合作名单分页参数
+  const croPage = ref(1)
+  const croPageSize = ref(10)
+  const croTotal = ref(0)
+  // 加载状态
+  const croLoading = ref(false)
+  const croNoMore = ref(false)
+
+  /**
+   * 获取 CRO 合作名单
+   */
+  async function fetchCroRankList() {
+    if (croLoading.value) return
+    croLoading.value = true
+    try {
+      // 接口必填参数：sponsorParentCompanyId 申办方母公司ID；lastYear 与时间筛选联动；croParentCompanyId 为筛选的 CRO
+      const res = await selectClinicalCroRankList({
+        sponsorParentCompanyId: sponsorParentCompanyId.value,
+        lastYear: currentTimeFilter.value ? Number(currentTimeFilter.value) : undefined,
+        croParentCompanyId: currentCroCompany.value ? Number(currentCroCompany.value) : undefined,
+        pageNum: croPage.value,
+        pageSize: croPageSize.value
+      })
+      if (res.data?.list) {
+        const newList = res.data.list.map((item) => ({
+          name: item.parentCompanyShortName,
+          count: item.projectExperienceNum
+        }))
+        // 第一页替换，后续页追加
+        croList.value = croPage.value === 1 ? newList : [...croList.value, ...newList]
+        croTotal.value = res.data.total
+        croNoMore.value = croList.value.length >= res.data.total
+      } else {
+        croNoMore.value = true
+      }
+    } catch {
+      // 静默处理
+    } finally {
+      croLoading.value = false
+    }
+  }
+  // #endregion
 
   const projectList = ref<
     {
@@ -260,15 +397,17 @@
     loading.value = true
     try {
       // 接口必填参数：companyType(cro/thirdLab)；lastYear 为筛选年份，空值表示全部
-      const res = await getCroProjectList({
+      const res = await getSponsorProjectList({
         companyType: 'cro',
-        lastYear: currentTimeFilter.value ? Number(currentTimeFilter.value) : undefined,
+        lastYear: currentTimeFilterObj.value ? Number(currentTimeFilterObj.value) : undefined,
         pageNum: projectPage.value,
         pageSize: projectPageSize.value,
+        // 有 CRO 合作名单筛选时按 CRO 过滤
+        partnerParentCompanyIdList: currentCroCompany.value
+          ? [Number(currentCroCompany.value)]
+          : undefined,
         // 有申办方母公司ID时按申办方过滤
-        sponsorParentCompanyIdList: sponsorParentCompanyId.value
-          ? [sponsorParentCompanyId.value]
-          : undefined
+        sponsorParentCompanyId: sponsorParentCompanyId.value || undefined
       })
       if (res.data?.list) {
         const newList = res.data.list.map((item) => ({
@@ -297,16 +436,36 @@
    * 滚动到底部加载下一页
    */
   function onScrollToLower() {
-    // 仅项目列表 tab 生效，加载中或无更多数据时不再请求
-    if (activeTab.value !== 'list' || loading.value || noMore.value) return
-    projectPage.value += 1
-    fetchProjectList()
+    // 加载中或无更多数据时不再请求
+    if (activeTab.value === 'stat') {
+      if (croLoading.value || croNoMore.value) return
+      croPage.value += 1
+      fetchCroRankList()
+    } else if (activeTab.value === 'list') {
+      if (loading.value || noMore.value) return
+      projectPage.value += 1
+      fetchProjectList()
+    }
   }
 
-  // 时间筛选变化时自动重新请求项目列表
+  // 时间筛选变化时自动重新请求列表数据
   watch(currentTimeFilter, () => {
+    croPage.value = 1
+    croNoMore.value = false
+    fetchCroRankList()
+  })
+
+  // 时间筛选变化时自动重新请求列表数据
+  watch(currentTimeFilterObj, () => {
     projectPage.value = 1
     noMore.value = false
+    fetchProjectList()
+  })
+
+  // CRO合作名单筛选变化时自动重新请求 CRO 合作名单
+  watch(currentCroCompany, () => {
+    croPage.value = 1
+    croNoMore.value = false
     fetchProjectList()
   })
 
@@ -348,6 +507,9 @@
     }
     fetchOutsourcingRatio()
     fetchProjectList()
+    fetchRelatedCompanyList()
+    fetchCroRankList()
+    fetchCroCompanyOptions()
   })
 </script>
 
@@ -459,6 +621,13 @@
     }
   }
 
+  .filter-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    width: 100%;
+  }
+
   /* 时间筛选 */
   .time-filter-wrapper {
     margin-bottom: 40rpx;
@@ -470,6 +639,7 @@
     padding: 0 30rpx;
     box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
     margin-bottom: 24rpx;
+    flex: 1;
 
     :deep(.uni-select) {
       border: none;
@@ -613,6 +783,16 @@
 
       &.highlight {
         color: #499ae6;
+      }
+    }
+
+    .load-status {
+      padding: 40rpx 0;
+      text-align: center;
+
+      text {
+        font-size: 24rpx;
+        color: #999;
       }
     }
   }

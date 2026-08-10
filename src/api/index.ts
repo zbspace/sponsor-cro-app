@@ -226,6 +226,28 @@ export async function getCroProjectList(params: {
 }
 
 /**
+ * 获取申办方项目列表
+ * @param params { companyType, lastYear, pageNum, pageSize, partnerParentCompanyIdList, sponsorParentCompanyId, sponsorStandardCompanyIdList }
+ * @returns Promise<CroProjectListResponse>
+ */
+export async function getSponsorProjectList(params: {
+  companyType: string
+  lastYear?: number
+  pageNum?: number
+  pageSize?: number
+  partnerParentCompanyIdList?: number[]
+  sponsorParentCompanyId?: number
+  sponsorStandardCompanyIdList?: number[]
+}) {
+  return post<CroProjectListResponse>(
+    '/api/v1/hgr/selectSponsorProjectList',
+    params,
+    true,
+    mockCroProjectList
+  )
+}
+
+/**
  * 查询母公司简称列表（搜索下拉）
  * @param params { companyType, pageNum, pageSize, shortName }
  * @returns Promise<ParentCompanyListResponse>
