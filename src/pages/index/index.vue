@@ -36,7 +36,7 @@
           class="grid-item"
           v-for="(item, index) in gridItems"
           :key="index"
-          @click="goTo(item.path)"
+          @click="handleGridClick(item)"
         >
           <view class="item-content">
             <text class="item-title">{{ item.title }}</text>
@@ -104,6 +104,9 @@
 
   <!-- 手机号绑定弹窗 -->
   <phone-bind-popup />
+
+  <!-- 搜索弹窗 -->
+  <search-company-popup v-model:visible="showSearchPopup" />
 </template>
 
 <script setup lang="ts">
@@ -112,12 +115,14 @@
   import { onShow, onLoad } from '@dcloudio/uni-app'
   import DataStatementPopup from '../../components/data-statement-popup/data-statement-popup.vue'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
+  import SearchCompanyPopup from '@/components/search-company-popup/search-company-popup.vue'
   import { getVip, ensureLogin } from '@/api'
   // #endregion
 
   // #region 状态
   const isVip = ref(0)
   const showDataStatement = ref(false)
+  const showSearchPopup = ref(false)
 
   // 功能网格数据
   const gridItems = [
@@ -143,7 +148,8 @@
       title: '查药企&CRO\n合作关系',
       desc: '立即前往',
       icon: '/static/home/4.png',
-      path: 'cro-stat/index'
+      path: 'cro-stat/index',
+      special: true
     },
     {
       title: '查药企&中心实\n验室合作关系',
@@ -204,6 +210,14 @@
   function goTo(path: string, query?: string) {
     const url = query ? `/pages/${path}?${query}` : `/pages/${path}`
     uni.navigateTo({ url })
+  }
+
+  function handleGridClick(item: any) {
+    if (item.special) {
+      showSearchPopup.value = true
+    } else {
+      goTo(item.path)
+    }
   }
 
   onLoad(() => {
