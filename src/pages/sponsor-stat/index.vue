@@ -32,9 +32,22 @@
             <uni-data-select
               v-model="currentCompany"
               :localdata="companyOptions"
-              :clear="false"
-              placeholder="请选择"
-            ></uni-data-select>
+              multiple
+              :clear="true"
+              placeholder="全部"
+            >
+              <template #selected="{ selectedItems }">
+                <view class="selected-companies">
+                  <text v-if="selectedItems.length === 0" class="placeholder-text">全部</text>
+                  <template v-else>
+                    <text class="selected-text">{{ selectedItems[0].text }}</text>
+                    <text v-if="selectedItems.length > 1" class="selected-more">
+                      +{{ selectedItems.length - 1 }}
+                    </text>
+                  </template>
+                </view>
+              </template>
+            </uni-data-select>
           </view>
         </view>
         <view class="star-btn" :class="{ active: isStarred }" @click="toggleStar">
@@ -226,11 +239,12 @@
   } from '@/api'
 
   const activeTab = ref('stat')
-  const currentCompany = ref('全部')
+  // 相关公司多选，空数组表示全部
+  const currentCompany = ref<string[]>([])
   const currentTimeFilter = ref('')
   const currentTimeFilterObj = ref('')
   const isStarred = ref(false)
-  const companyOptions = ref<{ value: string; text: string }[]>([{ value: '', text: '全部' }])
+  const companyOptions = ref<{ value: string; text: string }[]>([])
 
   // 时间筛选选项：全部 + 最近三年，值对应接口 lastYear 参数
   const timeOptions = ref([
@@ -281,13 +295,10 @@
         parentCompanyId: parentId
       })
       if (res.data?.list) {
-        companyOptions.value = [
-          { value: '', text: '全部' },
-          ...res.data.list.map((item) => ({
-            value: String(item.standardCompanyId),
-            text: item.companyStandardName
-          }))
-        ]
+        companyOptions.value = res.data.list.map((item) => ({
+          value: String(item.standardCompanyId),
+          text: item.companyStandardName
+        }))
       }
     } catch {
       // 静默处理
@@ -359,9 +370,8 @@
         croParentCompanyId: currentCroCompany.value ? Number(currentCroCompany.value) : undefined,
         pageNum: croPage.value,
         pageSize: croPageSize.value,
-        sponsorStandardCompanyIdList: currentCompany.value
-          ? [Number(currentCompany.value)]
-          : undefined
+        sponsorStandardCompanyIdList:
+          currentCompany.value.length > 0 ? currentCompany.value.map(Number) : undefined
       })
       if (res.data?.list) {
         const newList = res.data.list.map((item) => ({
@@ -586,6 +596,36 @@
           .uni-select__input-text {
             font-size: 28rpx;
             color: #333;
+          }
+        }
+
+        :deep(.slot-content) {
+          display: flex;
+          align-items: center;
+        }
+
+        .selected-companies {
+          display: flex;
+          align-items: center;
+          font-size: 28rpx;
+
+          .placeholder-text {
+            color: #c0c4cc;
+          }
+
+          .selected-text {
+            color: #333;
+            max-width: 240rpx;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          .selected-more {
+            margin-left: 8rpx;
+            color: #499ae6;
+            font-size: 24rpx;
+            flex-shrink: 0;
           }
         }
       }
