@@ -63,14 +63,24 @@
 
   <!-- 底部按钮 -->
   <view class="footer">
-    <view class="share-btn">分享</view>
+    <button class="share-btn" open-type="share">分享</button>
   </view>
 </template>
 
 <script setup lang="ts">
   import { ref, watch } from 'vue'
-  import { onLoad } from '@dcloudio/uni-app'
+  import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
   import { selectClinicalCroRankList } from '@/api'
+
+  // #region 分享
+  onShareAppMessage(() => {
+    return {
+      title: '中国临床CRO榜单 - 临床研究一站式查询',
+      path: '/pages/cro-rank/index',
+      imageUrl: '/static/icons/rank-bg.png'
+    }
+  })
+  // #endregion
 
   // #region 筛选
   const selectedYear = ref('')
@@ -339,6 +349,7 @@
     z-index: 10;
 
     .share-btn {
+      width: 100%;
       background: #499ae6;
       color: #ffffff;
       height: 90rpx;
@@ -348,6 +359,14 @@
       justify-content: center;
       font-size: 32rpx;
       box-shadow: 0 8rpx 20rpx rgba(73, 154, 230, 0.3);
+      border: none;
+      padding: 0;
+      margin: 0;
+      line-height: 90rpx;
+
+      &::after {
+        border: none;
+      }
     }
   }
 </style>
