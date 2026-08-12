@@ -1,7 +1,7 @@
 <template>
   <!-- 头部 -->
   <view class="header" :style="{ paddingTop: `${menu.top}px` }">
-    <view class="vip-btn-wrapper" v-if="isVip !== 1" @click="goTo('vip/index')">
+    <view class="vip-btn-wrapper" v-if="isVip !== 1" @click="handleApplyTrialClick">
       <text>申请试用</text>
       <view class="arrow-right-icon" style="border-color: #fff"></view>
     </view>
@@ -107,6 +107,9 @@
 
   <!-- 搜索弹窗 -->
   <search-company-popup v-model:visible="showSearchPopup" />
+
+  <!-- 申请试用弹窗 -->
+  <trial-apply-popup v-model:visible="showTrialPopup" />
 </template>
 
 <script setup lang="ts">
@@ -116,6 +119,7 @@
   import DataStatementPopup from '../../components/data-statement-popup/data-statement-popup.vue'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
   import SearchCompanyPopup from '@/components/search-company-popup/search-company-popup.vue'
+  import TrialApplyPopup from '@/components/trial-apply-popup/trial-apply-popup.vue'
   import { getVip, ensureLogin } from '@/api'
   // #endregion
 
@@ -123,6 +127,7 @@
   const isVip = ref(0)
   const showDataStatement = ref(false)
   const showSearchPopup = ref(false)
+  const showTrialPopup = ref(false)
 
   // 功能网格数据
   const gridItems = [
@@ -218,6 +223,10 @@
     } else {
       uni.showToast({ title: '该功能暂未开启', icon: 'none' })
     }
+  }
+
+  function handleApplyTrialClick() {
+    showTrialPopup.value = true
   }
 
   onLoad(() => {

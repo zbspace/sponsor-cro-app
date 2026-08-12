@@ -8,7 +8,7 @@ let baseUrl = ''
 // #ifdef MP-WEIXIN
 switch (envVersion) {
   case 'develop':
-    baseUrl = 'http://47.103.54.49:19082' //开发版接口
+    baseUrl = 'https://test.shucangyiyao.com/lyqApi' //开发版接口
     break
   case 'trial':
     baseUrl = 'https://test.shucangyiyao.com' //体验版接口
