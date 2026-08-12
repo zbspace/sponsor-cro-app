@@ -5,7 +5,8 @@ import type { ApiResponse, RequestConfig } from '@/types/request'
 /**
  * API 基础地址
  */
-const BASE_URL = import.meta.env.VITE_API_BASE_URL
+import env from '@/utils/env'
+const BASE_URL = env.baseUrl
 
 // #endregion
 
@@ -89,7 +90,7 @@ export function request<T = any>(config: RequestConfig): Promise<ApiResponse<T>>
   if (needToken) {
     const token = getToken()
     if (token) {
-      header.Authorization = `Bearer_${token}`;
+      header.Authorization = `Bearer_${token}`
       header.token = token
     }
   }

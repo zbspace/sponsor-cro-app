@@ -216,7 +216,7 @@
     if (item.special) {
       showSearchPopup.value = true
     } else {
-      goTo(item.path)
+      uni.showToast({ title: '该功能暂未开启', icon: 'none' })
     }
   }
 
