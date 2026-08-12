@@ -358,7 +358,10 @@
         lastYear: currentTimeFilter.value ? Number(currentTimeFilter.value) : undefined,
         croParentCompanyId: currentCroCompany.value ? Number(currentCroCompany.value) : undefined,
         pageNum: croPage.value,
-        pageSize: croPageSize.value
+        pageSize: croPageSize.value,
+        sponsorStandardCompanyIdList: currentCompany.value
+          ? [Number(currentCompany.value)]
+          : undefined
       })
       if (res.data?.list) {
         const newList = res.data.list.map((item) => ({
@@ -483,6 +486,12 @@
     croPage.value = 1
     croNoMore.value = false
     fetchProjectList()
+  })
+
+  watch(currentCompany, () => {
+    croPage.value = 1
+    croNoMore.value = false
+    fetchCroRankList()
   })
 
   const toggleStar = () => {

@@ -251,7 +251,11 @@
     const parentCompanyId = collectParentCompanyId.value
     if (!parentCompanyId) return
     try {
-      const res = await getUserCollectList(1, 50, collectCompanyType.value)
+      const res = await getUserCollectList({
+        pageNum: 1,
+        pageSize: 50,
+        companyType: collectCompanyType.value || undefined
+      })
       const record = (res.data?.list || []).find(
         (item: any) => item.parentCompanyId === parentCompanyId
       )
@@ -363,7 +367,10 @@
         lastYear: currentTimeFilter.value ? Number(currentTimeFilter.value) : undefined,
         pageNum: sponsorPage.value,
         pageSize: sponsorPageSize.value,
-        partnerParentCompanyId: partnerParentCompanyId.value
+        partnerParentCompanyId: partnerParentCompanyId.value,
+        partnerStandardCompanyIdList: currentCompany.value
+          ? [Number(currentCompany.value)]
+          : undefined
       })
       if (res.data?.list) {
         const newList = res.data.list.map((item) => ({
