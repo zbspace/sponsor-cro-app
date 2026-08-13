@@ -1,5 +1,5 @@
 <template>
-  <view class="search-popup-mask" v-if="visible" @click="close" @touchmove.stop.prevent>
+  <view class="search-popup-mask" v-if="visible" @click="close">
     <view class="search-popup-content" @click.stop>
       <view class="popup-header">
         <text class="popup-title">查药企&CRO合作关系</text>
@@ -17,11 +17,7 @@
           <text>查药企</text>
           <view class="active-line" v-if="currentTab === 'sponsor'"></view>
         </view>
-        <view
-          class="tab-item"
-          :class="{ active: currentTab === 'cro' }"
-          @click="switchTab('cro')"
-        >
+        <view class="tab-item" :class="{ active: currentTab === 'cro' }" @click="switchTab('cro')">
           <text>查CRO</text>
           <view class="active-line" v-if="currentTab === 'cro'"></view>
         </view>
@@ -44,14 +40,23 @@
             <text>加载中...</text>
           </view>
           <template v-else>
-            <view
-              class="dropdown-item"
-              v-for="item in searchResults"
-              :key="item.parentCompanyId"
-              @click="selectCompany(item)"
+            <!-- 结果较多时可上下滚动 -->
+            <scroll-view
+              scroll-y
+              class="dropdown-list"
+              :show-scrollbar="false"
+              :style="dropdownListStyle"
+              v-if="searchResults.length > 0"
             >
-              <text class="dropdown-name">{{ item.parentCompanyShortName }}</text>
-            </view>
+              <view
+                class="dropdown-item"
+                v-for="item in searchResults"
+                :key="item.parentCompanyId"
+                @click="selectCompany(item)"
+              >
+                <text class="dropdown-name">{{ item.parentCompanyShortName }}</text>
+              </view>
+            </scroll-view>
             <view class="dropdown-empty" v-if="searchResults.length === 0">
               <text>未找到相关公司</text>
             </view>
@@ -68,7 +73,7 @@
 
 <script setup lang="ts">
   // #region 导入
-  import { ref, watch } from 'vue'
+  import { ref, watch, computed } from 'vue'
   import { getParentShortNameList } from '@/api'
   import type { ParentCompanyItem } from '@/types/api'
   // #endregion
@@ -89,6 +94,15 @@
   const searchLoading = ref(false)
   const selectedCompany = ref<ParentCompanyItem | null>(null)
   let searchTimer: ReturnType<typeof setTimeout> | null = null
+
+  // 下拉列表高度：单行约 88rpx，最多展示约 400rpx，超出可上下滚动
+  const DROPDOWN_ITEM_HEIGHT = 88
+  const DROPDOWN_MAX_HEIGHT = 400
+  const dropdownListStyle = computed(() => {
+    const count = searchResults.value.length
+    const height = Math.min(count * DROPDOWN_ITEM_HEIGHT, DROPDOWN_MAX_HEIGHT)
+    return { height: `${height}rpx` }
+  })
   // #endregion
 
   // #region 监听
@@ -300,6 +314,11 @@
         z-index: 10;
         max-height: 400rpx;
         overflow-y: auto;
+
+        // 滚动列表
+        .dropdown-list {
+          width: 100%;
+        }
 
         .dropdown-item {
           padding: 24rpx 30rpx;
