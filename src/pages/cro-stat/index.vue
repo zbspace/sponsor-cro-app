@@ -86,13 +86,24 @@
       </view>
 
       <!-- 申办方公司筛选 -->
-      <view class="time-filter-wrapper" v-if="activeTab === 'list'">
-        <uni-data-select
-          v-model="currentSponsorCompany"
-          :localdata="sponsorCompanyOptions"
-          :clear="false"
-          placeholder="请选择"
-        ></uni-data-select>
+      <view class="filter-wrapper" v-if="activeTab === 'list'">
+        <view class="time-filter-wrapper">
+          <uni-data-select
+            v-model="currentSponsorCompany"
+            :localdata="sponsorCompanyOptions"
+            :clear="false"
+            placeholder="请选择"
+          ></uni-data-select>
+        </view>
+        <!-- 时间筛选 -->
+        <view class="time-filter-wrapper">
+          <uni-data-select
+            v-model="currentTimeFilterObj"
+            :localdata="timeOptions"
+            :clear="false"
+            placeholder="请选择"
+          ></uni-data-select>
+        </view>
       </view>
 
       <view class="time-filter-tip" v-if="activeTab === 'list'">
@@ -153,6 +164,9 @@
           <view class="load-status" v-else-if="sponsorNoMore && croList.length > 0">
             <text>没有更多了</text>
           </view>
+          <view class="load-status" v-if="!sponsorLoading && !croList.length">
+            <text>暂无数据</text>
+          </view>
         </view>
       </view>
 
@@ -196,6 +210,9 @@
         <view class="load-status" v-else-if="noMore && projectList.length > 0">
           <text>没有更多了</text>
         </view>
+        <view class="load-status" v-if="!loading && !projectList.length">
+          <text>暂无数据</text>
+        </view>
       </view>
     </view>
   </scroll-view>
@@ -224,6 +241,7 @@
   // 相关公司多选，空数组表示全部
   const currentCompany = ref<string[]>([])
   const currentTimeFilter = ref('')
+  const currentTimeFilterObj = ref('')
   const isStarred = ref(false)
 
   const companyOptions = ref<{ value: string; text: string }[]>([])
@@ -231,7 +249,7 @@
   // 时间筛选选项：全部 + 最近三年，值对应接口 lastYear 参数
   const timeOptions = ref([
     { value: '', text: '全部' },
-    ...Array.from({ length: 3 }, (_, i) => {
+    ...Array.from({ length: 5 }, (_, i) => {
       const year = new Date().getFullYear() - i
       return { value: String(year), text: `${year}年度` }
     })
@@ -468,7 +486,7 @@
       // 接口必填参数：companyType(cro/thirdLab)；lastYear 为筛选年份，空值表示全部
       const res = await getCroProjectList({
         companyType: 'cro',
-        lastYear: currentTimeFilter.value ? Number(currentTimeFilter.value) : undefined,
+        lastYear: currentTimeFilterObj.value ? Number(currentTimeFilterObj.value) : undefined,
         pageNum: projectPage.value,
         pageSize: projectPageSize.value,
         // CRO/中心实验室场景：按合作CRO母公司过滤
@@ -528,11 +546,15 @@
 
   // 时间筛选变化时自动重新请求列表数据
   watch(currentTimeFilter, () => {
-    projectPage.value = 1
-    noMore.value = false
     sponsorPage.value = 1
     sponsorNoMore.value = false
     fetchSponsorRankList()
+  })
+
+  watch(currentTimeFilterObj, () => {
+    projectPage.value = 1
+    noMore.value = false
+    fetchProjectList()
   })
 
   // 切换到项目列表 tab 时，加载申办方筛选下拉数据
@@ -624,6 +646,12 @@
 <style lang="scss" scoped>
   .container {
     padding: 30rpx;
+  }
+  .top-filter-bar {
+    :deep(.uni-select__selector) {
+      width: 700rpx;
+      left: -180rpx;
+    }
   }
 
   /* 顶部筛选栏 */
@@ -750,6 +778,13 @@
     }
   }
 
+  .filter-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    width: 100%;
+  }
+
   /* 时间筛选 */
   .time-filter-wrapper {
     margin-bottom: 40rpx;
@@ -761,6 +796,7 @@
     padding: 0 30rpx;
     box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
     margin-bottom: 24rpx;
+    flex: 1;
 
     :deep(.uni-select) {
       border: none;
@@ -911,6 +947,18 @@
         color: #499ae6;
       }
     }
+
+    // #region 加载状态
+    .load-status {
+      padding: 40rpx 0;
+      text-align: center;
+
+      text {
+        font-size: 24rpx;
+        color: #999;
+      }
+    }
+    // #endregion
   }
 
   // #region 临床研发排名样式

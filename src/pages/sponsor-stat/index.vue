@@ -173,7 +173,7 @@
           <view class="load-status" v-else-if="croNoMore && croList.length > 0">
             <text>没有更多了</text>
           </view>
-          <view class="load-status" v-if="!croList.length">
+          <view class="load-status" v-if="!croLoading && !croList.length">
             <text>暂无数据</text>
           </view>
         </view>
@@ -218,6 +218,9 @@
         </view>
         <view class="load-status" v-else-if="noMore && projectList.length > 0">
           <text>没有更多了</text>
+        </view>
+        <view class="load-status" v-if="!loading && !projectList.length">
+          <text>暂无数据</text>
         </view>
       </view>
     </view>
@@ -553,6 +556,13 @@
 <style lang="scss" scoped>
   .container {
     padding: 30rpx;
+  }
+
+  .top-filter-bar {
+    :deep(.uni-select__selector) {
+      width: 700rpx;
+      left: -180rpx;
+    }
   }
 
   /* 顶部筛选栏 */

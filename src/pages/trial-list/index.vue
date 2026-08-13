@@ -97,11 +97,10 @@
         <view class="load-status" v-if="loading">
           <text>加载中...</text>
         </view>
-        <view class="load-status" v-else-if="noMore && list.length > 0">
+        <!-- <view class="load-status" v-else-if="noMore && list.length > 0">
           <text>没有更多了</text>
-        </view>
+        </view> -->
         <view class="empty-status" v-else-if="!loading && list.length === 0">
-          <image src="../../static/home/empty.png" mode="aspectFit" v-if="false" />
           <text>暂无相关试验数据</text>
         </view>
       </view>
@@ -186,7 +185,7 @@
           cro: item.partnerParentCompanyShortName,
           tag: item.category
         }))
-        
+
         list.value = reset ? newList : [...list.value, ...newList]
         noMore.value = list.value.length >= res.data.total
         pageNum.value++
@@ -405,7 +404,8 @@
     }
   }
 
-  .load-status, .empty-status {
+  .load-status,
+  .empty-status {
     padding: 60rpx 0;
     text-align: center;
     color: #999;

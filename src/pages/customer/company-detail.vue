@@ -96,7 +96,6 @@
           <view class="grid-container">
             <view class="grid-item">
               <view class="item-icon hospital">
-                <image src="../../static/icons/hospital.png" mode="aspectFit" v-if="false" />
                 <text style="color: #52c41a; font-size: 24rpx">H</text>
               </view>
               <view class="item-info">
