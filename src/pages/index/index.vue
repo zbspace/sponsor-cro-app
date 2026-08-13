@@ -110,6 +110,9 @@
 
   <!-- 申请试用弹窗 -->
   <trial-apply-popup v-model:visible="showTrialPopup" />
+
+  <!-- 找客户弹窗 -->
+  <find-customer-popup v-model:visible="showFindPopup" />
 </template>
 
 <script setup lang="ts">
@@ -120,6 +123,7 @@
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
   import SearchCompanyPopup from '@/components/search-company-popup/search-company-popup.vue'
   import TrialApplyPopup from '@/components/trial-apply-popup/trial-apply-popup.vue'
+  import FindCustomerPopup from '@/components/find-customer-popup/find-customer-popup.vue'
   import { getVip, ensureLogin } from '@/api'
   // #endregion
 
@@ -128,6 +132,7 @@
   const showDataStatement = ref(false)
   const showSearchPopup = ref(false)
   const showTrialPopup = ref(false)
+  const showFindPopup = ref(false)
 
   // 功能网格数据
   const gridItems = [
@@ -141,13 +146,13 @@
       title: '找客户',
       desc: '立即前往',
       icon: '/static/home/2.png',
-      path: 'customer/find'
+      path: 'customer/company-detail'
     },
     {
       title: '查产品',
       desc: '立即前往',
       icon: '/static/home/3.png',
-      path: 'product/search'
+      path: 'trial-list/index'
     },
     {
       title: '查药企&CRO\n合作关系',
@@ -220,6 +225,10 @@
   function handleGridClick(item: any) {
     if (item.special) {
       showSearchPopup.value = true
+    } else if (item.title === '找客户') {
+      showFindPopup.value = true
+    } else if (item.path) {
+      goTo(item.path)
     } else {
       uni.showToast({ title: '该功能暂未开启', icon: 'none' })
     }

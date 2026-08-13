@@ -47,6 +47,34 @@
         "navigationBarTitleText": "收藏",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/hospital-stat/index",
+      "style": {
+        "navigationBarTitleText": "合作情况统计",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/trial-list/index",
+      "style": {
+        "navigationBarTitleText": "试验列表",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/customer/matching-degree",
+      "style": {
+        "navigationBarTitleText": "匹配度",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/customer/company-detail",
+      "style": {
+        "navigationBarTitleText": "药企详情",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "easycom": {
