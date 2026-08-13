@@ -269,7 +269,8 @@
       // 接口必填参数：companyType(cro/thirdLab)、sponsorParentCompanyId
       const res = await getOutsourcingRatio({
         companyType: 'cro',
-        sponsorParentCompanyId: sponsorParentCompanyId.value
+        sponsorParentCompanyId: sponsorParentCompanyId.value,
+        lastYear: currentTimeFilter.value ? Number(currentTimeFilter.value) : undefined
       })
       if (res.data) {
         outsourceRate.cro = res.data.outsourcingCroRatio
@@ -482,6 +483,7 @@
     croPage.value = 1
     croNoMore.value = false
     fetchCroRankList()
+    fetchOutsourcingRatio()
   })
 
   // 时间筛选变化时自动重新请求列表数据
