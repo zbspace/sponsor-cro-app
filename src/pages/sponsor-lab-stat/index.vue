@@ -62,7 +62,7 @@
           :class="{ active: activeTab === 'stat' }"
           @click="activeTab = 'stat'"
         >
-          <text>合作CRO统计</text>
+          <text>合作Lab统计</text>
           <view class="active-line" v-if="activeTab === 'stat'"></view>
         </view>
         <view
@@ -86,11 +86,11 @@
       </view>
 
       <view class="filter-wrapper" v-if="activeTab === 'list'">
-        <!-- CRO合作名单筛选 -->
+        <!-- LAB合作名单筛选 -->
         <view class="time-filter-wrapper">
           <uni-data-select
-            v-model="currentCroCompany"
-            :localdata="croCompanyOptions"
+            v-model="currentLabCompany"
+            :localdata="labCompanyOptions"
             :clear="false"
             placeholder="请选择"
           ></uni-data-select>
@@ -121,7 +121,7 @@
               <view
                 class="pie-chart"
                 :style="{
-                  background: `conic-gradient(#499AE6 0% ${outsourceRate.cro}%, #7ED321 ${outsourceRate.cro}% 100%)`
+                  background: `conic-gradient(#499AE6 0% ${outsourceRate.lab}%, #7ED321 ${outsourceRate.lab}% 100%)`
                 }"
               ></view>
             </view>
@@ -129,8 +129,8 @@
               <view class="legend-item">
                 <view class="dot blue"></view>
                 <view class="legend-info">
-                  <text class="label">外包CRO</text>
-                  <text class="value">{{ outsourceRate.cro }}%</text>
+                  <text class="label">外包Lab</text>
+                  <text class="value">{{ outsourceRate.lab }}%</text>
                 </view>
               </view>
               <view class="legend-item">
@@ -144,21 +144,21 @@
           </view>
         </view>
 
-        <!-- CRO合作名单卡片 -->
+        <!-- LAB合作名单卡片 -->
         <view class="card list-card">
-          <view class="card-title">CRO合作名单</view>
+          <view class="card-title">Lab合作名单</view>
           <view class="table-header">
             <text class="col-rank">排序</text>
-            <text class="col-name">CRO公司</text>
+            <text class="col-name">Lab公司</text>
             <text class="col-count">合作项目数</text>
           </view>
           <view class="table-body">
             <view
               class="table-row"
-              v-for="(item, index) in croList"
+              v-for="(item, index) in labList"
               :key="index"
               hover-class="row-hover"
-              @click="onCroClick(item)"
+              @click="onLabClick(item)"
             >
               <text class="col-rank">{{ index + 1 }}</text>
               <text class="col-name">{{ item.name }}</text>
@@ -167,13 +167,13 @@
           </view>
 
           <!-- 加载状态提示 -->
-          <view class="load-status" v-if="croLoading">
+          <view class="load-status" v-if="labLoading">
             <text>加载中...</text>
           </view>
-          <view class="load-status" v-else-if="croNoMore && croList.length > 0">
+          <view class="load-status" v-else-if="labNoMore && labList.length > 0">
             <text>没有更多了</text>
           </view>
-          <view class="load-status" v-if="!croLoading && !croList.length">
+          <view class="load-status" v-if="!labLoading && !labList.length">
             <text>暂无数据</text>
           </view>
         </view>
@@ -206,7 +206,7 @@
               <view class="info-icon cro">
                 <image src="../../static/icons/cro.png" mode="aspectFit" />
               </view>
-              <text class="info-text">合作CRO：{{ item.cro }}</text>
+              <text class="info-text">合作Lab：{{ item.lab }}</text>
             </view>
           </view>
           <view class="action-btn">{{ item.tag }}</view>
@@ -238,7 +238,7 @@
     getOutsourcingRatio,
     getSponsorProjectList,
     getRelatedCompanyList,
-    selectClinicalCroRankList
+    selectClinicalThirdLabRankList
   } from '@/api'
 
   const activeTab = ref('stat')
@@ -259,26 +259,24 @@
   ])
 
   const outsourceRate = reactive({
-    cro: 0,
+    lab: 0,
     self: 0
   })
   // 申办方母公司ID，优先从路由参数获取，默认为 0
   const sponsorParentCompanyId = ref(0)
   // 公司名称，从路由参数获取
   const companyName = ref('')
-  // 跳转来源页面的CRO公司ID，用于项目列表 tab CRO合作名单筛选默认选中
-  const routeCroCompanyId = ref(0)
 
   async function fetchOutsourcingRatio() {
     try {
       // 接口必填参数：companyType(cro/thirdLab)、sponsorParentCompanyId
       const res = await getOutsourcingRatio({
-        companyType: 'cro',
+        companyType: 'thirdLab',
         sponsorParentCompanyId: sponsorParentCompanyId.value,
         lastYear: currentTimeFilter.value ? Number(currentTimeFilter.value) : undefined
       })
       if (res.data) {
-        outsourceRate.cro = res.data.outsourcingCroRatio
+        outsourceRate.lab = res.data.outsourcingCroRatio
         outsourceRate.self = res.data.selfRatio
       }
     } catch {
@@ -312,18 +310,18 @@
   }
   // #endregion
 
-  // #region CRO合作名单筛选
-  const currentCroCompany = ref('')
-  const croCompanyOptions = ref<{ value: string; text: string }[]>([{ value: '', text: '全部' }])
+  // #region LAB合作名单筛选
+  const currentLabCompany = ref('')
+  const labCompanyOptions = ref<{ value: string; text: string }[]>([{ value: '', text: '全部' }])
 
   /**
-   * 查询该申办方合作的所有 CRO，用于 CRO 合作名单筛选下拉
+   * 查询该申办方合作的所有 LAB，用于 LAB 合作名单筛选下拉
    */
-  async function fetchCroCompanyOptions() {
+  async function fetchLabCompanyOptions() {
     try {
       const pageSize = 100
       // 先取第一页，得到总页数
-      const firstRes = await selectClinicalCroRankList({
+      const firstRes = await selectClinicalThirdLabRankList({
         sponsorParentCompanyId: sponsorParentCompanyId.value,
         pageNum: 1,
         pageSize
@@ -332,29 +330,20 @@
       const pages = firstRes.data?.pages || 1
       // 分页拉取全部 CRO
       for (let page = 2; page <= pages; page++) {
-        const res = await selectClinicalCroRankList({
+        const res = await selectClinicalThirdLabRankList({
           sponsorParentCompanyId: sponsorParentCompanyId.value,
           pageNum: page,
           pageSize
         })
         list = [...list, ...(res.data?.list || [])]
       }
-      croCompanyOptions.value = [
+      labCompanyOptions.value = [
         { value: '', text: '全部' },
         ...list.map((item) => ({
           value: String(item.parentCompanyId),
           text: item.parentCompanyShortName
         }))
       ]
-      // 从CRO主页跳转进入时，默认在CRO合作名单筛选中选上上个页面的CRO公司
-      if (routeCroCompanyId.value) {
-        const target = croCompanyOptions.value.find(
-          (opt) => opt.value === String(routeCroCompanyId.value)
-        )
-        if (target) {
-          currentCroCompany.value = String(routeCroCompanyId.value)
-        }
-      }
     } catch {
       // 静默处理
     }
@@ -362,29 +351,29 @@
   // #endregion
 
   // #region CRO合作名单
-  const croList = ref<{ name: string; count: number }[]>([])
+  const labList = ref<{ name: string; count: number }[]>([])
   // CRO合作名单分页参数
-  const croPage = ref(1)
-  const croPageSize = ref(10)
-  const croTotal = ref(0)
+  const labPage = ref(1)
+  const labPageSize = ref(10)
+  const labTotal = ref(0)
   // 加载状态
-  const croLoading = ref(false)
-  const croNoMore = ref(false)
+  const labLoading = ref(false)
+  const labNoMore = ref(false)
 
   /**
-   * 获取 CRO 合作名单
+   * 获取 LAB 合作名单
    */
-  async function fetchCroRankList() {
-    if (croLoading.value) return
-    croLoading.value = true
+  async function fetchLabRankList() {
+    if (labLoading.value) return
+    labLoading.value = true
     try {
       // 接口必填参数：sponsorParentCompanyId 申办方母公司ID；lastYear 与时间筛选联动；croParentCompanyId 为筛选的 CRO
-      const res = await selectClinicalCroRankList({
+      const res = await selectClinicalThirdLabRankList({
         sponsorParentCompanyId: sponsorParentCompanyId.value,
         lastYear: currentTimeFilter.value ? Number(currentTimeFilter.value) : undefined,
-        croParentCompanyId: currentCroCompany.value ? Number(currentCroCompany.value) : undefined,
-        pageNum: croPage.value,
-        pageSize: croPageSize.value,
+        labParentCompanyId: currentLabCompany.value ? Number(currentLabCompany.value) : undefined,
+        pageNum: labPage.value,
+        pageSize: labPageSize.value,
         sponsorStandardCompanyIdList:
           currentCompany.value.length > 0 ? currentCompany.value.map(Number) : undefined
       })
@@ -395,27 +384,25 @@
           parentCompanyId: item.parentCompanyId
         }))
         // 第一页替换，后续页追加
-        croList.value = croPage.value === 1 ? newList : [...croList.value, ...newList]
-        croTotal.value = res.data.total
-        croNoMore.value = croList.value.length >= res.data.total
+        labList.value = labPage.value === 1 ? newList : [...labList.value, ...newList]
+        labTotal.value = res.data.total
+        labNoMore.value = labList.value.length >= res.data.total
       } else {
-        croNoMore.value = true
+        labNoMore.value = true
       }
     } catch {
       // 静默处理
     } finally {
-      croLoading.value = false
+      labLoading.value = false
     }
   }
   // #endregion
 
-  // #region 点击 CRO 合作名单行进入 CRO 主页
-  const onCroClick = (item: any) => {
+  // #region 点击 LAB 合作名单行进入 LAB 主页
+  const onLabClick = (item: any) => {
     if (!item.parentCompanyId) return
-    // 携带当前查询时间，进入后默认切换到项目列表 tab 并套用该年份；
-    // 同时带上当前申办方公司，用于 CRO 主页项目列表 tab 的申办方筛选默认选中
     uni.navigateTo({
-      url: `/pages/cro-stat/index?partnerParentCompanyId=${item.parentCompanyId}&parentCompanyShortName=${encodeURIComponent(item.name)}&sponsorParentCompanyId=${sponsorParentCompanyId.value}&companyName=${encodeURIComponent(companyName.value)}&activeTab=list&timeFilter=${currentTimeFilter.value || ''}`
+      url: `/pages/lab-stat/index?partnerParentCompanyId=${item.parentCompanyId}&parentCompanyShortName=${encodeURIComponent(item.name)}`
     })
   }
   // #endregion
@@ -426,7 +413,7 @@
       approveTime: string
       sponsor: string
       approveNo: string
-      cro: string
+      lab: string
       tag: string
     }[]
   >([])
@@ -444,18 +431,16 @@
     try {
       // 接口必填参数：companyType(cro/thirdLab)；lastYear 为筛选年份，空值表示全部
       const res = await getSponsorProjectList({
-        companyType: 'cro',
+        companyType: 'thirdLab',
         lastYear: currentTimeFilterObj.value ? Number(currentTimeFilterObj.value) : undefined,
         pageNum: projectPage.value,
         pageSize: projectPageSize.value,
-        // 有 CRO 合作名单筛选时按 CRO 过滤；下拉未加载完成时退回来源CRO
-        partnerParentCompanyIdList: currentCroCompany.value
-          ? [Number(currentCroCompany.value)]
-          : routeCroCompanyId.value
-            ? [routeCroCompanyId.value]
-            : undefined,
-        // 有申办方母公司ID时按申办方过滤
-        sponsorParentCompanyId: sponsorParentCompanyId.value || undefined
+        // 有 LAB 合作名单筛选时按 LAB 过滤
+        partnerParentCompanyIdList: currentLabCompany.value
+          ? [Number(currentLabCompany.value)]
+          : undefined,
+        sponsorStandardCompanyIdList:
+          currentCompany.value.length > 0 ? currentCompany.value.map(Number) : undefined
       })
       if (res.data?.list) {
         const newList = res.data.list.map((item) => ({
@@ -463,7 +448,7 @@
           approveTime: item.approvalRecordTime,
           sponsor: item.sponsorStandardCompanyName,
           approveNo: item.projectNo,
-          cro: item.partnerParentCompanyShortName,
+          lab: item.partnerParentCompanyShortName,
           tag: item.category
         }))
         // 第一页替换，后续页追加
@@ -486,9 +471,9 @@
   function onScrollToLower() {
     // 加载中或无更多数据时不再请求
     if (activeTab.value === 'stat') {
-      if (croLoading.value || croNoMore.value) return
-      croPage.value += 1
-      fetchCroRankList()
+      if (labLoading.value || labNoMore.value) return
+      labPage.value += 1
+      fetchLabRankList()
     } else if (activeTab.value === 'list') {
       if (loading.value || noMore.value) return
       projectPage.value += 1
@@ -498,9 +483,9 @@
 
   // 时间筛选变化时自动重新请求列表数据
   watch(currentTimeFilter, () => {
-    croPage.value = 1
-    croNoMore.value = false
-    fetchCroRankList()
+    labPage.value = 1
+    labNoMore.value = false
+    fetchLabRankList()
     fetchOutsourcingRatio()
   })
 
@@ -511,17 +496,20 @@
     fetchProjectList()
   })
 
-  // CRO合作名单筛选变化时自动重新请求 CRO 合作名单
-  watch(currentCroCompany, () => {
-    croPage.value = 1
-    croNoMore.value = false
+  // LAB合作名单筛选变化时自动重新请求 LAB 合作名单
+  watch(currentLabCompany, () => {
+    labPage.value = 1
+    labNoMore.value = false
     fetchProjectList()
   })
 
   watch(currentCompany, () => {
-    croPage.value = 1
-    croNoMore.value = false
-    fetchCroRankList()
+    labPage.value = 1
+    labNoMore.value = false
+    projectPage.value = 1
+    noMore.value = false
+    fetchLabRankList()
+    fetchProjectList()
   })
 
   const toggleStar = () => {
@@ -560,26 +548,11 @@
     if (options?.sponsorParentCompanyId) {
       sponsorParentCompanyId.value = Number(options.sponsorParentCompanyId)
     }
-    // 读取路由参数中的来源CRO公司ID：从CRO主页跳转进入时，用于CRO合作名单筛选默认选中
-    if (options?.partnerParentCompanyId) {
-      routeCroCompanyId.value = Number(options.partnerParentCompanyId)
-    }
-    // 读取路由参数中的目标tab：支持从CRO主页跳转时默认切换到项目列表tab
-    if (options?.activeTab === 'list') {
-      activeTab.value = 'list'
-    }
-    // 读取路由参数中的时间筛选：有值时通过 watch 触发按指定年份加载项目列表
-    const timeFilter = options?.timeFilter
-    if (timeFilter) {
-      currentTimeFilterObj.value = timeFilter
-    }
     fetchOutsourcingRatio()
-    if (!timeFilter) {
-      fetchProjectList()
-    }
     fetchRelatedCompanyList()
-    fetchCroRankList()
-    fetchCroCompanyOptions()
+    fetchLabRankList()
+    fetchLabCompanyOptions()
+    fetchProjectList()
   })
 </script>
 

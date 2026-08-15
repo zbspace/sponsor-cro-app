@@ -265,6 +265,8 @@
   const sponsorParentCompanyId = ref(0)
   // cro/中心实验室母公司ID，从路由参数获取
   const partnerParentCompanyId = ref(0)
+  // 跳转来源页面的申办方公司ID，用于项目列表 tab 申办方筛选默认选中
+  const routeSponsorCompanyId = ref(0)
 
   // #region 收藏功能
   // 收藏记录id，用于取消收藏
@@ -423,8 +425,10 @@
   // #region 点击申办方合作名单行进入申办方主页
   const onSponsorClick = (item: any) => {
     if (!item.parentCompanyId) return
+    // 携带当前查询时间，进入后默认切换到项目列表 tab 并套用该年份；
+    // 同时带上当前CRO公司，用于申办方主页项目列表 tab 的CRO合作名单筛选默认选中
     uni.navigateTo({
-      url: `/pages/sponsor-stat/index?sponsorParentCompanyId=${item.parentCompanyId}&companyName=${encodeURIComponent(item.name)}`
+      url: `/pages/sponsor-stat/index?sponsorParentCompanyId=${item.parentCompanyId}&companyName=${encodeURIComponent(item.name)}&partnerParentCompanyId=${partnerParentCompanyId.value}&activeTab=list&timeFilter=${currentTimeFilter.value || ''}`
     })
   }
   // #endregion
@@ -455,6 +459,15 @@
           text: item.parentCompanyShortName
         }))
       ]
+      // 从申办方主页跳转进入时，默认在申办方筛选下拉中选上上个页面的申办方公司
+      if (routeSponsorCompanyId.value) {
+        const target = sponsorCompanyOptions.value.find(
+          (opt) => opt.value === String(routeSponsorCompanyId.value)
+        )
+        if (target) {
+          currentSponsorCompany.value = String(routeSponsorCompanyId.value)
+        }
+      }
     } catch {
       // 静默处理
     }
@@ -491,12 +504,14 @@
         pageSize: projectPageSize.value,
         // CRO/中心实验室场景：按合作CRO母公司过滤
         partnerParentCompanyId: partnerParentCompanyId.value || undefined,
-        // 申办方筛选：优先使用项目列表 tab 选择的申办方，否则按路由申办方过滤
+        // 申办方筛选：优先使用项目列表 tab 选择的申办方；下拉未加载完成时退回来源申办方，再退回路由申办方
         sponsorParentCompanyIdList: currentSponsorCompany.value
           ? [Number(currentSponsorCompany.value)]
-          : sponsorParentCompanyId.value
-            ? [sponsorParentCompanyId.value]
-            : undefined
+          : routeSponsorCompanyId.value
+            ? [routeSponsorCompanyId.value]
+            : sponsorParentCompanyId.value
+              ? [sponsorParentCompanyId.value]
+              : undefined
       })
       if (res.data?.list) {
         const newList = res.data.list.map((item) => ({
@@ -634,10 +649,25 @@
     if (options?.partnerParentCompanyId) {
       partnerParentCompanyId.value = Number(options.partnerParentCompanyId)
     }
+    // 读取路由参数中的来源申办方公司ID：从申办方主页跳转进入时，用于申办方筛选默认选中
+    if (options?.sponsorParentCompanyId) {
+      routeSponsorCompanyId.value = Number(options.sponsorParentCompanyId)
+    }
+    // 读取路由参数中的目标tab：支持从申办方主页跳转时默认切换到项目列表tab
+    if (options?.activeTab === 'list') {
+      activeTab.value = 'list'
+    }
+    // 读取路由参数中的时间筛选：有值时通过 watch 触发按指定年份加载项目列表
+    const timeFilter = options?.timeFilter
+    if (timeFilter) {
+      currentTimeFilterObj.value = timeFilter
+    }
     fetchRelatedCompanyList()
     fetchOutsourcingRatio()
     fetchSponsorRankList()
-    fetchProjectList()
+    if (!timeFilter) {
+      fetchProjectList()
+    }
     fetchCroRank()
     fetchCollectStatus()
   })

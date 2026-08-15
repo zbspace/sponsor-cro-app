@@ -186,6 +186,22 @@ export async function selectClinicalCroRankList(data: any) {
 }
 
 /**
+ * 获取中国临床Lab榜单
+ * @param pageNum 页码
+ * @param pageSize 每页条数
+ * @param lastYear 最后一年份
+ * * @returns Promise<CroRankListResponse>
+ */
+export async function selectClinicalThirdLabRankList(data: any) {
+  return post<CroRankListResponse>(
+    '/api/v1/hgr/selectClinicalThirdLabRankList',
+    { ...data },
+    true,
+    mockCroRankList
+  )
+}
+
+/**
  * 获取外包比例
  * @param params { companyType, lastYear, sponsorParentCompanyId, sponsorStandardCompanyIdList }
  * @returns Promise<OutsourcingRatioResponse>

@@ -8,7 +8,7 @@
     </view>
   </view>
 
-  <image class="bg-img" src="../../static/icons/rank-bg.png" mode="aspectFit" />
+  <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
 
   <view class="content-body">
     <!-- 年份选择 -->
@@ -77,7 +77,7 @@
     return {
       title: '中国临床CRO榜单 - 临床研究一站式查询',
       path: '/pages/cro-rank/index',
-      imageUrl: '/static/icons/rank-bg.png'
+      imageUrl: '/static/icons/header-bg.png'
     }
   })
   // #endregion

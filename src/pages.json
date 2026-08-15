@@ -28,6 +28,13 @@
       }
     },
     {
+      "path": "pages/sponsor-lab-stat/index",
+      "style": {
+        "navigationBarTitleText": "合作申办方统计",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/contact/index",
       "style": {
         "navigationBarTitleText": "联系我们",

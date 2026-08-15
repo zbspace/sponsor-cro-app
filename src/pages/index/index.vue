@@ -105,8 +105,11 @@
   <!-- 手机号绑定弹窗 -->
   <phone-bind-popup />
 
-  <!-- 搜索弹窗 -->
+  <!-- company & cro 弹窗 -->
   <search-company-popup v-model:visible="showSearchPopup" />
+
+  <!--company & lab 弹窗 -->
+  <search-company-lab-popup v-model:visible="showCompanyLabPopup" />
 
   <!-- 申请试用弹窗 -->
   <trial-apply-popup v-model:visible="showTrialPopup" />
@@ -133,6 +136,7 @@
   const showSearchPopup = ref(false)
   const showTrialPopup = ref(false)
   const showFindPopup = ref(false)
+  const showCompanyLabPopup = ref(false)
 
   // 功能网格数据
   const gridItems = [
@@ -223,10 +227,12 @@
   }
 
   function handleGridClick(item: any) {
-    if (item.special) {
+    if (item.title === '查药企&CRO\n合作关系') {
       showSearchPopup.value = true
     } else if (item.title === '找客户') {
       showFindPopup.value = true
+    } else if (item.title === '查药企&中心实\n验室合作关系') {
+      showCompanyLabPopup.value = true
     } else if (item.path) {
       goTo(item.path)
     } else {
