@@ -1,30 +1,30 @@
 <template>
   <view class="trial-list-wrapper">
     <!-- 筛选区域 -->
-    <view class="filter-bar">
-      <view class="filter-item">
-        <picker mode="selector" :range="yearOptions" range-key="text" @change="onYearChange">
-          <view class="filter-trigger">
-            <text>{{ yearText }}</text>
-            <view class="arrow-down"></view>
-          </view>
-        </picker>
+    <view class="filter-wrapper">
+      <view class="time-filter-wrapper">
+        <uni-data-select
+          v-model="currentTimeFilter"
+          :localdata="timeOptions"
+          :clear="false"
+          placeholder="请选择"
+        ></uni-data-select>
       </view>
-      <view class="filter-item">
-        <picker mode="selector" :range="stageOptions" range-key="text" @change="onStageChange">
-          <view class="filter-trigger">
-            <text>{{ stageText }}</text>
-            <view class="arrow-down"></view>
-          </view>
-        </picker>
+      <view class="time-filter-wrapper">
+        <uni-data-select
+          v-model="stageFilter"
+          :localdata="stageOptions"
+          :clear="false"
+          placeholder="请选择"
+        ></uni-data-select>
       </view>
-      <view class="filter-item">
-        <picker mode="selector" :range="statusOptions" range-key="text" @change="onStatusChange">
-          <view class="filter-trigger">
-            <text>{{ statusText }}</text>
-            <view class="arrow-down"></view>
-          </view>
-        </picker>
+      <view class="time-filter-wrapper">
+        <uni-data-select
+          v-model="statusFilter"
+          :localdata="statusOptions"
+          :clear="false"
+          placeholder="请选择"
+        ></uni-data-select>
       </view>
     </view>
 
@@ -127,16 +127,17 @@
   const yearFilter = ref('')
   const stageFilter = ref('')
   const statusFilter = ref('')
+  const currentTimeFilter = ref('')
 
-  const yearOptions = computed(() => [
-    { value: '', text: '年份' },
+  const timeOptions = computed(() => [
+    { value: '', text: '全部' },
     ...Array.from({ length: 5 }, (_, i) => {
       const year = new Date().getFullYear() - i
-      return { value: String(year), text: `${year}年` }
+      return { value: String(year), text: `${year}年度` }
     })
   ])
   const yearText = computed(
-    () => yearOptions.value.find((o) => o.value === yearFilter.value)?.text || '年份'
+    () => timeOptions.value.find((o) => o.value === yearFilter.value)?.text || '年份'
   )
 
   const stageOptions = ref<{ value: string; text: string }[]>([{ value: '', text: '试验分期' }])
@@ -170,7 +171,7 @@
       companyParentId: props.companyParentId || undefined,
       hospitalId: props.hospitalId || undefined,
       researcherId: props.researcherId || undefined,
-      year: yearFilter.value || undefined,
+      year: currentTimeFilter.value || undefined,
       trialStage: stageFilter.value || undefined,
       trialStatus: statusFilter.value || undefined,
       pageNum: pageNum.value,
@@ -209,24 +210,16 @@
 
   // #endregion
 
-  // #region 筛选回调
-  function onYearChange(e: any) {
-    const idx = e.detail.value
-    yearFilter.value = yearOptions.value[idx].value
+  // 时间筛选变化时自动重新请求列表数据
+  watch(currentTimeFilter, () => {
     fetchList(true)
-  }
-
-  function onStageChange(e: any) {
-    const idx = e.detail.value
-    stageFilter.value = stageOptions.value[idx].value
+  })
+  watch(stageFilter, () => {
     fetchList(true)
-  }
-
-  function onStatusChange(e: any) {
-    const idx = e.detail.value
-    statusFilter.value = statusOptions.value[idx].value
+  })
+  watch(statusFilter, () => {
     fetchList(true)
-  }
+  })
   // #endregion
 
   // #region 枚举获取
@@ -276,6 +269,43 @@
 </script>
 
 <style lang="scss" scoped>
+  .filter-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    width: 100%;
+  }
+  /* 时间筛选 */
+  .time-filter-wrapper {
+    margin-bottom: 40rpx;
+    background: #ffffff;
+    height: 90rpx;
+    border-radius: 16rpx;
+    display: flex;
+    align-items: center;
+    padding: 0 30rpx;
+    box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
+    margin-bottom: 24rpx;
+    flex: 1;
+
+    :deep(.uni-select) {
+      border: none;
+      padding: 0;
+
+      .uni-select__input-text {
+        font-size: 28rpx;
+        color: #333;
+      }
+    }
+
+    .filter-tip {
+      font-size: 24rpx;
+      color: #f38a8a; /* 更柔和的红色 */
+      line-height: 1.4;
+      padding: 0 10rpx;
+    }
+  }
+
   .trial-list-wrapper {
     display: flex;
     flex-direction: column;
