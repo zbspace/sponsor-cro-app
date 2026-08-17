@@ -111,6 +111,9 @@
   <!--company & lab 弹窗 -->
   <search-company-lab-popup v-model:visible="showCompanyLabPopup" />
 
+  <!-- sponsor site pi 弹窗 -->
+  <search-sponsor-site-pi-popup v-model:visible="showSponsorSitePiPopup" />
+
   <!-- 申请试用弹窗 -->
   <trial-apply-popup v-model:visible="showTrialPopup" />
 
@@ -137,6 +140,7 @@
   const showTrialPopup = ref(false)
   const showFindPopup = ref(false)
   const showCompanyLabPopup = ref(false)
+  const showSponsorSitePiPopup = ref(false)
 
   // 功能网格数据
   const gridItems = [
@@ -233,6 +237,8 @@
       showFindPopup.value = true
     } else if (item.title === '查药企&中心实\n验室合作关系') {
       showCompanyLabPopup.value = true
+    } else if (item.title === '查药企&医院/研\n究者合作关系') {
+      showSponsorSitePiPopup.value = true
     } else if (item.path) {
       goTo(item.path)
     } else {

@@ -1,270 +1,545 @@
 <template>
-  <view class="page-wrapper">
-    <!-- 头部导航 -->
-    <view class="header" :style="{ paddingTop: `${menu.top}px` }">
-      <view class="nav-left" @click="goBack">
-        <view class="back-icon">
-          <view class="arrow"></view>
-        </view>
+  <!-- 头部导航 -->
+  <view class="header" :style="{ paddingTop: `${menu.top}px` }">
+    <view class="nav-left" @click="goBack">
+      <view class="back-icon">
+        <view class="arrow"></view>
       </view>
-      <text class="title">合作情况统计</text>
-      <view class="nav-right"></view>
     </view>
+    <text class="title">合作情况统计</text>
+    <view class="nav-right"></view>
+  </view>
 
-    <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
+  <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
 
-    <scroll-view
-      scroll-y
-      class="container-scroll-view"
-      :show-scrollbar="false"
-      enhanced
-      :style="{
-        height: `calc(100vh - ${menu.top}px - ${menu.height}px)`
-      }"
-    >
-      <view class="container">
-        <!-- 选项卡 -->
-        <view class="tabs">
-          <view
-            class="tab-item"
-            :class="{ active: activeTab === 'stat' }"
-            @click="activeTab = 'stat'"
-          >
-            <text>统计</text>
-            <view class="active-line" v-if="activeTab === 'stat'"></view>
-          </view>
-          <view
-            class="tab-item"
-            :class="{ active: activeTab === 'detail' }"
-            @click="activeTab = 'detail'"
-          >
-            <text>详情</text>
-            <view class="active-line" v-if="activeTab === 'detail'"></view>
+  <scroll-view
+    scroll-y
+    class="container-scroll-view"
+    :show-scrollbar="false"
+    enhanced
+    :style="{
+      height: `calc(100vh - ${menu.top}px - ${menu.height}px)`
+    }"
+  >
+    <view class="container">
+      <!-- 选项卡 -->
+      <view class="tabs">
+        <view
+          class="tab-item"
+          :class="{ active: activeTab === 'stat' }"
+          @click="activeTab = 'stat'"
+        >
+          <text>统计</text>
+          <view class="active-line" v-if="activeTab === 'stat'"></view>
+        </view>
+        <view
+          class="tab-item"
+          :class="{ active: activeTab === 'list' }"
+          @click="activeTab = 'list'"
+        >
+          <text>试验列表</text>
+          <view class="active-line" v-if="activeTab === 'list'"></view>
+        </view>
+      </view>
+
+      <!-- 统计内容 -->
+      <view v-if="activeTab === 'stat'" class="stat-content">
+        <!-- 汇总统计 -->
+        <view class="section-card">
+          <view class="section-title">汇总统计</view>
+          <view class="summary-cards">
+            <view class="summary-card purple">
+              <text class="label">合作试验数</text>
+              <text class="value">{{ summary.trialCount }}</text>
+              <image class="icon" src="/static/icons/time.png" mode="aspectFit" />
+            </view>
+            <view class="summary-card blue">
+              <text class="label">合作研究者数</text>
+              <text class="value">{{ summary.researcherCount }}</text>
+              <image class="icon" src="/static/icons/sponsor.png" mode="aspectFit" />
+            </view>
+            <view class="summary-card cyan">
+              <text class="label">合作产品数</text>
+              <text class="value">{{ summary.productCount }}</text>
+              <image class="icon" src="/static/icons/cro.png" mode="aspectFit" />
+            </view>
           </view>
         </view>
 
-        <!-- 统计内容 -->
-        <view v-if="activeTab === 'stat'" class="stat-content">
-          <!-- 汇总统计 -->
-          <view class="section-card">
-            <view class="section-title">汇总统计</view>
-            <view class="summary-cards">
-              <view class="summary-card purple">
-                <text class="label">合作试验数</text>
-                <text class="value">23</text>
-                <image class="icon" src="/static/icons/time.png" mode="aspectFit" />
-              </view>
-              <view class="summary-card blue">
-                <text class="label">合作研究者数</text>
-                <text class="value">23</text>
-                <image class="icon" src="/static/icons/sponsor.png" mode="aspectFit" />
-              </view>
-              <view class="summary-card cyan">
-                <text class="label">合作产品数</text>
-                <text class="value">23</text>
-                <image class="icon" src="/static/icons/cro.png" mode="aspectFit" />
-              </view>
-            </view>
-          </view>
-
-          <!-- 近五年试验合作变化 -->
-          <view class="section-card">
-            <view class="section-header">
-              <view class="section-title">近五年试验合作变化</view>
-              <view class="filter-dropdown">
-                <text>注册分类</text>
-                <view class="arrow-down"></view>
-              </view>
-            </view>
-            <view class="chart-container line-chart">
-              <canvas canvas-id="lineCanvas" id="lineCanvas" class="canvas"></canvas>
-            </view>
-          </view>
-
-          <!-- 试验分期 -->
-          <view class="section-card">
-            <view class="section-header">
-              <view class="section-title">试验分期</view>
-              <view class="filter-dropdown">
-                <text>年份</text>
-                <view class="arrow-down"></view>
-              </view>
-            </view>
-            <view class="chart-container radar-chart">
-              <canvas canvas-id="radarCanvas" id="radarCanvas" class="canvas"></canvas>
-            </view>
-            <view class="phase-table">
-              <view class="table-header">
-                <text>1类</text><text>2类</text><text>3类</text><text>4类</text><text>5类</text><text>其他</text>
-              </view>
-              <view class="table-body">
-                <text>1</text><text>4</text><text>12</text><text>12</text><text>4</text><text>0</text>
-              </view>
-            </view>
-          </view>
-
-          <!-- 试验状态 -->
-          <view class="section-card">
-            <view class="section-header">
-              <view class="section-title">试验状态</view>
-              <view class="filter-dropdown">
-                <text>年份</text>
-                <view class="arrow-down"></view>
-              </view>
-            </view>
-            <view class="donut-chart-wrapper">
-              <view class="donut-chart" :style="{ background: donutGradient }"></view>
-              <view class="legend-grid">
-                <view class="legend-item" v-for="(item, index) in statusLegend" :key="index">
-                  <view class="dot" :style="{ backgroundColor: item.color }"></view>
-                  <text class="name">{{ item.name }}</text>
-                  <text class="count">{{ item.count }}</text>
+        <!-- 近五年试验合作变化 -->
+        <view class="section-card">
+          <view class="section-header">
+            <view class="section-title">近五年试验合作变化</view>
+            <view class="filter-dropdown">
+              <picker
+                class="filter-picker"
+                mode="selector"
+                :range="changeStageOptions"
+                range-key="text"
+                @change="onChangeStageChange"
+              >
+                <view class="filter-trigger">
+                  <text>{{ changeStageText }}</text>
+                  <view class="arrow-down"></view>
                 </view>
-              </view>
+              </picker>
             </view>
           </view>
+          <view class="chart-container line-chart">
+            <canvas canvas-id="lineCanvas" id="lineCanvas" class="canvas"></canvas>
+          </view>
+        </view>
 
-          <!-- 合作产品 -->
-          <view class="section-card">
-            <view class="section-header">
-              <view class="section-title">合作产品</view>
-              <view class="filter-dropdown">
-                <text>年份</text>
-                <view class="arrow-down"></view>
-              </view>
-            </view>
-            <view class="data-table">
-              <view class="table-header">
-                <text class="col-rank">排名</text>
-                <text class="col-name">研究者</text>
-                <text class="col-count">临床试验数</text>
-              </view>
-              <view class="table-body">
-                <view class="table-row" v-for="i in 6" :key="i" :class="{ zebra: i % 2 === 0 }">
-                  <text class="col-rank">{{ i }}</text>
-                  <text class="col-name">研究者</text>
-                  <text class="col-count">2</text>
+        <!-- 试验分期 -->
+        <view class="section-card">
+          <view class="section-header">
+            <view class="section-title">试验分期</view>
+            <view class="filter-dropdown">
+              <picker
+                class="filter-picker"
+                mode="selector"
+                :range="yearOptions"
+                range-key="text"
+                @change="onStageYearChange"
+              >
+                <view class="filter-trigger">
+                  <text>{{ stageYearText }}</text>
+                  <view class="arrow-down"></view>
                 </view>
-              </view>
+              </picker>
             </view>
           </view>
-
-          <!-- 合作研究者情况 -->
-          <view class="section-card">
-            <view class="section-header">
-              <view class="section-title">合作研究者情况</view>
+          <view class="chart-container radar-chart">
+            <canvas canvas-id="radarCanvas" id="radarCanvas" class="canvas"></canvas>
+          </view>
+          <view class="phase-table">
+            <view class="table-header">
+              <text>1类</text>
+              <text>2类</text>
+              <text>3类</text>
+              <text>4类</text>
+              <text>BE类</text>
+              <text>其他</text>
             </view>
-            <view class="data-table">
-              <view class="table-header">
-                <text class="col-rank">排名</text>
-                <text class="col-name">研究者</text>
-                <text class="col-count">临床试验数</text>
-              </view>
-              <view class="table-body">
-                <view class="table-row" v-for="i in 6" :key="i" :class="{ zebra: i % 2 === 0 }">
-                  <text class="col-rank">{{ i }}</text>
-                  <text class="col-name">研究者</text>
-                  <text class="col-count">2</text>
+            <view class="table-body">
+              <text>{{ stageCounts.oneClass }}</text>
+              <text>{{ stageCounts.twoClass }}</text>
+              <text>{{ stageCounts.threeClass }}</text>
+              <text>{{ stageCounts.fourClass }}</text>
+              <text>{{ stageCounts.beClass }}</text>
+              <text>{{ stageCounts.otherClass }}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 试验状态 -->
+        <view class="section-card">
+          <view class="section-header">
+            <view class="section-title">试验状态</view>
+            <view class="filter-dropdown">
+              <picker
+                class="filter-picker"
+                mode="selector"
+                :range="yearOptions"
+                range-key="text"
+                @change="onStatusYearChange"
+              >
+                <view class="filter-trigger">
+                  <text>{{ statusYearText }}</text>
+                  <view class="arrow-down"></view>
                 </view>
+              </picker>
+            </view>
+          </view>
+          <view class="donut-chart-wrapper">
+            <view class="donut-chart" :style="{ background: donutGradient }"></view>
+            <view class="legend-grid">
+              <view class="legend-item" v-for="(item, index) in statusLegend" :key="index">
+                <view class="dot" :style="{ backgroundColor: item.color }"></view>
+                <text class="name">{{ item.name }}</text>
+                <text class="count">{{ item.count }}</text>
               </view>
             </view>
           </view>
         </view>
 
-        <!-- 详情内容 (复用现有的项目列表样式) -->
-        <view v-else class="detail-content">
-          <view class="project-card" v-for="i in 5" :key="i">
-            <view class="project-title">这是一项关于某种新药的临床试验项目详情标题...</view>
-            <view class="info-list">
-              <view class="info-item">
-                <view class="info-icon time"><image src="../../static/icons/time.png" mode="aspectFit" /></view>
-                <text class="info-text">批入时间：2025-07-01</text>
-              </view>
-              <view class="info-item">
-                <view class="info-icon sponsor"><image src="../../static/icons/sponsor.png" mode="aspectFit" /></view>
-                <text class="info-text">合作申办方：某某制药有限公司</text>
-              </view>
+        <!-- 合作产品 -->
+        <view class="section-card">
+          <view class="section-header">
+            <view class="section-title">合作产品</view>
+            <view class="filter-dropdown">
+              <picker
+                class="filter-picker"
+                mode="selector"
+                :range="yearOptions"
+                range-key="text"
+                @change="onProductYearChange"
+              >
+                <view class="filter-trigger">
+                  <text>{{ productYearText }}</text>
+                  <view class="arrow-down"></view>
+                </view>
+              </picker>
             </view>
-            <view class="action-btn">国合审批</view>
+          </view>
+          <view class="data-table">
+            <view class="table-header">
+              <text class="col-rank">排名</text>
+              <text class="col-name">产品名称</text>
+              <text class="col-count">临床试验数</text>
+            </view>
+            <view class="table-body">
+              <view
+                class="table-row"
+                v-for="(item, index) in productList"
+                :key="index"
+                :class="{ zebra: index % 2 === 1 }"
+              >
+                <text class="col-rank">{{ index + 1 }}</text>
+                <text class="col-name">{{ item.drugStandardName }}</text>
+                <text class="col-count">{{ item.trialCount }}</text>
+              </view>
+              <view class="empty-tip" v-if="!productList.length">暂无数据</view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 合作研究者情况 -->
+        <view class="section-card">
+          <view class="section-header">
+            <view class="section-title">合作研究者情况</view>
+          </view>
+          <view class="data-table">
+            <view class="table-header">
+              <text class="col-rank">排名</text>
+              <text class="col-name">研究者</text>
+              <text class="col-count">临床试验数</text>
+            </view>
+            <view class="table-body">
+              <view
+                class="table-row"
+                v-for="(item, index) in researcherList"
+                :key="index"
+                :class="{ zebra: index % 2 === 1 }"
+              >
+                <text class="col-rank">{{ index + 1 }}</text>
+                <text class="col-name">{{ item.researcherName }}</text>
+                <text class="col-count">{{ item.trialCount }}</text>
+              </view>
+              <view class="empty-tip" v-if="!researcherList.length">暂无数据</view>
+            </view>
           </view>
         </view>
       </view>
-    </scroll-view>
 
-    <phone-bind-popup />
-  </view>
+      <!-- 详情内容 (复用现有的项目列表样式) -->
+      <view v-else class="detail-content">
+        <TrialList
+          :company-parent-id="companyParentId"
+          :hospital-id="hospitalId"
+          :researcher-id="researcherId"
+        />
+      </view>
+    </view>
+  </scroll-view>
+
+  <phone-bind-popup />
 </template>
 
 <script setup lang="ts">
   // #region 导入
-  import { ref, onMounted } from 'vue'
+  import { ref, reactive, computed, onMounted, watch } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
+  import TrialList from '@/components/trial-list/trial-list.vue'
+
+  import {
+    queryHospitalStatistics,
+    queryHospitalCooperationChange,
+    queryHospitalTrialStage,
+    queryHospitalTrialStatus,
+    queryHospitalCooperationProduct,
+    queryHospitalCooperationResearcher,
+    getTrialStageOptions
+  } from '@/api'
+  import type {
+    CooperationSumItem,
+    DrugStatisticsItem,
+    HospitalStatisticsQuery,
+    ResearcherStatisticsItem,
+    TrialStatusResponse
+  } from '@/types/api'
   // #endregion
 
-  // #region 状态
+  // #region 页面状态
   const activeTab = ref('stat')
   const menu = ref({ top: 0, left: 0, height: 0 })
 
-  const donutGradient = ref('conic-gradient(#499AE6 0% 12.5%, #7ED321 12.5% 25%, #F5A623 25% 37.5%, #9013FE 37.5% 50%, #F8E71C 50% 62.5%, #D0021B 62.5% 75%, #499AE6 75% 100%)')
-
-  const statusLegend = [
-    { name: '进行中-尚未招募', count: 4, color: '#499AE6' },
-    { name: '已完成', count: 4, color: '#9013FE' },
-    { name: '进行中-招募完成', count: 4, color: '#7ED321' },
-    { name: '主动暂停', count: 4, color: '#F8E71C' },
-    { name: '进行中-尚未招募', count: 4, color: '#F5A623' },
-    { name: '被叫停', count: 4, color: '#D0021B' }
-  ]
+  // 路由筛选参数（来自搜索页选中的药企/医院/研究者）
+  const companyParentId = ref(0)
+  const hospitalId = ref(0)
+  const researcherId = ref(0)
   // #endregion
 
-  // #region 生命周期
-  onLoad(() => {
-    const info = uni.getMenuButtonBoundingClientRect()
-    menu.value = info
-  })
-
-  onMounted(() => {
-    drawCharts()
-  })
+  // #region 汇总统计
+  const summary = reactive({ trialCount: 0, researcherCount: 0, productCount: 0 })
   // #endregion
 
-  // #region 方法
-  function goBack() {
-    uni.navigateBack({ delta: 1, fail: () => uni.reLaunch({ url: '/pages/index/index' }) })
+  // #region 近五年试验合作变化
+  const changeList = ref<CooperationSumItem[]>([])
+  // 注册分类筛选选项（trialStage）
+  const changeStageOptions = ref<{ value: string; text: string }[]>([{ value: '', text: '全部' }])
+  const changeStageFilter = ref('')
+  const changeStageText = computed(
+    () => changeStageOptions.value.find((o) => o.value === changeStageFilter.value)?.text || '全部'
+  )
+  // #endregion
+
+  // #region 试验分期
+  const stageCounts = reactive({
+    oneClass: 0,
+    twoClass: 0,
+    threeClass: 0,
+    fourClass: 0,
+    beClass: 0,
+    otherClass: 0
+  })
+  const stageYearFilter = ref('')
+  // #endregion
+
+  // #region 试验状态
+  const statusLegend = ref<{ name: string; count: number; color: string }[]>([])
+  const donutGradient = ref('')
+  const statusYearFilter = ref('')
+  // #endregion
+
+  // #region 合作产品
+  const productList = ref<DrugStatisticsItem[]>([])
+  const productYearFilter = ref('')
+  // #endregion
+
+  // #region 合作研究者情况
+  const researcherList = ref<ResearcherStatisticsItem[]>([])
+  // #endregion
+
+  // #region 年份选项
+  const yearOptions = computed(() => [
+    { value: '', text: '全部' },
+    ...Array.from({ length: 5 }, (_, i) => {
+      const year = new Date().getFullYear() - i
+      return { value: String(year), text: `${year}年` }
+    })
+  ])
+  const stageYearText = computed(
+    () => yearOptions.value.find((o) => o.value === stageYearFilter.value)?.text || '全部'
+  )
+  const statusYearText = computed(
+    () => yearOptions.value.find((o) => o.value === statusYearFilter.value)?.text || '全部'
+  )
+  const productYearText = computed(
+    () => yearOptions.value.find((o) => o.value === productYearFilter.value)?.text || '全部'
+  )
+  // #endregion
+
+  // #region 请求参数构造
+  /**
+   * 构造统计接口通用请求参数
+   */
+  function buildBaseParams(): HospitalStatisticsQuery {
+    return {
+      pageNum: 1,
+      pageSize: 10,
+      companyParentId: companyParentId.value || undefined,
+      hospitalId: hospitalId.value || undefined,
+      researcherId: researcherId.value || undefined
+    }
+  }
+  // #endregion
+
+  // #region 数据请求
+  async function fetchSummary() {
+    try {
+      const res = await queryHospitalStatistics(buildBaseParams())
+      if (res.data) {
+        summary.trialCount = res.data.coopTrialNum ?? 0
+        summary.researcherCount = res.data.coopResearcherNum ?? 0
+        summary.productCount = res.data.coopProductNum ?? 0
+      }
+    } catch {
+      // 静默处理
+    }
   }
 
+  async function fetchChange() {
+    try {
+      const params = buildBaseParams()
+      if (changeStageFilter.value) {
+        params.trialStage = changeStageFilter.value
+      }
+      const res = await queryHospitalCooperationChange(params)
+      changeList.value = res.data?.cooperationSumList || []
+      drawLineChart()
+    } catch {
+      // 静默处理
+    }
+  }
+
+  async function fetchStage() {
+    try {
+      const params = buildBaseParams()
+      if (stageYearFilter.value) {
+        params.year = stageYearFilter.value
+      }
+      const res = await queryHospitalTrialStage(params)
+      if (res.data) {
+        stageCounts.oneClass = res.data.oneClassCount ?? 0
+        stageCounts.twoClass = res.data.twoClassCount ?? 0
+        stageCounts.threeClass = res.data.threeClassCount ?? 0
+        stageCounts.fourClass = res.data.fourClassCount ?? 0
+        stageCounts.beClass = res.data.beClassCount ?? 0
+        stageCounts.otherClass = res.data.otherClassCount ?? 0
+      }
+      drawRadarChart()
+    } catch {
+      // 静默处理
+    }
+  }
+
+  async function fetchStatus() {
+    try {
+      const params = buildBaseParams()
+      if (statusYearFilter.value) {
+        params.year = statusYearFilter.value
+      }
+      const res = await queryHospitalTrialStatus(params)
+      buildStatusLegend(res.data || ({} as TrialStatusResponse))
+    } catch {
+      // 静默处理
+    }
+  }
+
+  async function fetchProduct() {
+    try {
+      const params = buildBaseParams()
+      if (productYearFilter.value) {
+        params.year = productYearFilter.value
+      }
+      const res = await queryHospitalCooperationProduct(params)
+      productList.value = res.data?.list || []
+    } catch {
+      // 静默处理
+    }
+  }
+
+  async function fetchResearcher() {
+    try {
+      const res = await queryHospitalCooperationResearcher(buildBaseParams())
+      researcherList.value = res.data?.list || []
+    } catch {
+      // 静默处理
+    }
+  }
+
+  /**
+   * 获取注册分类枚举，用于「近五年试验合作变化」筛选下拉
+   */
+  async function fetchStageOptions() {
+    try {
+      const res = await getTrialStageOptions()
+      changeStageOptions.value = [
+        { value: '', text: '全部' },
+        ...(res.data || []).map((item) => ({ value: item, text: item }))
+      ]
+    } catch {
+      // 静默处理
+    }
+  }
+  // #endregion
+
+  // #region 筛选联动
+  function onChangeStageChange(e: any) {
+    const idx = Number(e.detail.value)
+    changeStageFilter.value = changeStageOptions.value[idx]?.value || ''
+    fetchChange()
+  }
+
+  function onStageYearChange(e: any) {
+    const idx = Number(e.detail.value)
+    stageYearFilter.value = yearOptions.value[idx]?.value || ''
+    fetchStage()
+  }
+
+  function onStatusYearChange(e: any) {
+    const idx = Number(e.detail.value)
+    statusYearFilter.value = yearOptions.value[idx]?.value || ''
+    fetchStatus()
+  }
+
+  function onProductYearChange(e: any) {
+    const idx = Number(e.detail.value)
+    productYearFilter.value = yearOptions.value[idx]?.value || ''
+    fetchProduct()
+  }
+  // #endregion
+
+  // #region 图表绘制
   function drawCharts() {
-    // 绘制折线图
-    const lineCtx = uni.createCanvasContext('lineCanvas')
-    drawLineChart(lineCtx)
-
-    // 绘制雷达图
-    const radarCtx = uni.createCanvasContext('radarCanvas')
-    drawRadarChart(radarCtx)
+    drawLineChart()
+    drawRadarChart()
   }
 
-  function drawLineChart(ctx: any) {
-    const data = [1, 2, 1, 3, 2]
-    const years = ['21年', '22年', '23年', '24年', '25年']
+  function drawLineChart() {
+    const ctx = uni.createCanvasContext('lineCanvas')
     const width = 300
     const height = 150
     const padding = 20
 
-    ctx.setStrokeStyle('#499AE6')
-    ctx.setLineWidth(2)
-    ctx.beginPath()
+    // 清空画布
+    ctx.clearRect(0, 0, width, height)
 
-    data.forEach((val, i) => {
-      const x = padding + (i * (width - 2 * padding)) / (data.length - 1)
-      const y = height - padding - (val / 7) * (height - 2 * padding)
-      if (i === 0) ctx.moveTo(x, y)
-      else ctx.lineTo(x, y)
+    const data = changeList.value.map((item) => Number(item.cooperationCount) || 0)
+    const years = changeList.value.map((item) => {
+      const y = String(item.year)
+      return y.length >= 4 ? `${y.slice(2)}年` : y
     })
-    ctx.stroke()
+
+    if (!data.length) {
+      ctx.setFillStyle('#999999')
+      ctx.setFontSize(12)
+      ctx.fillText('暂无数据', width / 2 - 24, height / 2)
+      ctx.draw()
+      return
+    }
+
+    const maxVal = Math.max(...data, 1)
+    const stepX = data.length > 1 ? (width - 2 * padding) / (data.length - 1) : 0
+    const pointAt = (i: number) => ({
+      x: padding + i * stepX,
+      y: height - padding - (data[i] / maxVal) * (height - 2 * padding)
+    })
+
+    // 网格线
+    ctx.setStrokeStyle('#eeeeee')
+    ctx.setLineWidth(0.5)
+    for (let i = 0; i <= 4; i++) {
+      const y = height - padding - (i / 4) * (height - 2 * padding)
+      ctx.beginPath()
+      ctx.moveTo(padding, y)
+      ctx.lineTo(width - padding, y)
+      ctx.stroke()
+      ctx.setFillStyle('#999999')
+      ctx.setFontSize(9)
+      ctx.fillText(String(Math.round((maxVal * i) / 4)), 4, y + 3)
+    }
 
     // 绘制渐变区域
-    ctx.lineTo(width - padding, height - padding)
+    ctx.beginPath()
+    data.forEach((_, i) => {
+      const p = pointAt(i)
+      if (i === 0) ctx.moveTo(p.x, p.y)
+      else ctx.lineTo(p.x, p.y)
+    })
+    ctx.lineTo(padding + (data.length - 1) * stepX, height - padding)
     ctx.lineTo(padding, height - padding)
     ctx.closePath()
     const gradient = ctx.createLinearGradient(0, padding, 0, height - padding)
@@ -273,46 +548,57 @@
     ctx.setFillStyle(gradient)
     ctx.fill()
 
-    // 绘制点
-    data.forEach((val, i) => {
-      const x = padding + (i * (width - 2 * padding)) / (data.length - 1)
-      const y = height - padding - (val / 7) * (height - 2 * padding)
+    // 绘制折线
+    ctx.setStrokeStyle('#499AE6')
+    ctx.setLineWidth(2)
+    ctx.beginPath()
+    data.forEach((_, i) => {
+      const p = pointAt(i)
+      if (i === 0) ctx.moveTo(p.x, p.y)
+      else ctx.lineTo(p.x, p.y)
+    })
+    ctx.stroke()
+
+    // 绘制数据点和年份
+    data.forEach((_, i) => {
+      const p = pointAt(i)
       ctx.setFillStyle('#ffffff')
       ctx.beginPath()
-      ctx.arc(x, y, 4, 0, 2 * Math.PI)
+      ctx.arc(p.x, p.y, 4, 0, 2 * Math.PI)
       ctx.fill()
       ctx.setStrokeStyle('#499AE6')
       ctx.stroke()
-      
-      // 绘制年份文字
+
       ctx.setFillStyle('#999999')
       ctx.setFontSize(10)
-      ctx.fillText(years[i], x - 10, height - 5)
+      ctx.fillText(years[i] || '', p.x - 12, height - 5)
     })
-    
-    // 绘制网格线
-    ctx.setStrokeStyle('#eeeeee')
-    ctx.setLineWidth(0.5)
-    for(let i=0; i<=7; i++) {
-        const y = height - padding - (i/7) * (height - 2 * padding)
-        ctx.beginPath()
-        ctx.moveTo(padding, y)
-        ctx.lineTo(width - padding, y)
-        ctx.stroke()
-        ctx.fillText(i, 5, y + 5)
-    }
 
     ctx.draw()
   }
 
-  function drawRadarChart(ctx: any) {
-    const center = { x: 150, y: 75 }
-    const radius = 60
+  function drawRadarChart() {
+    const ctx = uni.createCanvasContext('radarCanvas')
+    const center = { x: 150, y: 80 }
+    const radius = 55
     const sides = 6
-    const data = [0.8, 0.9, 0.7, 0.6, 0.8, 0.7]
+    const labels = ['1类', '2类', '3类', '4类', 'BE类', '其他']
+    const values = [
+      stageCounts.oneClass,
+      stageCounts.twoClass,
+      stageCounts.threeClass,
+      stageCounts.fourClass,
+      stageCounts.beClass,
+      stageCounts.otherClass
+    ]
+    const maxVal = Math.max(...values, 1)
+
+    // 清空画布
+    ctx.clearRect(0, 0, 300, 150)
 
     // 绘制背景网格
     ctx.setStrokeStyle('#eeeeee')
+    ctx.setLineWidth(1)
     for (let r = 1; r <= 5; r++) {
       ctx.beginPath()
       const currentRadius = (radius / 5) * r
@@ -331,10 +617,10 @@
     ctx.setFillStyle('rgba(245, 166, 35, 0.3)')
     ctx.setStrokeStyle('#F5A623')
     ctx.beginPath()
-    data.forEach((val, i) => {
+    values.forEach((val, i) => {
       const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
-      const x = center.x + Math.cos(angle) * radius * val
-      const y = center.y + Math.sin(angle) * radius * val
+      const x = center.x + Math.cos(angle) * radius * (val / maxVal)
+      const y = center.y + Math.sin(angle) * radius * (val / maxVal)
       if (i === 0) ctx.moveTo(x, y)
       else ctx.lineTo(x, y)
     })
@@ -342,68 +628,100 @@
     ctx.fill()
     ctx.stroke()
 
+    // 绘制轴线及分类标签
+    ctx.setFillStyle('#999999')
+    ctx.setFontSize(10)
+    labels.forEach((label, i) => {
+      const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
+      const x = center.x + Math.cos(angle) * (radius + 12)
+      const y = center.y + Math.sin(angle) * (radius + 12)
+      const textX = Math.min(Math.max(x - 12, 2), 296)
+      const textY = Math.min(Math.max(y + 4, 10), 148)
+      ctx.fillText(label, textX, textY)
+    })
+
     ctx.draw()
+  }
+
+  /**
+   * 试验状态：根据接口数据生成环形渐变与图例
+   */
+  function buildStatusLegend(data: TrialStatusResponse) {
+    const items: { key: keyof TrialStatusResponse; name: string; color: string }[] = [
+      { key: 'trialingRecruiting', name: '进行中-招募中', color: '#499AE6' },
+      { key: 'trialingRecruited', name: '进行中-招募完成', color: '#7ED321' },
+      { key: 'trialing', name: '进行中-尚未招募', color: '#F5A623' },
+      { key: 'completed', name: '已完成', color: '#9013FE' },
+      { key: 'trialingTerminated', name: '主动暂停/终止', color: '#D0021B' },
+      { key: 'trialingNoticeTerminated', name: '责令暂停/终止', color: '#F8E71C' },
+      { key: 'trialingIecTerminated', name: 'IEC/IRB暂停/终止', color: '#50E3C2' }
+    ]
+
+    const legend = items
+      .filter((item) => (data[item.key] || 0) > 0)
+      .map((item) => ({ name: item.name, count: data[item.key] || 0, color: item.color }))
+    statusLegend.value = legend
+
+    const total = legend.reduce((sum, item) => sum + item.count, 0)
+    if (!total) {
+      donutGradient.value = 'conic-gradient(#eeeeee 0% 100%)'
+      return
+    }
+    let acc = 0
+    const segments = legend.map((item) => {
+      const start = acc
+      acc += (item.count / total) * 100
+      return `${item.color} ${start}% ${acc}%`
+    })
+    donutGradient.value = `conic-gradient(${segments.join(', ')})`
+  }
+  // #endregion
+
+  // #region 生命周期
+  onLoad((options: any) => {
+    const info = uni.getMenuButtonBoundingClientRect()
+    menu.value = info
+    // 读取路由筛选参数
+    if (options?.companyParentId) {
+      companyParentId.value = Number(options.companyParentId)
+    }
+    if (options?.hosStandardId) {
+      hospitalId.value = Number(options.hosStandardId)
+    }
+    if (options?.researcherId) {
+      researcherId.value = Number(options.researcherId)
+    }
+    fetchSummary()
+    fetchChange()
+    fetchStage()
+    fetchStatus()
+    fetchProduct()
+    fetchResearcher()
+    fetchStageOptions()
+  })
+
+  onMounted(() => {
+    drawCharts()
+  })
+
+  // 切换到统计 tab 时 canvas 会被重新创建，需要重新绘制
+  watch(activeTab, (val) => {
+    if (val === 'stat') {
+      drawCharts()
+    }
+  })
+  // #endregion
+
+  // #region 方法
+  function goBack() {
+    uni.navigateBack({ delta: 1, fail: () => uni.reLaunch({ url: '/pages/index/index' }) })
   }
   // #endregion
 </script>
 
 <style lang="scss" scoped>
-  .page-wrapper {
-    background: #f8f9fb;
-    min-height: 100vh;
-  }
-
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 30rpx;
-    height: 88rpx;
-    position: relative;
-    z-index: 10;
-
-    .nav-left {
-      width: 60rpx;
-      height: 60rpx;
-      display: flex;
-      align-items: center;
-      .back-icon {
-        width: 40rpx;
-        height: 40rpx;
-        .arrow {
-          width: 20rpx;
-          height: 20rpx;
-          border-top: 4rpx solid #333;
-          border-left: 4rpx solid #333;
-          transform: rotate(-45deg);
-        }
-      }
-    }
-
-    .title {
-      font-size: 34rpx;
-      font-weight: 500;
-      color: #333;
-    }
-
-    .nav-right {
-      width: 60rpx;
-    }
-  }
-
-  .bg-img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 300rpx;
-    z-index: 1;
-  }
-
   .container {
     padding: 30rpx;
-    position: relative;
-    z-index: 2;
   }
 
   .tabs {
@@ -476,6 +794,15 @@
       font-size: 24rpx;
       color: #999;
 
+      .filter-picker {
+        display: flex;
+      }
+
+      .filter-trigger {
+        display: flex;
+        align-items: center;
+      }
+
       .arrow-down {
         width: 0;
         height: 0;
@@ -523,9 +850,15 @@
         opacity: 0.2;
       }
 
-      &.purple { background: linear-gradient(135deg, #9013FE, #B86BFF); }
-      &.blue { background: linear-gradient(135deg, #499AE6, #79B8F2); }
-      &.cyan { background: linear-gradient(135deg, #50E3C2, #85F1DA); }
+      &.purple {
+        background: linear-gradient(135deg, #9013fe, #b86bff);
+      }
+      &.blue {
+        background: linear-gradient(135deg, #499ae6, #79b8f2);
+      }
+      &.cyan {
+        background: linear-gradient(135deg, #50e3c2, #85f1da);
+      }
     }
   }
 
@@ -548,7 +881,8 @@
     border-radius: 12rpx;
     overflow: hidden;
 
-    .table-header, .table-body {
+    .table-header,
+    .table-body {
       display: flex;
       text-align: center;
       font-size: 24rpx;
@@ -557,7 +891,9 @@
         flex: 1;
         padding: 16rpx 0;
         border-right: 1rpx solid #f0f0f0;
-        &:last-child { border-right: none; }
+        &:last-child {
+          border-right: none;
+        }
       }
     }
 
@@ -648,9 +984,25 @@
       }
     }
 
-    .col-rank { width: 100rpx; text-align: center; }
-    .col-name { flex: 1; text-align: center; }
-    .col-count { width: 200rpx; text-align: center; }
+    .col-rank {
+      width: 100rpx;
+      text-align: center;
+    }
+    .col-name {
+      flex: 1;
+      text-align: center;
+    }
+    .col-count {
+      width: 200rpx;
+      text-align: center;
+    }
+
+    .empty-tip {
+      padding: 40rpx 0;
+      text-align: center;
+      font-size: 24rpx;
+      color: #999;
+    }
   }
 
   .project-card {
@@ -680,9 +1032,15 @@
         .info-icon {
           width: 32rpx;
           height: 32rpx;
-          image { width: 100%; height: 100%; }
+          image {
+            width: 100%;
+            height: 100%;
+          }
         }
-        .info-text { font-size: 26rpx; color: #999; }
+        .info-text {
+          font-size: 26rpx;
+          color: #999;
+        }
       }
     }
 

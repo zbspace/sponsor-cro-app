@@ -46,6 +46,42 @@ export interface ParentCompanyListResponse {
 }
 
 /**
+ * 医院信息条目
+ */
+export interface HospitalItem {
+  hosStandardId: number
+  hosStandardName: string
+}
+
+/**
+ * 医院信息列表响应
+ */
+export interface HospitalListResponse {
+  list: HospitalItem[]
+  pages: number
+  total: number
+}
+
+/**
+ * 研究者信息条目
+ */
+export interface ResearcherItem {
+  hosStandardId: number
+  hosStandardName: string
+  researcherId: number
+  researcherName: string
+}
+
+/**
+ * 研究者信息列表响应
+ */
+export interface ResearcherListResponse {
+  list: ResearcherItem[]
+  pages: number
+  total: number
+}
+
+/**
  * CRO/中心实验室 sponsor合作名单条目
  */
 export interface SponsorRankItem {
@@ -98,6 +134,192 @@ export interface CroRankItem {
  */
 export interface CroRankListResponse {
   list: CroRankItem[]
+  pages: number
+  total: number
+}
+
+/**
+ * 药企&医院统计查询参数
+ */
+export interface HospitalStatisticsQuery {
+  /** 登记号 */
+  acceptanceNo?: string
+  /** 药企母公司ID */
+  companyParentId?: number
+  /** 医院标准ID（页面筛选条件，后端扩展字段） */
+  hospitalId?: number
+  /** 研究者ID（页面筛选条件，后端扩展字段） */
+  researcherId?: number
+  /** 当前页数 */
+  pageNum?: number
+  /** 每页条数 */
+  pageSize?: number
+  /** 试验分期（注册分类） */
+  trialStage?: string
+  /** 试验状态 */
+  trialStatus?: string
+  /** 年份 */
+  year?: string
+}
+
+/**
+ * 汇总统计响应
+ */
+export interface HospitalStatisticsResponse {
+  /** 合作试验数 */
+  coopTrialNum: number
+  /** 合作研究者数 */
+  coopResearcherNum: number
+  /** 合作产品数 */
+  coopProductNum: number
+}
+
+/**
+ * 试验分期响应
+ */
+export interface TrialStageResponse {
+  /** 1类数量 */
+  oneClassCount: number
+  /** 2类数量 */
+  twoClassCount: number
+  /** 3类数量 */
+  threeClassCount: number
+  /** 4类数量 */
+  fourClassCount: number
+  /** BE类数量 */
+  beClassCount: number
+  /** 其他类数量 */
+  otherClassCount: number
+}
+
+/**
+ * 试验状态响应
+ */
+export interface TrialStatusResponse {
+  /** 已完成-数量 */
+  completed: number
+  /** 进行中-尚未招募-数量 */
+  trialing: number
+  /** IEC/IRB暂停/终止-数量 */
+  trialingIecTerminated: number
+  /** 责令暂停/终止-数量 */
+  trialingNoticeTerminated: number
+  /** 进行中-招募完成-数量 */
+  trialingRecruited: number
+  /** 进行中-招募中-数量 */
+  trialingRecruiting: number
+  /** 主动暂停/终止-数量 */
+  trialingTerminated: number
+}
+
+/**
+ * 近五年试验合作变化-合作统计条目
+ */
+export interface CooperationSumItem {
+  /** 合作数量 */
+  cooperationCount: number
+  /** 年份 */
+  year: string
+}
+
+/**
+ * 近五年试验合作变化响应
+ */
+export interface CooperationChangeResponse {
+  /** 合作统计 */
+  cooperationSumList: CooperationSumItem[]
+  /** 试验分期 */
+  trialStage: string
+}
+
+/**
+ * 合作产品统计条目
+ */
+export interface DrugStatisticsItem {
+  /** 药品名(标准名) */
+  drugStandardName: string
+  /** 试验数量 */
+  trialCount: number
+}
+
+/**
+ * 合作产品统计分页响应
+ */
+export interface DrugStatisticsResponse {
+  list: DrugStatisticsItem[]
+  pages: number
+  total: number
+}
+
+/**
+ * 合作研究者统计条目
+ */
+export interface ResearcherStatisticsItem {
+  /** 中心 */
+  hosStandardName: string
+  /** 研究者 */
+  researcherName: string
+  /** 试验数量 */
+  trialCount: number
+}
+
+/**
+ * 合作研究者统计分页响应
+ */
+export interface ResearcherStatisticsResponse {
+  list: ResearcherStatisticsItem[]
+  pages: number
+  total: number
+}
+
+/**
+ * 试验列表条目
+ */
+export interface TrialItem {
+  /** 登记号 */
+  acceptanceNo: string
+  /** 中心及研究者数量 */
+  centerAndResearcherCount: number
+  /** 药品名称 */
+  drugName: string
+  /** 适应症 */
+  indication: string
+  /** 发布日期 */
+  publishDate: string
+  /** 申请人 */
+  sponsorContacts: string
+  /** 申办方 */
+  sponsorName: string
+  /** 试验分期 */
+  trialStage: string
+  /** 试验状态 */
+  trialStatus: string
+}
+
+/**
+ * 试验列表分页响应
+ */
+export interface TrialListResponse {
+  list: TrialItem[]
+  pages: number
+  total: number
+}
+
+/**
+ * 中心及研究者条目
+ */
+export interface CenterAndResearcherItem {
+  /** 中心名称 */
+  hosStandardName: string
+  /** 研究者姓名 */
+  researcherName: string
+}
+
+/**
+ * 中心及研究者列表分页响应
+ */
+export interface CenterAndResearcherListResponse {
+  list: CenterAndResearcherItem[]
   pages: number
   total: number
 }

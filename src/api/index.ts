@@ -26,8 +26,19 @@ import type {
   OutsourcingRatioResponse,
   CroProjectListResponse,
   ParentCompanyListResponse,
+  HospitalListResponse,
+  ResearcherListResponse,
   SponsorRankListResponse,
-  RelatedCompanyListResponse
+  RelatedCompanyListResponse,
+  HospitalStatisticsResponse,
+  TrialStageResponse,
+  TrialStatusResponse,
+  CooperationChangeResponse,
+  DrugStatisticsResponse,
+  ResearcherStatisticsResponse,
+  TrialListResponse,
+  CenterAndResearcherListResponse,
+  HospitalStatisticsQuery
 } from '@/types/api'
 
 // #region 登录模块
@@ -282,6 +293,162 @@ export async function getParentShortNameList(params: {
     mockParentShortNameList
   )
 }
+
+/**
+ * 查询药企简称（搜索下拉）
+ * @param params { id, pageNum, pageSize, searchKey }
+ * @returns Promise<ParentCompanyListResponse>
+ */
+export async function queryPharmaShortName(params: {
+  id?: number
+  pageNum?: number
+  pageSize?: number
+  searchKey?: string
+}) {
+  return post<ParentCompanyListResponse>(
+    '/api/v1/companyHospital/queryPharmaShortName',
+    params,
+    true
+  )
+}
+
+/**
+ * 查询医院信息（搜索下拉）
+ * @param params { id, pageNum, pageSize, searchKey }
+ * @returns Promise<HospitalListResponse>
+ */
+export async function queryHospitalData(params: {
+  id?: number
+  pageNum?: number
+  pageSize?: number
+  searchKey?: string
+}) {
+  return post<HospitalListResponse>('/api/v1/companyHospital/queryHospitalData', params, true)
+}
+
+/**
+ * 查询研究者信息（搜索下拉）
+ * @param params { id, pageNum, pageSize, searchKey }
+ * @returns Promise<ResearcherListResponse>
+ */
+export async function queryResearcherData(params: {
+  id?: number
+  pageNum?: number
+  pageSize?: number
+  searchKey?: string
+}) {
+  return post<ResearcherListResponse>('/api/v1/companyHospital/queryResearcherData', params, true)
+}
+
+// #endregion
+
+// #region 医院/研究者合作情况统计模块
+
+/**
+ * 合作情况统计-统计汇总
+ * @param params 药企&医院统计查询参数
+ * @returns Promise<HospitalStatisticsResponse>
+ */
+export async function queryHospitalStatistics(params: HospitalStatisticsQuery) {
+  return post<HospitalStatisticsResponse>('/api/v1/companyHospital/queryStatistics', params, true)
+}
+
+/**
+ * 合作情况统计-近5年试验合作变化
+ * @param params 药企&医院统计查询参数
+ * @returns Promise<CooperationChangeResponse>
+ */
+export async function queryHospitalCooperationChange(params: HospitalStatisticsQuery) {
+  return post<CooperationChangeResponse>(
+    '/api/v1/companyHospital/queryCooperationChange',
+    params,
+    true
+  )
+}
+
+/**
+ * 合作情况统计-合作产品
+ * @param params 药企&医院统计查询参数
+ * @returns Promise<DrugStatisticsResponse>
+ */
+export async function queryHospitalCooperationProduct(params: HospitalStatisticsQuery) {
+  return post<DrugStatisticsResponse>(
+    '/api/v1/companyHospital/queryCooperationProduct',
+    params,
+    true
+  )
+}
+
+/**
+ * 合作情况统计-合作研究者情况
+ * @param params 药企&医院统计查询参数
+ * @returns Promise<ResearcherStatisticsResponse>
+ */
+export async function queryHospitalCooperationResearcher(params: HospitalStatisticsQuery) {
+  return post<ResearcherStatisticsResponse>(
+    '/api/v1/companyHospital/queryCooperationResearcher',
+    params,
+    true
+  )
+}
+
+/**
+ * 合作情况统计-试验分期
+ * @param params 药企&医院统计查询参数
+ * @returns Promise<TrialStageResponse>
+ */
+export async function queryHospitalTrialStage(params: HospitalStatisticsQuery) {
+  return post<TrialStageResponse>('/api/v1/companyHospital/queryTrialStage', params, true)
+}
+
+/**
+ * 合作情况统计-试验状态
+ * @param params 药企&医院统计查询参数
+ * @returns Promise<TrialStatusResponse>
+ */
+export async function queryHospitalTrialStatus(params: HospitalStatisticsQuery) {
+  return post<TrialStatusResponse>('/api/v1/companyHospital/queryTrialStatus', params, true)
+}
+
+/**
+ * 实验分期枚举
+ * @returns Promise<string[]>
+ */
+export async function getTrialStageOptions() {
+  return get<string[]>('/api/v1/companyHospital/trialStageOptions', {}, true)
+}
+
+/**
+ * 试验状态枚举
+ * @returns Promise<string[]>
+ */
+export async function getTrialStatusOptions() {
+  return get<string[]>('/api/v1/companyHospital/trialStatusOptions', {}, true)
+}
+
+/**
+ * 合作情况统计-试验列表
+ * @param params 药企&医院统计查询参数
+ * @returns Promise<TrialListResponse>
+ */
+export async function queryHospitalTrialList(params: HospitalStatisticsQuery) {
+  return post<TrialListResponse>('/api/v1/companyHospital/queryTrialList', params, true)
+}
+
+/**
+ * 合作情况统计-试验列表-中心及研究者列表
+ * @param params 药企&医院统计查询参数
+ * @returns Promise<CenterAndResearcherListResponse>
+ */
+export async function queryCenterAndResearcherList(params: HospitalStatisticsQuery) {
+  return post<CenterAndResearcherListResponse>(
+    '/api/v1/companyHospital/queryCenterAndResearcherList',
+    params,
+    true
+  )
+}
+
+// #endregion
 
 /**
  * 获取CRO/中心实验室sponsor合作名单
