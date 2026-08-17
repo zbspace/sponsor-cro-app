@@ -12,16 +12,16 @@
       </view>
       <view class="time-filter-wrapper">
         <uni-data-select
-          v-model="stageFilter"
-          :localdata="stageOptions"
+          v-model="statusFilter"
+          :localdata="statusOptions"
           :clear="false"
           placeholder="请选择"
         ></uni-data-select>
       </view>
       <view class="time-filter-wrapper">
         <uni-data-select
-          v-model="statusFilter"
-          :localdata="statusOptions"
+          v-model="stageFilter"
+          :localdata="stageOptions"
           :clear="false"
           placeholder="请选择"
         ></uni-data-select>
@@ -48,7 +48,7 @@
           </view>
           <view class="tag-row">
             <view class="tag status">{{ item.trialStatus }}</view>
-            <view class="tag stage">{{ item.trialStage }}</view>
+            <view class="tag stage">{{ item.trialStage || '未知' }}</view>
           </view>
         </view>
 
@@ -103,7 +103,8 @@
 
 <script setup lang="ts">
   import { ref, computed, onMounted, watch } from 'vue'
-  import { queryHospitalTrialList, getTrialStageOptions, getTrialStatusOptions } from '@/api'
+  import { queryHospitalTrialList } from '@/api'
+  import { TRIAL_STATUS, TRIAL_PHASE, createEnumsToOptions } from '@/utils/enums'
   import type { TrialItem, HospitalStatisticsQuery } from '@/types/api'
   import CenterResearcherPopup from '../center-researcher-popup/center-researcher-popup.vue'
 
@@ -130,25 +131,23 @@
   const currentTimeFilter = ref('')
 
   const timeOptions = computed(() => [
-    { value: '', text: '全部' },
+    { value: '', text: '年份' },
     ...Array.from({ length: 5 }, (_, i) => {
       const year = new Date().getFullYear() - i
       return { value: String(year), text: `${year}年度` }
     })
   ])
-  const yearText = computed(
-    () => timeOptions.value.find((o) => o.value === yearFilter.value)?.text || '年份'
-  )
 
-  const stageOptions = ref<{ value: string; text: string }[]>([{ value: '', text: '试验分期' }])
-  const stageText = computed(
-    () => stageOptions.value.find((o) => o.value === stageFilter.value)?.text || '试验分期'
-  )
+  const stageOptions = computed(() => [
+    { value: '', text: '试验分期' },
+    ...createEnumsToOptions(TRIAL_PHASE)
+  ])
 
-  const statusOptions = ref<{ value: string; text: string }[]>([{ value: '', text: '试验状态' }])
-  const statusText = computed(
-    () => statusOptions.value.find((o) => o.value === statusFilter.value)?.text || '试验状态'
-  )
+  const statusOptions = computed(() => [
+    { value: '', text: '试验状态' },
+    ...createEnumsToOptions(TRIAL_STATUS)
+  ])
+
   // #endregion
 
   // #region 列表数据
@@ -222,31 +221,6 @@
   })
   // #endregion
 
-  // #region 枚举获取
-  async function fetchOptions() {
-    try {
-      const [stageRes, statusRes] = await Promise.all([
-        getTrialStageOptions(),
-        getTrialStatusOptions()
-      ])
-      if (stageRes.data) {
-        stageOptions.value = [
-          { value: '', text: '试验分期' },
-          ...stageRes.data.map((item) => ({ value: item, text: item }))
-        ]
-      }
-      if (statusRes.data) {
-        statusOptions.value = [
-          { value: '', text: '试验状态' },
-          ...statusRes.data.map((item) => ({ value: item, text: item }))
-        ]
-      }
-    } catch (e) {
-      console.error('获取枚举失败', e)
-    }
-  }
-  // #endregion
-
   // #region 辅助函数
   function getRandomColorClass(index: number) {
     const classes = ['blue', 'green', 'purple', 'orange']
@@ -255,7 +229,6 @@
   // #endregion
 
   onMounted(() => {
-    fetchOptions()
     fetchList(true)
   })
 
@@ -268,242 +241,271 @@
   )
 </script>
 
+<script lang="ts">
+  export default {
+    options: {
+      // 微信小程序默认样式隔离，需设为 shared 才能让 :deep() 样式穿透到 uni-data-select 等子组件内部
+      styleIsolation: 'shared'
+    }
+  }
+</script>
+
 <style lang="scss" scoped>
-  .filter-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 20rpx;
-    width: 100%;
-  }
-  /* 时间筛选 */
-  .time-filter-wrapper {
-    margin-bottom: 40rpx;
-    background: #ffffff;
-    height: 90rpx;
-    border-radius: 16rpx;
-    display: flex;
-    align-items: center;
-    padding: 0 30rpx;
-    box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
-    margin-bottom: 24rpx;
-    flex: 1;
-
-    :deep(.uni-select) {
-      border: none;
-      padding: 0;
-
-      .uni-select__input-text {
-        font-size: 28rpx;
-        color: #333;
-      }
-    }
-
-    .filter-tip {
-      font-size: 24rpx;
-      color: #f38a8a; /* 更柔和的红色 */
-      line-height: 1.4;
-      padding: 0 10rpx;
-    }
-  }
-
   .trial-list-wrapper {
     display: flex;
     flex-direction: column;
     height: 100%;
-  }
 
-  .filter-bar {
-    display: flex;
-    justify-content: space-between;
-    padding: 20rpx 0;
-    gap: 20rpx;
-
-    .filter-item {
-      flex: 1;
-      background: #ffffff;
-      border-radius: 16rpx;
-      height: 72rpx;
-      box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.02);
-
-      .filter-trigger {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        height: 100%;
-        padding: 0 24rpx;
-        font-size: 26rpx;
-        color: #666;
-
-        .arrow-down {
-          width: 0;
-          height: 0;
-          border-left: 8rpx solid transparent;
-          border-right: 8rpx solid transparent;
-          border-top: 10rpx solid #cccccc;
-          margin-left: 10rpx;
-        }
-      }
-    }
-  }
-
-  .list-scroll {
-    flex: 1;
-    height: 0; // 必须设置高度 0，配合 flex:1 才能正确工作
-  }
-
-  .trial-card {
-    background: #ffffff;
-    border-radius: 24rpx;
-    padding: 30rpx;
-    margin-bottom: 30rpx;
-    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.02);
-
-    .card-header {
-      margin-bottom: 24rpx;
-
-      .title-row {
-        display: flex;
-        align-items: center;
-        margin-bottom: 20rpx;
-
-        .icon-wrap {
-          width: 50rpx;
-          height: 50rpx;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 24rpx;
-          color: #ffffff;
-          font-weight: bold;
-          margin-right: 20rpx;
-
-          &.blue {
-            background: #499ae6;
-          }
-          &.green {
-            background: #50e3c2;
-          }
-          &.purple {
-            background: #9013fe;
-          }
-          &.orange {
-            background: #f5a623;
-          }
-        }
-
-        .title {
-          flex: 1;
-          font-size: 30rpx;
-          color: #333;
-          font-weight: 500;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .date {
-          font-size: 24rpx;
-          color: #cccccc;
-          margin-left: 20rpx;
-        }
-      }
-
-      .tag-row {
-        display: flex;
-        gap: 16rpx;
-
-        .tag {
-          font-size: 22rpx;
-          padding: 4rpx 16rpx;
-          border-radius: 8rpx;
-
-          &.status {
-            background: #f3e9ff;
-            color: #9013fe;
-          }
-          &.stage {
-            background: #e9f4ff;
-            color: #499ae6;
-          }
-        }
-      }
-    }
-
-    .card-body {
-      background: #f8f9fb;
-      border-radius: 16rpx;
-      padding: 24rpx;
+    .filter-wrapper {
       display: flex;
-      flex-direction: column;
-      gap: 16rpx;
-
-      .info-row {
-        display: flex;
-        font-size: 26rpx;
-
-        .label {
-          color: #999;
-          width: 200rpx;
-        }
-
-        .value {
-          color: #333;
-          flex: 1;
-        }
-      }
-    }
-
-    .card-footer {
-      display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-top: 24rpx;
-      padding-top: 20rpx;
-      border-top: 1rpx solid #f0f0f0;
+      gap: 20rpx;
+      width: 100%;
+    }
+    /* 时间筛选 */
+    .time-filter-wrapper {
+      margin-bottom: 40rpx;
+      background: #ffffff;
+      height: 90rpx;
+      border-radius: 16rpx;
+      display: flex;
+      align-items: center;
+      padding: 0 30rpx;
+      box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
+      margin-bottom: 24rpx;
+      flex: 1;
 
-      .footer-label {
-        font-size: 26rpx;
-        color: #999;
-      }
+      :deep(.uni-select) {
+        border: none;
+        padding: 0;
 
-      .footer-right {
-        display: flex;
-        align-items: center;
-
-        .count {
+        .uni-select__input-text {
           font-size: 28rpx;
           color: #333;
-          margin-right: 10rpx;
         }
+        .uni-select__selector {
+          width: 220rpx;
+          left: -30rpx;
+        }
+      }
 
-        .arrow-right {
-          width: 12rpx;
-          height: 12rpx;
-          border-top: 2rpx solid #cccccc;
-          border-right: 2rpx solid #cccccc;
-          transform: rotate(45deg);
+      &:nth-child(2) {
+        :deep(.uni-select) {
+          .uni-select__selector {
+            width: max-content;
+          }
+        }
+      }
+
+      .filter-tip {
+        font-size: 24rpx;
+        color: #f38a8a; /* 更柔和的红色 */
+        line-height: 1.4;
+        padding: 0 10rpx;
+      }
+    }
+
+    /* 时间筛选提示 */
+    .time-filter-tip {
+      font-size: 24rpx;
+      color: #f38a8a; /* 更柔和的红色 */
+      line-height: 1.4;
+      padding: 0 10rpx;
+      margin-bottom: 30rpx;
+    }
+
+    .filter-bar {
+      display: flex;
+      justify-content: space-between;
+      padding: 20rpx 0;
+      gap: 20rpx;
+
+      .filter-item {
+        flex: 1;
+        background: #ffffff;
+        border-radius: 16rpx;
+        height: 72rpx;
+        box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.02);
+
+        .filter-trigger {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          height: 100%;
+          padding: 0 24rpx;
+          font-size: 26rpx;
+          color: #666;
+
+          .arrow-down {
+            width: 0;
+            height: 0;
+            border-left: 8rpx solid transparent;
+            border-right: 8rpx solid transparent;
+            border-top: 10rpx solid #cccccc;
+            margin-left: 10rpx;
+          }
         }
       }
     }
-  }
 
-  .loading-status,
-  .empty-status {
-    padding: 40rpx 0;
-    text-align: center;
-    font-size: 24rpx;
-    color: #999;
-  }
+    .list-scroll {
+      flex: 1;
+      height: 0; // 必须设置高度 0，配合 flex:1 才能正确工作
+    }
 
-  .empty-status {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20rpx;
-    image {
-      width: 200rpx;
-      height: 200rpx;
+    .trial-card {
+      background: #ffffff;
+      border-radius: 24rpx;
+      padding: 30rpx;
+      margin-bottom: 30rpx;
+      box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.02);
+
+      .card-header {
+        margin-bottom: 24rpx;
+
+        .title-row {
+          display: flex;
+          align-items: center;
+          margin-bottom: 20rpx;
+
+          .icon-wrap {
+            width: 50rpx;
+            height: 50rpx;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24rpx;
+            color: #ffffff;
+            font-weight: bold;
+            margin-right: 20rpx;
+
+            &.blue {
+              background: #499ae6;
+            }
+            &.green {
+              background: #50e3c2;
+            }
+            &.purple {
+              background: #9013fe;
+            }
+            &.orange {
+              background: #f5a623;
+            }
+          }
+
+          .title {
+            flex: 1;
+            font-size: 30rpx;
+            color: #333;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .date {
+            font-size: 24rpx;
+            color: #cccccc;
+            margin-left: 20rpx;
+          }
+        }
+
+        .tag-row {
+          display: flex;
+          gap: 16rpx;
+
+          .tag {
+            font-size: 22rpx;
+            padding: 4rpx 16rpx;
+            border-radius: 8rpx;
+
+            &.status {
+              background: #f3e9ff;
+              color: #9013fe;
+            }
+            &.stage {
+              background: #e9f4ff;
+              color: #499ae6;
+            }
+          }
+        }
+      }
+
+      .card-body {
+        background: #f8f9fb;
+        border-radius: 16rpx;
+        padding: 24rpx;
+        display: flex;
+        flex-direction: column;
+        gap: 16rpx;
+
+        .info-row {
+          display: flex;
+          font-size: 26rpx;
+
+          .label {
+            color: #999;
+            width: 200rpx;
+          }
+
+          .value {
+            color: #333;
+            flex: 1;
+          }
+        }
+      }
+
+      .card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 24rpx;
+        padding-top: 20rpx;
+
+        .footer-label {
+          font-size: 26rpx;
+          color: #999;
+        }
+
+        .footer-right {
+          display: flex;
+          align-items: center;
+
+          .count {
+            font-size: 28rpx;
+            color: #333;
+            margin-right: 10rpx;
+          }
+
+          .arrow-right {
+            width: 12rpx;
+            height: 12rpx;
+            border-top: 2rpx solid #cccccc;
+            border-right: 2rpx solid #cccccc;
+            transform: rotate(45deg);
+          }
+        }
+      }
+    }
+
+    .loading-status,
+    .empty-status {
+      padding: 40rpx 0;
+      text-align: center;
+      font-size: 24rpx;
+      color: #999;
+    }
+
+    .empty-status {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20rpx;
+      image {
+        width: 200rpx;
+        height: 200rpx;
+      }
     }
   }
 </style>

@@ -6,7 +6,7 @@
         <view class="arrow"></view>
       </view>
     </view>
-    <text class="title">合作情况统计</text>
+    <text class="title">{{ companyName || '合作情况统计' }}</text>
     <view class="nav-right"></view>
   </view>
 
@@ -46,22 +46,19 @@
       <view v-if="activeTab === 'stat'" class="stat-content">
         <!-- 汇总统计 -->
         <view class="section-card">
-          <view class="section-title">汇总统计</view>
+          <view class="section-title" style="margin-bottom: 30rpx">汇总统计</view>
           <view class="summary-cards">
             <view class="summary-card purple">
               <text class="label">合作试验数</text>
               <text class="value">{{ summary.trialCount }}</text>
-              <image class="icon" src="/static/icons/time.png" mode="aspectFit" />
             </view>
             <view class="summary-card blue">
               <text class="label">合作研究者数</text>
               <text class="value">{{ summary.researcherCount }}</text>
-              <image class="icon" src="/static/icons/sponsor.png" mode="aspectFit" />
             </view>
             <view class="summary-card cyan">
               <text class="label">合作产品数</text>
               <text class="value">{{ summary.productCount }}</text>
-              <image class="icon" src="/static/icons/cro.png" mode="aspectFit" />
             </view>
           </view>
         </view>
@@ -269,6 +266,8 @@
     ResearcherStatisticsItem,
     TrialStatusResponse
   } from '@/types/api'
+  import { TRIAL_STATUS, TRIAL_PHASE, createEnumsToOptions } from '@/utils/enums'
+
   // #endregion
 
   // #region 页面状态
@@ -276,6 +275,7 @@
   const menu = ref({ top: 0, left: 0, height: 0 })
 
   // 路由筛选参数（来自搜索页选中的药企/医院/研究者）
+  const companyName = ref('')
   const companyParentId = ref(0)
   const hospitalId = ref(0)
   const researcherId = ref(0)
@@ -287,8 +287,6 @@
 
   // #region 近五年试验合作变化
   const changeList = ref<CooperationSumItem[]>([])
-  // 注册分类筛选选项（trialStage）
-  const changeStageOptions = ref<{ value: string; text: string }[]>([{ value: '', text: '全部' }])
   const changeStageFilter = ref('')
   const changeStageText = computed(
     () => changeStageOptions.value.find((o) => o.value === changeStageFilter.value)?.text || '全部'
@@ -324,7 +322,7 @@
 
   // #region 年份选项
   const yearOptions = computed(() => [
-    { value: '', text: '全部' },
+    { value: '', text: '年份' },
     ...Array.from({ length: 5 }, (_, i) => {
       const year = new Date().getFullYear() - i
       return { value: String(year), text: `${year}年` }
@@ -440,20 +438,10 @@
     }
   }
 
-  /**
-   * 获取注册分类枚举，用于「近五年试验合作变化」筛选下拉
-   */
-  async function fetchStageOptions() {
-    try {
-      const res = await getTrialStageOptions()
-      changeStageOptions.value = [
-        { value: '', text: '全部' },
-        ...(res.data || []).map((item) => ({ value: item, text: item }))
-      ]
-    } catch {
-      // 静默处理
-    }
-  }
+  const changeStageOptions = computed(() => [
+    { value: '', text: '试验分期' },
+    ...createEnumsToOptions(TRIAL_PHASE)
+  ])
   // #endregion
 
   // #region 筛选联动
@@ -682,6 +670,9 @@
     const info = uni.getMenuButtonBoundingClientRect()
     menu.value = info
     // 读取路由筛选参数
+    if (options?.companyName) {
+      companyName.value = decodeURIComponent(options.companyName)
+    }
     if (options?.companyParentId) {
       companyParentId.value = Number(options.companyParentId)
     }
@@ -697,7 +688,6 @@
     fetchStatus()
     fetchProduct()
     fetchResearcher()
-    fetchStageOptions()
   })
 
   onMounted(() => {
@@ -720,10 +710,6 @@
 </script>
 
 <style lang="scss" scoped>
-  .container {
-    padding: 30rpx;
-  }
-
   .tabs {
     display: flex;
     justify-content: center;
@@ -821,7 +807,8 @@
 
     .summary-card {
       flex: 1;
-      height: 160rpx;
+      width: 194rpx;
+      height: 118rpx;
       border-radius: 20rpx;
       padding: 20rpx;
       position: relative;
@@ -843,21 +830,23 @@
 
       .icon {
         position: absolute;
-        right: 10rpx;
-        bottom: 10rpx;
-        width: 60rpx;
-        height: 60rpx;
-        opacity: 0.2;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
       }
 
       &.purple {
-        background: linear-gradient(135deg, #9013fe, #b86bff);
+        background: url('/static/icons/4.png');
+        background-size: 100% 100%;
       }
       &.blue {
-        background: linear-gradient(135deg, #499ae6, #79b8f2);
+        background: url('/static/icons/5.png');
+        background-size: 100% 100%;
       }
       &.cyan {
-        background: linear-gradient(135deg, #50e3c2, #85f1da);
+        background: url('/static/icons/6.png');
+        background-size: 100% 100%;
       }
     }
   }

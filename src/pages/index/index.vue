@@ -130,6 +130,9 @@
   import SearchCompanyPopup from '@/components/search-company-popup/search-company-popup.vue'
   import TrialApplyPopup from '@/components/trial-apply-popup/trial-apply-popup.vue'
   import FindCustomerPopup from '@/components/find-customer-popup/find-customer-popup.vue'
+  import SearchCompanyLabPopup from '@/components/search-company-lab-popup/search-company-lab-popup.vue'
+  import SearchSponsorSitePiPopup from '@/components/search-sponsor-site-pi-popup/search-sponsor-site-pi-popup.vue'
+
   import { getVip, ensureLogin } from '@/api'
   // #endregion
 

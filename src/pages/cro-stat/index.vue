@@ -674,9 +674,6 @@
 </script>
 
 <style lang="scss" scoped>
-  .container {
-    padding: 30rpx;
-  }
   .top-filter-bar {
     :deep(.uni-select__selector) {
       width: 700rpx;
