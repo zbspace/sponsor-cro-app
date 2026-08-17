@@ -17,9 +17,13 @@
           <text>查药企</text>
           <view class="active-line" v-if="currentTab === 'sponsor'"></view>
         </view>
-        <view class="tab-item" :class="{ active: currentTab === 'lab' }" @click="switchTab('lab')">
+        <view
+          class="tab-item"
+          :class="{ active: currentTab === 'thirdLab' }"
+          @click="switchTab('thirdLab')"
+        >
           <text>查Lab</text>
-          <view class="active-line" v-if="currentTab === 'lab'"></view>
+          <view class="active-line" v-if="currentTab === 'thirdLab'"></view>
         </view>
       </view>
 
@@ -87,7 +91,7 @@
   // #endregion
 
   // #region 状态
-  const currentTab = ref<'sponsor' | 'lab'>('sponsor')
+  const currentTab = ref<'sponsor' | 'thirdLab'>('sponsor')
   const searchKeyword = ref('')
   const searchResults = ref<ParentCompanyItem[]>([])
   const showDropdown = ref(false)
@@ -125,7 +129,7 @@
     emit('update:visible', false)
   }
 
-  function switchTab(tab: 'sponsor' | 'lab') {
+  function switchTab(tab: 'sponsor' | 'thirdLab') {
     if (currentTab.value === tab) return
     currentTab.value = tab
     searchKeyword.value = ''

@@ -21,6 +21,13 @@
       }
     },
     {
+      "path": "pages/lab-stat/index",
+      "style": {
+        "navigationBarTitleText": "合作实验室统计",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/sponsor-stat/index",
       "style": {
         "navigationBarTitleText": "合作申办方统计",
@@ -44,7 +51,14 @@
     {
       "path": "pages/cro-rank/index",
       "style": {
-        "navigationBarTitleText": "榜单",
+        "navigationBarTitleText": "CRO榜单",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/lab-rank/index",
+      "style": {
+        "navigationBarTitleText": "LAB榜单",
         "navigationStyle": "custom"
       }
     },
