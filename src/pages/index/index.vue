@@ -119,6 +119,9 @@
 
   <!-- 找客户弹窗 -->
   <find-customer-popup v-model:visible="showFindPopup" />
+
+  <!-- 查客户弹窗 -->
+  <search-customer-popup v-model:visible="showCustomerCustomerPopup" />
 </template>
 
 <script setup lang="ts">
@@ -132,6 +135,7 @@
   import FindCustomerPopup from '@/components/find-customer-popup/find-customer-popup.vue'
   import SearchCompanyLabPopup from '@/components/search-company-lab-popup/search-company-lab-popup.vue'
   import SearchSponsorSitePiPopup from '@/components/search-sponsor-site-pi-popup/search-sponsor-site-pi-popup.vue'
+  import SearchCustomerPopup from '@/components/search-customer-popup/search-customer-popup.vue'
 
   import { getVip, ensureLogin } from '@/api'
   // #endregion
@@ -144,14 +148,14 @@
   const showFindPopup = ref(false)
   const showCompanyLabPopup = ref(false)
   const showSponsorSitePiPopup = ref(false)
+  const showCustomerCustomerPopup = ref(false)
 
   // 功能网格数据
   const gridItems = [
     {
       title: '查客户',
       desc: '立即前往',
-      icon: '/static/home/1.png',
-      path: 'customer/search'
+      icon: '/static/home/1.png'
     },
     {
       title: '找客户',
@@ -242,6 +246,8 @@
       showCompanyLabPopup.value = true
     } else if (item.title === '查药企&医院/研\n究者合作关系') {
       showSponsorSitePiPopup.value = true
+    } else if (item.title === '查客户') {
+      showCustomerCustomerPopup.value = true
     } else if (item.path) {
       goTo(item.path)
     } else {
