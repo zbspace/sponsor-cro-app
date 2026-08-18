@@ -256,8 +256,7 @@
     queryHospitalTrialStage,
     queryHospitalTrialStatus,
     queryHospitalCooperationProduct,
-    queryHospitalCooperationResearcher,
-    getTrialStageOptions
+    queryHospitalCooperationResearcher
   } from '@/api'
   import type {
     CooperationSumItem,
