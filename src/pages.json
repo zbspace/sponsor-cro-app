@@ -84,6 +84,27 @@
       }
     },
     {
+      "path": "pages/ind-stat/index",
+      "style": {
+        "navigationBarTitleText": "IND统计",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/cde-stat/index",
+      "style": {
+        "navigationBarTitleText": "CDE统计",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/nda-stat/index",
+      "style": {
+        "navigationBarTitleText": "NDA统计",
+        "navigationStyle": "custom"
+      }
+    },
+       {
       "path": "pages/customer/matching-degree",
       "style": {
         "navigationBarTitleText": "匹配度",
