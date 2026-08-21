@@ -6,7 +6,7 @@
         <view class="arrow"></view>
       </view>
     </view>
-    <text class="title">{{ companyName || '合作情况统计' }}</text>
+    <text class="title">{{ '合作情况统计' }}</text>
     <view class="nav-right"></view>
   </view>
 

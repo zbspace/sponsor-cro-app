@@ -162,7 +162,12 @@
     /** 列表项唯一键字段名 */
     keyField: keyof T & string
     /** 查询接口 */
-    api: (params: { pageNum?: number; pageSize?: number; searchKey?: string }) => Promise<{
+    api: (params: {
+      id?: number
+      pageNum?: number
+      pageSize?: number
+      searchKey?: string
+    }) => Promise<{
       data?: { list?: T[] }
     }>
     timer: ReturnType<typeof setTimeout> | null
@@ -280,7 +285,19 @@
     state.showDropdown = true
 
     try {
-      const res = await state.api({ pageNum: 1, pageSize: 20, searchKey: keyword })
+      const params: { id?: number; pageNum?: number; pageSize?: number; searchKey?: string } = {
+        pageNum: 1,
+        pageSize: 20,
+        searchKey: keyword
+      }
+      // 研究者查询需携带所选医院的 id
+      if (
+        state === (researcherState as unknown as SearchSectionState<T>) &&
+        hospitalState.selected
+      ) {
+        params.id = hospitalState.selected.hosStandardId
+      }
+      const res = await state.api(params)
       state.results = (res.data?.list || []) as T[]
     } catch {
       state.results = []
@@ -300,9 +317,16 @@
     const hospital = hospitalState.selected
     const researcher = researcherState.selected
 
-    if (!pharma && !hospital && !researcher) {
+    if (!pharma) {
       uni.showToast({
-        title: '请至少选择一项',
+        title: '请选择药企申办方',
+        icon: 'none'
+      })
+      return
+    }
+    if (!hospital) {
+      uni.showToast({
+        title: '请选择医院',
         icon: 'none'
       })
       return
