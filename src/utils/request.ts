@@ -60,6 +60,46 @@ function handleError(err: any) {
 
 // #endregion
 
+// #region 接口调试日志
+
+/**
+ * 是否开启接口日志：仅体验模式（trial）下输出，便于在控制台调试
+ */
+const IS_API_LOG = env.envVersion === 'trial'
+
+/**
+ * 打印接口请求日志（接口名 + 入参）
+ * @param url 接口地址
+ * @param method 请求方法
+ * @param data 入参
+ */
+function logRequest(url: string, method: string, data: any) {
+  if (!IS_API_LOG) return
+  console.log(`[API 请求] ${url.replace('/api/v1', '')}`, '入参:', data ?? '-')
+}
+
+/**
+ * 打印接口响应日志（接口名 + 出参）
+ * @param url 接口地址
+ * @param res 响应数据
+ */
+function logResponse(url: string, res: any) {
+  if (!IS_API_LOG) return
+  console.log(`[API 响应] ${url.replace('/api/v1', '')}`, '出参:', res)
+}
+
+/**
+ * 打印接口错误日志
+ * @param url 接口地址
+ * @param err 错误信息
+ */
+function logError(url: string, err: any) {
+  if (!IS_API_LOG) return
+  console.warn(`[API 错误] ${url.replace('/api/v1', '')}`, err)
+}
+
+// #endregion
+
 // #region 请求方法
 
 /**
@@ -69,6 +109,9 @@ function handleError(err: any) {
  */
 export function request<T = any>(config: RequestConfig): Promise<ApiResponse<T>> {
   const { url, method = 'GET', data, needToken = true, mockData } = config
+
+  // 打印接口请求日志（接口名 + 入参）
+  logRequest(url, method, data)
 
   // region Mock 逻辑
   const useMock = import.meta.env.VITE_USE_MOCK === 'true'
@@ -102,9 +145,12 @@ export function request<T = any>(config: RequestConfig): Promise<ApiResponse<T>>
       data,
       header,
       success: (res) => {
+        // 打印接口响应日志（接口名 + 出参）
+        logResponse(url, res.data)
         handleResponse<T>(res).then(resolve).catch(reject)
       },
       fail: (err) => {
+        logError(url, err)
         handleError(err)
       }
     })

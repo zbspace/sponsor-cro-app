@@ -278,6 +278,7 @@
   const companyParentId = ref(0)
   const hospitalId = ref(0)
   const researcherId = ref(0)
+  const researcherName = ref('')
   // #endregion
 
   // #region 汇总统计
@@ -347,8 +348,9 @@
       pageNum: 1,
       pageSize: 10,
       companyParentId: companyParentId.value || undefined,
-      hospitalId: hospitalId.value || undefined,
-      researcherId: researcherId.value || undefined
+      hosStandardId: hospitalId.value || undefined,
+      researcherId: researcherId.value || undefined,
+      researcherName: researcherName.value || undefined
     }
   }
   // #endregion
@@ -680,6 +682,9 @@
     }
     if (options?.researcherId) {
       researcherId.value = Number(options.researcherId)
+    }
+    if (options?.researcherName) {
+      researcherName.value = decodeURIComponent(options.researcherName)
     }
     fetchSummary()
     fetchChange()

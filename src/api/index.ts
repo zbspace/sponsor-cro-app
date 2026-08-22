@@ -72,7 +72,7 @@ export function ensureLogin(): Promise<void> {
     try {
       const { code } = await uni.login()
 
-      console.log(11, code)
+      console.log('code->', code)
       if (!code) {
         console.error('微信登录失败：未获取到 code')
         reject(new Error('未获取到 code'))

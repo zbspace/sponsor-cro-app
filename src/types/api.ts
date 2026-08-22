@@ -146,10 +146,12 @@ export interface HospitalStatisticsQuery {
   acceptanceNo?: string
   /** 药企母公司ID */
   companyParentId?: number
-  /** 医院标准ID（页面筛选条件，后端扩展字段） */
-  hospitalId?: number
+  /** 医院标准ID */
+  hosStandardId?: number
   /** 研究者ID（页面筛选条件，后端扩展字段） */
   researcherId?: number
+  /** 研究者姓名 */
+  researcherName?: string
   /** 当前页数 */
   pageNum?: number
   /** 每页条数 */

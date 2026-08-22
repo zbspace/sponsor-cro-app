@@ -1,6 +1,11 @@
 // #ifdef MP-WEIXIN
 const accountInfo = uni.getAccountInfoSync()
-const envVersion = accountInfo.miniProgram.envVersion
+// #endif
+
+// 小程序运行版本：develop 开发版 / trial 体验版 / release 正式版
+let envVersion = 'release'
+// #ifdef MP-WEIXIN
+envVersion = accountInfo.miniProgram.envVersion
 // #endif
 
 let baseUrl = ''
@@ -27,5 +32,6 @@ baseUrl = import.meta.env.VITE_API_URL
 // #endif
 
 export default {
-  baseUrl
+  baseUrl,
+  envVersion
 }
