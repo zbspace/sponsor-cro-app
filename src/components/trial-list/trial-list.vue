@@ -47,8 +47,12 @@
             <text class="date">{{ item.publishDate }}</text>
           </view>
           <view class="tag-row">
-            <view class="tag status">{{ item.trialStatus }}</view>
-            <view class="tag stage">{{ item.trialStage || '未知' }}</view>
+            <view class="tag status">
+              {{ item.trialStageStr }}
+            </view>
+            <view class="tag stage">
+              {{ item.trialStatusStr || '未知' }}
+            </view>
           </view>
         </view>
 
@@ -80,8 +84,15 @@
         </view>
       </view>
 
+      <!-- 加载更多 -->
       <view class="loading-status" v-if="list.length > 0">
+        <view class="spinner" v-if="hasMore"></view>
         <text>{{ hasMore ? '正在加载...' : '没有更多了' }}</text>
+      </view>
+      <!-- 初始/筛选加载中 -->
+      <view class="loading-status empty" v-if="list.length === 0 && loading">
+        <view class="spinner"></view>
+        <text>加载中...</text>
       </view>
       <view class="empty-status" v-if="list.length === 0 && !loading">
         <image src="/static/icons/no.png" mode="aspectFit" />
@@ -168,7 +179,7 @@
 
     const params: HospitalStatisticsQuery = {
       companyParentId: props.companyParentId || undefined,
-      hospitalId: props.hospitalId || undefined,
+      hosStandardId: props.hospitalId || undefined,
       researcherId: props.researcherId || undefined,
       year: currentTimeFilter.value || undefined,
       trialStage: stageFilter.value || undefined,
@@ -254,17 +265,20 @@
   .trial-list-wrapper {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    flex: 1;
+    width: 100%;
+    overflow: hidden;
+    min-height: 0;
 
     .filter-wrapper {
       display: flex;
       align-items: center;
       gap: 20rpx;
       width: 100%;
+      flex-shrink: 0;
     }
     /* 时间筛选 */
     .time-filter-wrapper {
-      margin-bottom: 40rpx;
       background: #ffffff;
       height: 90rpx;
       border-radius: 16rpx;
@@ -274,6 +288,7 @@
       box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
       margin-bottom: 24rpx;
       flex: 1;
+      min-width: 0;
 
       :deep(.uni-select) {
         border: none;
@@ -351,6 +366,8 @@
     .list-scroll {
       flex: 1;
       height: 0; // 必须设置高度 0，配合 flex:1 才能正确工作
+      min-height: 0;
+      box-sizing: border-box;
     }
 
     .trial-card {
@@ -495,6 +512,32 @@
       text-align: center;
       font-size: 24rpx;
       color: #999;
+    }
+
+    .loading-status {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12rpx;
+
+      &.empty {
+        padding: 80rpx 0;
+      }
+    }
+
+    .spinner {
+      width: 32rpx;
+      height: 32rpx;
+      border: 4rpx solid #e5e5e5;
+      border-top-color: #499ae6;
+      border-radius: 50%;
+      animation: trial-list-spin 0.8s linear infinite;
+    }
+
+    @keyframes trial-list-spin {
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     .empty-status {

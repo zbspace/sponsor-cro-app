@@ -1,6 +1,6 @@
 <template>
   <!-- 头部导航 -->
-  <view class="header" :style="{ paddingTop: `${menu.top}px` }">
+  <view class="header header-fixed" :style="{ paddingTop: `${menu.top}px`, zIndex: 999 }">
     <view class="nav-left" @click="goBack">
       <view class="back-icon">
         <view class="arrow"></view>
@@ -10,18 +10,27 @@
     <view class="nav-right"></view>
   </view>
 
+  <!-- 占位，防止固定定位后内容上移 -->
+  <view :style="{ height: `${menu.top + menu.height}px` }"></view>
+
   <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
 
   <scroll-view
-    scroll-y
+    :scroll-y="activeTab === 'stat'"
     class="container-scroll-view"
     :show-scrollbar="false"
-    enhanced
     :style="{
       height: `calc(100vh - ${menu.top}px - ${menu.height}px)`
     }"
   >
-    <view class="container">
+    <view
+      class="container"
+      :style="{
+        height: activeTab === 'list' ? '100%' : 'auto',
+        display: activeTab === 'list' ? 'flex' : 'block',
+        flexDirection: 'column'
+      }"
+    >
       <!-- 选项卡 -->
       <view class="tabs">
         <view
@@ -29,7 +38,7 @@
           :class="{ active: activeTab === 'stat' }"
           @click="activeTab = 'stat'"
         >
-          <text>NDA统计</text>
+          <text>IND统计</text>
           <view class="active-line" v-if="activeTab === 'stat'"></view>
         </view>
         <view
@@ -37,7 +46,7 @@
           :class="{ active: activeTab === 'list' }"
           @click="activeTab = 'list'"
         >
-          <text>NDA列表</text>
+          <text>IND列表</text>
           <view class="active-line" v-if="activeTab === 'list'"></view>
         </view>
       </view>
@@ -64,7 +73,12 @@
             </view>
           </view>
           <view class="chart-container line-chart">
-            <canvas canvas-id="lineCanvas" id="lineCanvas" class="canvas"></canvas>
+            <!-- #ifdef MP-WEIXIN -->
+            <canvas id="lineCanvas" type="2d" class="canvas"></canvas>
+            <!-- #endif -->
+            <!-- #ifndef MP-WEIXIN -->
+            <canvas canvas-id="lineCanvas" class="canvas"></canvas>
+            <!-- #endif -->
           </view>
         </view>
 
@@ -88,7 +102,12 @@
             </view>
           </view>
           <view class="chart-container radar-chart">
-            <canvas canvas-id="radarCanvas" id="radarCanvas" class="canvas"></canvas>
+            <!-- #ifdef MP-WEIXIN -->
+            <canvas id="radarCanvas" type="2d" class="canvas"></canvas>
+            <!-- #endif -->
+            <!-- #ifndef MP-WEIXIN -->
+            <canvas canvas-id="radarCanvas" class="canvas"></canvas>
+            <!-- #endif -->
           </view>
           <view class="phase-table">
             <view class="table-header">
@@ -188,6 +207,7 @@
       <!-- 详情内容 (复用现有的项目列表样式) -->
       <view v-else class="detail-content">
         <TrialList
+          class="trial-list-comp"
           :company-parent-id="companyParentId"
           :hospital-id="hospitalId"
           :researcher-id="researcherId"
@@ -201,7 +221,7 @@
 
 <script setup lang="ts">
   // #region 导入
-  import { ref, reactive, computed, onMounted, watch } from 'vue'
+  import { ref, reactive, computed, onMounted, watch, getCurrentInstance, nextTick } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
   import TrialList from '@/components/trial-list/trial-list.vue'
@@ -223,6 +243,7 @@
   // #endregion
 
   // #region 页面状态
+  const instance = getCurrentInstance()
   const activeTab = ref('stat')
   const menu = ref({ top: 0, left: 0, height: 0 })
 
@@ -292,7 +313,7 @@
       pageNum: 1,
       pageSize: 10,
       companyParentId: companyParentId.value || undefined,
-      hospitalId: hospitalId.value || undefined,
+      hosStandardId: hospitalId.value || undefined,
       researcherId: researcherId.value || undefined
     }
   }
@@ -393,12 +414,219 @@
   // #endregion
 
   // #region 图表绘制
-  function drawCharts() {
-    drawLineChart()
-    drawRadarChart()
+  // #ifdef MP-WEIXIN
+  /**
+   * 获取 canvas 2d 节点与上下文（同层渲染，解决原生组件层级盖住其他元素的问题）
+   * @param canvasId 画布节点 id
+   * @param retry 内部重试计数
+   */
+  function getCanvas2d(
+    canvasId: string,
+    retry = 0
+  ): Promise<{ ctx: any; width: number; height: number } | null> {
+    return new Promise((resolve) => {
+      nextTick(() => {
+        uni
+          .createSelectorQuery()
+          .in(instance?.proxy)
+          .select(`#${canvasId}`)
+          .fields({ node: true, size: true }, () => {})
+          .exec((res) => {
+            const node = res?.[0]?.node
+            const width = res?.[0]?.width
+            const height = res?.[0]?.height
+            // v-if 重建后节点/尺寸可能未就绪，延迟重试避免绘制偏移
+            if (!node || !width || !height) {
+              if (retry < 12) {
+                setTimeout(() => resolve(getCanvas2d(canvasId, retry + 1)), 80)
+              } else {
+                resolve(null)
+              }
+              return
+            }
+            const ctx = node.getContext('2d')
+            const dpr = uni.getSystemInfoSync().pixelRatio || 1
+            // 按设备像素比设置画布物理尺寸，避免模糊
+            if (node.width !== width * dpr || node.height !== height * dpr) {
+              node.width = width * dpr
+              node.height = height * dpr
+            }
+            // 重置变换矩阵，避免重复调用导致累加缩放引起偏移和错位
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+            resolve({ ctx, width, height })
+          })
+      })
+    })
   }
 
-  function drawLineChart() {
+  /**
+   * 绘制近五年试验合作变化折线图（canvas 2d 版本）
+   */
+  async function drawLineChart2d() {
+    const canvas = await getCanvas2d('lineCanvas')
+    if (!canvas) return
+    const ctx = canvas.ctx
+    const width = canvas.width
+    const height = canvas.height
+    const padding = 20
+
+    // 清空画布
+    ctx.clearRect(0, 0, width, height)
+
+    const data = changeList.value.map((item) => Number(item.cooperationCount) || 0)
+    const years = changeList.value.map((item) => {
+      const y = String(item.year)
+      return y.length >= 4 ? `${y.slice(2)}年` : y
+    })
+
+    if (!data.length) {
+      ctx.fillStyle = '#999999'
+      ctx.font = '12px sans-serif'
+      ctx.fillText('暂无数据', width / 2 - 24, height / 2)
+      return
+    }
+
+    const maxVal = Math.max(...data, 1)
+    const stepX = data.length > 1 ? (width - 2 * padding) / (data.length - 1) : 0
+    const pointAt = (i: number) => ({
+      x: padding + i * stepX,
+      y: height - padding - (data[i] / maxVal) * (height - 2 * padding)
+    })
+
+    // 网格线
+    ctx.strokeStyle = '#eeeeee'
+    ctx.lineWidth = 0.5
+    for (let i = 0; i <= 4; i++) {
+      const y = height - padding - (i / 4) * (height - 2 * padding)
+      ctx.beginPath()
+      ctx.moveTo(padding, y)
+      ctx.lineTo(width - padding, y)
+      ctx.stroke()
+      ctx.fillStyle = '#999999'
+      ctx.font = '9px sans-serif'
+      ctx.fillText(String(Math.round((maxVal * i) / 4)), 4, y + 3)
+    }
+
+    // 绘制渐变区域
+    ctx.beginPath()
+    data.forEach((_, i) => {
+      const p = pointAt(i)
+      if (i === 0) ctx.moveTo(p.x, p.y)
+      else ctx.lineTo(p.x, p.y)
+    })
+    ctx.lineTo(padding + (data.length - 1) * stepX, height - padding)
+    ctx.lineTo(padding, height - padding)
+    ctx.closePath()
+    const gradient = ctx.createLinearGradient(0, padding, 0, height - padding)
+    gradient.addColorStop(0, 'rgba(73, 154, 230, 0.2)')
+    gradient.addColorStop(1, 'rgba(73, 154, 230, 0)')
+    ctx.fillStyle = gradient
+    ctx.fill()
+
+    // 绘制折线
+    ctx.strokeStyle = '#499AE6'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    data.forEach((_, i) => {
+      const p = pointAt(i)
+      if (i === 0) ctx.moveTo(p.x, p.y)
+      else ctx.lineTo(p.x, p.y)
+    })
+    ctx.stroke()
+
+    // 绘制数据点和年份
+    data.forEach((_, i) => {
+      const p = pointAt(i)
+      ctx.fillStyle = '#ffffff'
+      ctx.beginPath()
+      ctx.arc(p.x, p.y, 4, 0, 2 * Math.PI)
+      ctx.fill()
+      ctx.strokeStyle = '#499AE6'
+      ctx.stroke()
+
+      ctx.fillStyle = '#999999'
+      ctx.font = '10px sans-serif'
+      ctx.fillText(years[i] || '', p.x - 12, height - 5)
+    })
+  }
+
+  /**
+   * 绘制试验分期雷达图（canvas 2d 版本）
+   */
+  async function drawRadarChart2d() {
+    const canvas = await getCanvas2d('radarCanvas')
+    if (!canvas) return
+    const ctx = canvas.ctx
+    const width = canvas.width
+    const height = canvas.height
+    const center = { x: width / 2, y: height / 2 }
+    const radius = Math.min(width, height) * 0.36
+    const sides = 6
+    const labels = ['1类', '2类', '3类', '4类', 'BE类', '其他']
+    const values = [
+      stageCounts.oneClass,
+      stageCounts.twoClass,
+      stageCounts.threeClass,
+      stageCounts.fourClass,
+      stageCounts.beClass,
+      stageCounts.otherClass
+    ]
+    const maxVal = Math.max(...values, 1)
+
+    // 清空画布
+    ctx.clearRect(0, 0, width, height)
+
+    // 绘制背景网格
+    ctx.strokeStyle = '#eeeeee'
+    ctx.lineWidth = 1
+    for (let r = 1; r <= 5; r++) {
+      ctx.beginPath()
+      const currentRadius = (radius / 5) * r
+      for (let i = 0; i < sides; i++) {
+        const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
+        const x = center.x + Math.cos(angle) * currentRadius
+        const y = center.y + Math.sin(angle) * currentRadius
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+      }
+      ctx.closePath()
+      ctx.stroke()
+    }
+
+    // 绘制数据区域
+    ctx.fillStyle = 'rgba(245, 166, 35, 0.3)'
+    ctx.strokeStyle = '#F5A623'
+    ctx.beginPath()
+    values.forEach((val, i) => {
+      const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
+      const x = center.x + Math.cos(angle) * radius * (val / maxVal)
+      const y = center.y + Math.sin(angle) * radius * (val / maxVal)
+      if (i === 0) ctx.moveTo(x, y)
+      else ctx.lineTo(x, y)
+    })
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
+
+    // 绘制轴线及分类标签
+    ctx.fillStyle = '#999999'
+    ctx.font = '10px sans-serif'
+    labels.forEach((label, i) => {
+      const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
+      const x = center.x + Math.cos(angle) * (radius + 12)
+      const y = center.y + Math.sin(angle) * (radius + 12)
+      const textX = Math.min(Math.max(x - 12, 2), width - 4)
+      const textY = Math.min(Math.max(y + 4, 10), height - 2)
+      ctx.fillText(label, textX, textY)
+    })
+  }
+  // #endif
+
+  // #ifndef MP-WEIXIN
+  /**
+   * 绘制近五年试验合作变化折线图（旧版 canvas 接口）
+   */
+  function drawLineChartLegacy() {
     const ctx = uni.createCanvasContext('lineCanvas')
     const width = 300
     const height = 150
@@ -487,7 +715,10 @@
     ctx.draw()
   }
 
-  function drawRadarChart() {
+  /**
+   * 绘制试验分期雷达图（旧版 canvas 接口）
+   */
+  function drawRadarChartLegacy() {
     const ctx = uni.createCanvasContext('radarCanvas')
     const center = { x: 150, y: 80 }
     const radius = 55
@@ -552,6 +783,34 @@
 
     ctx.draw()
   }
+  // #endif
+
+  function drawLineChart() {
+    let p: void | Promise<void>
+    // #ifdef MP-WEIXIN
+    p = drawLineChart2d()
+    // #endif
+    // #ifndef MP-WEIXIN
+    p = drawLineChartLegacy()
+    // #endif
+    return p
+  }
+
+  function drawRadarChart() {
+    let p: void | Promise<void>
+    // #ifdef MP-WEIXIN
+    p = drawRadarChart2d()
+    // #endif
+    // #ifndef MP-WEIXIN
+    p = drawRadarChartLegacy()
+    // #endif
+    return p
+  }
+
+  function drawCharts() {
+    drawLineChart()
+    drawRadarChart()
+  }
 
   /**
    * 试验状态：根据接口数据生成环形渐变与图例
@@ -611,13 +870,15 @@
   })
 
   onMounted(() => {
-    drawCharts()
+    // 延迟绘制，确保布局稳定
+    setTimeout(() => drawCharts(), 100)
   })
 
   // 切换到统计 tab 时 canvas 会被重新创建，需要重新绘制
   watch(activeTab, (val) => {
     if (val === 'stat') {
-      drawCharts()
+      // 延迟绘制，给 v-if 重建留出时间
+      setTimeout(() => drawCharts(), 100)
     }
   })
   // #endregion
@@ -630,6 +891,41 @@
 </script>
 
 <style lang="scss" scoped>
+  .header-fixed {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: #fff;
+    z-index: 1000;
+  }
+
+  .container-scroll-view {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .container {
+    padding: 30rpx;
+    padding-bottom: 60rpx;
+    min-height: 100%;
+    box-sizing: border-box;
+  }
+
+  .detail-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+
+    .trial-list-comp {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+  }
+
   .tabs {
     display: flex;
     justify-content: center;
@@ -723,13 +1019,12 @@
   .chart-container {
     width: 100%;
     height: 300rpx;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    position: relative;
 
     .canvas {
       width: 100%;
       height: 100%;
+      display: block;
     }
   }
 
@@ -848,6 +1143,10 @@
     }
     .col-name {
       flex: 1;
+      text-align: center;
+    }
+    .col-type {
+      width: 150rpx;
       text-align: center;
     }
     .col-count {

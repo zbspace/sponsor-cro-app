@@ -21,7 +21,12 @@
           @scrolltolower="loadMore"
           :lower-threshold="50"
         >
-          <view class="table-row" v-for="(item, index) in list" :key="index" :class="{ zebra: index % 2 === 1 }">
+          <view
+            class="table-row"
+            v-for="(item, index) in list"
+            :key="index"
+            :class="{ zebra: index % 2 === 1 }"
+          >
             <text class="col-index">{{ index + 1 }}</text>
             <text class="col-center">{{ item.hosStandardName }}</text>
             <text class="col-researcher">{{ item.researcherName }}</text>
@@ -30,7 +35,6 @@
           <view class="loading-status" v-if="list.length > 0">
             <text>{{ hasMore ? '正在加载...' : '没有更多了' }}</text>
           </view>
-          
           <view class="empty-status" v-if="list.length === 0 && !loading">
             <text>暂无中心及研究者信息</text>
           </view>
@@ -91,7 +95,7 @@
     try {
       const res = await queryCenterAndResearcherList(params)
       if (res.data) {
-        list.value = refresh ? (res.data.list || []) : [...list.value, ...(res.data.list || [])]
+        list.value = refresh ? res.data.list || [] : [...list.value, ...(res.data.list || [])]
         total.value = res.data.total || 0
       }
     } catch (e) {
@@ -167,7 +171,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      
+
       .close-icon {
         font-size: 40rpx;
         color: #999;
@@ -191,7 +195,7 @@
       padding: 20rpx 0;
       border-radius: 8rpx;
       margin-bottom: 10rpx;
-      
+
       text {
         font-size: 26rpx;
         color: #999;
@@ -201,18 +205,19 @@
 
     .table-body-scroll {
       flex: 1;
-      height: 0;
+      height: 600rpx;
+      min-height: 0;
     }
 
     .table-row {
       display: flex;
       padding: 24rpx 0;
       border-bottom: 1rpx solid #f8f9fb;
-      
+
       &.zebra {
         background: #fafbfc;
       }
-      
+
       text {
         font-size: 28rpx;
         color: #333;
@@ -257,17 +262,17 @@
       justify-content: center;
       border-radius: 12rpx;
       font-size: 28rpx;
-      
+
       &.prev {
         background: #499ae6;
         color: #fff;
       }
-      
+
       &.next {
         background: #f5f5f5;
         color: #999;
       }
-      
+
       &.disabled {
         opacity: 0.5;
       }

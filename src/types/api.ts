@@ -296,6 +296,10 @@ export interface TrialItem {
   trialStage: string
   /** 试验状态 */
   trialStatus: string
+  /** 试验分期字符串 */
+  trialStageStr: string
+  /** 试验状态字符串 */
+  trialStatusStr: string
 }
 
 /**

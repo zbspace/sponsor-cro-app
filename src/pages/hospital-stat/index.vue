@@ -16,14 +16,21 @@
   <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
 
   <scroll-view
-    scroll-y
+    :scroll-y="activeTab === 'stat'"
     class="container-scroll-view"
     :show-scrollbar="false"
     :style="{
       height: `calc(100vh - ${menu.top}px - ${menu.height}px)`
     }"
   >
-    <view class="container">
+    <view
+      class="container"
+      :style="{
+        height: activeTab === 'list' ? '100%' : 'auto',
+        display: activeTab === 'list' ? 'flex' : 'block',
+        flexDirection: 'column'
+      }"
+    >
       <!-- 选项卡 -->
       <view class="tabs">
         <view
@@ -244,6 +251,7 @@
       <!-- 详情内容 (复用现有的项目列表样式) -->
       <view v-else class="detail-content">
         <TrialList
+          class="trial-list-comp"
           :company-parent-id="companyParentId"
           :hospital-id="hospitalId"
           :researcher-id="researcherId"
@@ -975,6 +983,32 @@
     width: 100%;
     background: #fff;
     z-index: 1000;
+  }
+
+  .container-scroll-view {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .container {
+    padding: 30rpx;
+    padding-bottom: 60rpx;
+    min-height: 100%;
+    box-sizing: border-box;
+  }
+
+  .detail-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+
+    .trial-list-comp {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
   }
 
   .tabs {
