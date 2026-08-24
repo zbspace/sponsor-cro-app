@@ -130,11 +130,11 @@
           </view>
           <view class="phase-table">
             <view class="table-header">
-              <text>1类</text>
-              <text>2类</text>
-              <text>3类</text>
-              <text>4类</text>
-              <text>BE类</text>
+              <text>I期</text>
+              <text>I期</text>
+              <text>III期</text>
+              <text>IV期</text>
+              <text>BE</text>
               <text>其他</text>
             </view>
             <view class="table-body">
@@ -209,7 +209,9 @@
                 class="table-row"
                 v-for="(item, index) in productList"
                 :key="index"
+                hover-class="row-hover"
                 :class="{ zebra: index % 2 === 1 }"
+                @click="onProductClick(item)"
               >
                 <text class="col-rank">{{ index + 1 }}</text>
                 <text class="col-name">{{ item.drugStandardName }}</text>
@@ -224,6 +226,20 @@
         <view class="section-card">
           <view class="section-header">
             <view class="section-title">合作研究者情况</view>
+            <view class="filter-dropdown">
+              <picker
+                class="filter-picker"
+                mode="selector"
+                :range="yearOptions"
+                range-key="text"
+                @change="onResearcherYearChange"
+              >
+                <view class="filter-trigger">
+                  <text>{{ researcherYearText }}</text>
+                  <view class="arrow-down"></view>
+                </view>
+              </picker>
+            </view>
           </view>
           <view class="data-table">
             <view class="table-header">
@@ -236,7 +252,9 @@
                 class="table-row"
                 v-for="(item, index) in researcherList"
                 :key="index"
+                hover-class="row-hover"
                 :class="{ zebra: index % 2 === 1 }"
+                @click="onResearcherClick"
               >
                 <text class="col-rank">{{ index + 1 }}</text>
                 <text class="col-name">{{ item.researcherName }}</text>
@@ -255,6 +273,8 @@
           :company-parent-id="companyParentId"
           :hospital-id="hospitalId"
           :researcher-id="researcherId"
+          :drug-name="selectedDrugName"
+          :year="selectedListYear"
         />
       </view>
     </view>
@@ -335,10 +355,15 @@
   // #region 合作产品
   const productList = ref<DrugStatisticsItem[]>([])
   const productYearFilter = ref('')
+  // 点击产品/研究者行进入试验列表时携带的产品名称筛选
+  const selectedDrugName = ref('')
+  // 点击产品/研究者行进入试验列表时携带的年份筛选
+  const selectedListYear = ref('')
   // #endregion
 
   // #region 合作研究者情况
   const researcherList = ref<ResearcherStatisticsItem[]>([])
+  const researcherYearFilter = ref('')
   // #endregion
 
   // #region 年份选项
@@ -357,6 +382,9 @@
   )
   const productYearText = computed(
     () => yearOptions.value.find((o) => o.value === productYearFilter.value)?.text || '全部'
+  )
+  const researcherYearText = computed(
+    () => yearOptions.value.find((o) => o.value === researcherYearFilter.value)?.text || '全部'
   )
   // #endregion
 
@@ -453,7 +481,11 @@
 
   async function fetchResearcher() {
     try {
-      const res = await queryHospitalCooperationResearcher(buildBaseParams())
+      const params = buildBaseParams()
+      if (researcherYearFilter.value) {
+        params.year = researcherYearFilter.value
+      }
+      const res = await queryHospitalCooperationResearcher(params)
       researcherList.value = res.data?.list || []
     } catch {
       // 静默处理
@@ -489,6 +521,12 @@
     const idx = Number(e.detail.value)
     productYearFilter.value = yearOptions.value[idx]?.value || ''
     fetchProduct()
+  }
+
+  function onResearcherYearChange(e: any) {
+    const idx = Number(e.detail.value)
+    researcherYearFilter.value = yearOptions.value[idx]?.value || ''
+    fetchResearcher()
   }
   // #endregion
 
@@ -641,7 +679,7 @@
     const center = { x: width / 2, y: height / 2 }
     const radius = Math.min(width, height) * 0.36
     const sides = 6
-    const labels = ['1类', '2类', '3类', '4类', 'BE类', '其他']
+    const labels = ['I期', 'II期', 'III期', 'IV期', 'BE', '其他']
     const values = [
       stageCounts.oneClass,
       stageCounts.twoClass,
@@ -802,7 +840,7 @@
     const center = { x: 150, y: 80 }
     const radius = 55
     const sides = 6
-    const labels = ['1类', '2类', '3类', '4类', 'BE类', '其他']
+    const labels = ['I期', 'II期', 'III期', 'IV期', 'BE', '其他']
     const values = [
       stageCounts.oneClass,
       stageCounts.twoClass,
@@ -971,6 +1009,24 @@
   // #region 方法
   function goBack() {
     uni.navigateBack({ delta: 1, fail: () => uni.reLaunch({ url: '/pages/index/index' }) })
+  }
+
+  /**
+   * 点击合作产品行：切换到试验列表 tab，并携带产品名称、年份（若已选）筛选
+   */
+  function onProductClick(item: DrugStatisticsItem) {
+    selectedDrugName.value = item.drugStandardName
+    selectedListYear.value = productYearFilter.value
+    activeTab.value = 'list'
+  }
+
+  /**
+   * 点击研究者行：切换到试验列表 tab，并携带年份（若已选）筛选
+   */
+  function onResearcherClick() {
+    selectedDrugName.value = ''
+    selectedListYear.value = researcherYearFilter.value
+    activeTab.value = 'list'
   }
   // #endregion
 </script>
@@ -1270,6 +1326,10 @@
 
       &.zebra {
         background: #fafbfc;
+      }
+
+      &.row-hover {
+        background: #f0f7ff;
       }
     }
 

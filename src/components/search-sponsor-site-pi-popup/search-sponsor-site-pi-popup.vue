@@ -14,7 +14,7 @@
           <input
             type="text"
             v-model="pharmaState.keyword"
-            placeholder="输入及选择企业名称"
+            placeholder="输入及选择企业（必填）"
             placeholder-style="color: #B2B2B2"
             @input="onSearchInput(pharmaState)"
           />
@@ -56,7 +56,7 @@
           <input
             type="text"
             v-model="hospitalState.keyword"
-            placeholder="输入及选择医院名称"
+            placeholder="输入及选择医院（必填）"
             placeholder-style="color: #B2B2B2"
             @input="onSearchInput(hospitalState)"
           />
@@ -98,7 +98,7 @@
           <input
             type="text"
             v-model="researcherState.keyword"
-            placeholder="输入及选择研究者姓名"
+            placeholder="输入及选择研究者（选填）"
             placeholder-style="color: #B2B2B2"
             @input="onSearchInput(researcherState)"
           />

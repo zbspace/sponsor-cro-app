@@ -123,6 +123,7 @@
     companyParentId?: number
     hospitalId?: number
     researcherId?: number
+    year?: string
   }>()
 
   // #region 弹窗状态
@@ -181,7 +182,7 @@
       companyParentId: props.companyParentId || undefined,
       hosStandardId: props.hospitalId || undefined,
       researcherId: props.researcherId || undefined,
-      year: currentTimeFilter.value || undefined,
+      year: currentTimeFilter.value || props.year || undefined,
       trialStage: stageFilter.value || undefined,
       trialStatus: statusFilter.value || undefined,
       pageNum: pageNum.value,
@@ -240,13 +241,21 @@
   // #endregion
 
   onMounted(() => {
+    // 外部传入年份时，同步到年份下拉框
+    if (props.year) {
+      currentTimeFilter.value = props.year
+    }
     fetchList(true)
   })
 
   // 监听 props 变化重新加载
   watch(
-    () => [props.companyParentId, props.hospitalId, props.researcherId],
+    () => [props.companyParentId, props.hospitalId, props.researcherId, props.year],
     () => {
+      // 外部年份变化时同步到年份下拉框
+      if (props.year) {
+        currentTimeFilter.value = props.year
+      }
       fetchList(true)
     }
   )
