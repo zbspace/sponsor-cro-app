@@ -13,7 +13,7 @@
   <!-- 占位，防止固定定位后内容上移 -->
   <view :style="{ height: `${menu.top + menu.height}px` }"></view>
 
-  <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
+  <!-- <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" /> -->
 
   <scroll-view
     :scroll-y="activeTab === 'stat'"

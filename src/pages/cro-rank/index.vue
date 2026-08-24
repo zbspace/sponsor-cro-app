@@ -8,7 +8,7 @@
     </view>
   </view>
 
-  <image class="bg-img" src="../../static/header-bg.png" mode="aspectFit" />
+  <image class="bg-img" src="../../static/icons/head-bg.png" mode="aspectFit" />
 
   <view class="content-body">
     <!-- 年份选择 -->
