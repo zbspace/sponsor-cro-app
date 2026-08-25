@@ -106,7 +106,7 @@
   <phone-bind-popup />
 
   <!-- company & cro 弹窗 -->
-  <search-company-popup v-model:visible="showSearchPopup" />
+  <search-company-cro-popup v-model:visible="showSearchPopup" />
 
   <!--company & lab 弹窗 -->
   <search-company-lab-popup v-model:visible="showCompanyLabPopup" />
@@ -130,7 +130,7 @@
   import { onShow, onLoad } from '@dcloudio/uni-app'
   import DataStatementPopup from '../../components/data-statement-popup/data-statement-popup.vue'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
-  import SearchCompanyPopup from '@/components/search-company-popup/search-company-popup.vue'
+  import SearchCompanyPopup from '@/components/search-company-cro-popup/search-company-cro-popup.vue'
   import TrialApplyPopup from '@/components/trial-apply-popup/trial-apply-popup.vue'
   import FindCustomerPopup from '@/components/find-customer-popup/find-customer-popup.vue'
   import SearchCompanyLabPopup from '@/components/search-company-lab-popup/search-company-lab-popup.vue'

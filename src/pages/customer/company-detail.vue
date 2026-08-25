@@ -86,14 +86,14 @@
       <view class="section-card">
         <view class="section-title">供应商合作记录</view>
         <view class="grid-container">
-          <view class="grid-item">
+          <view class="grid-item" @click="goTo('cro-stat')">
             <view class="item-icon cro">CRO</view>
             <view class="item-info">
               <text class="label">CRO公司</text>
               <text class="value">34</text>
             </view>
           </view>
-          <view class="grid-item">
+          <view class="grid-item" @click="goTo('lab-stat')">
             <view class="item-icon lab">
               <image src="../../static/icons/cro.png" mode="aspectFit" />
             </view>
@@ -109,7 +109,7 @@
       <view class="section-card">
         <view class="section-title">医院&研究者合作记录</view>
         <view class="grid-container">
-          <view class="grid-item">
+          <view class="grid-item" @click="goTo('hospital-stat')">
             <view class="item-icon hospital">
               <text style="color: #52c41a; font-size: 24rpx">H</text>
             </view>
@@ -118,7 +118,7 @@
               <text class="value">34</text>
             </view>
           </view>
-          <view class="grid-item">
+          <view class="grid-item" @click="goTo('researcher-stat')">
             <view class="item-icon researcher">
               <image src="../../static/icons/sponsor.png" mode="aspectFit" v-if="false" />
               <text style="color: #9013fe; font-size: 24rpx">R</text>

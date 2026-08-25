@@ -425,11 +425,8 @@
   // #region 点击申办方合作名单行进入申办方主页
   const onSponsorClick = (item: any) => {
     if (!item.parentCompanyId) return
-    // 携带当前查询时间，进入后默认切换到项目列表 tab 并套用该年份；
-    // 同时带上当前CRO公司，用于申办方主页项目列表 tab 的CRO合作名单筛选默认选中
-    uni.navigateTo({
-      url: `/pages/sponsor-stat/index?sponsorParentCompanyId=${item.parentCompanyId}&companyName=${encodeURIComponent(item.name)}&partnerParentCompanyId=${partnerParentCompanyId.value}&activeTab=list&timeFilter=${currentTimeFilter.value || ''}`
-    })
+    activeTab.value = 'list'
+    currentSponsorCompany.value = String(item.parentCompanyId)
   }
   // #endregion
 

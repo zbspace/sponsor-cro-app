@@ -412,11 +412,9 @@
   // #region 点击 CRO 合作名单行进入 CRO 主页
   const onCroClick = (item: any) => {
     if (!item.parentCompanyId) return
-    // 携带当前查询时间，进入后默认切换到项目列表 tab 并套用该年份；
-    // 同时带上当前申办方公司，用于 CRO 主页项目列表 tab 的申办方筛选默认选中
-    uni.navigateTo({
-      url: `/pages/cro-stat/index?partnerParentCompanyId=${item.parentCompanyId}&parentCompanyShortName=${encodeURIComponent(item.name)}&sponsorParentCompanyId=${sponsorParentCompanyId.value}&companyName=${encodeURIComponent(companyName.value)}&activeTab=list&timeFilter=${currentTimeFilter.value || ''}`
-    })
+    // 切换到项目列表 tab，并在 CRO 合作名单筛选中默认选中当前点击的 CRO
+    activeTab.value = 'list'
+    currentCroCompany.value = String(item.parentCompanyId)
   }
   // #endregion
 

@@ -91,13 +91,6 @@
       }
     },
     {
-      "path": "pages/cde-stat/index",
-      "style": {
-        "navigationBarTitleText": "CDE统计",
-        "navigationStyle": "custom"
-      }
-    },
-    {
       "path": "pages/nda-stat/index",
       "style": {
         "navigationBarTitleText": "NDA统计",
