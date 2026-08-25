@@ -170,6 +170,38 @@ export async function renewVipAndRecordOrder(outTradeNo: string, deviceType: str
 
 // #endregion
 
+// #region VIP申请模块
+
+/**
+ * 申请试用（VIP申请）
+ * @param data 申请信息：姓名、手机号必填，公司、职位选填
+ * @returns Promise<ApiResponse>
+ */
+export async function applyVip(data: {
+  userName: string
+  userPhone: string
+  userCompany?: string
+  userPosition?: string
+}) {
+  return post('/api/vip/applicate', data, true)
+}
+
+/**
+ * 查询VIP申请记录（是否存在待审批记录）
+ * @returns Promise<ApiResponse<VipApplication | null>> approvalStatus：1-待审批，2-审批通过，3-审批不通过
+ */
+export async function getVipApplication() {
+  return get<{
+    approvalStatus?: number
+    approvalRemark?: string
+    applicateDate?: string
+    userName?: string
+    userPhone?: string
+  } | null>('/api/vip/getVipApplication', {}, true)
+}
+
+// #endregion
+
 // #region 首页模块
 
 /**

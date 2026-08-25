@@ -44,8 +44,14 @@
         </view>
       </view>
 
-      <view class="submit-btn" @click="handleSubmit">
-        <text>搜索</text>
+      <view class="pending-tip" v-if="applicationStatus === 1">
+        <text>您已提交申请，请耐心等待审核</text>
+      </view>
+      <view class="pending-tip" v-else-if="applicationStatus === 2">
+        <text>您的试用申请已通过，请直接使用</text>
+      </view>
+      <view class="submit-btn" v-else @click="handleSubmit">
+        <text>申请</text>
       </view>
     </view>
   </view>
@@ -53,7 +59,8 @@
 
 <script setup lang="ts">
   // #region 导入
-  import { reactive, watch } from 'vue'
+  import { reactive, ref, watch } from 'vue'
+  import { applyVip, getVipApplication } from '@/api'
   // #endregion
 
   // #region 属性与事件
@@ -71,18 +78,24 @@
     company: '',
     position: ''
   })
+  // 申请状态：0-无记录/可申请，1-待审批，2-审批通过，3-审批不通过
+  const applicationStatus = ref(0)
   // #endregion
 
   // #region 监听
   watch(
     () => props.visible,
     (val) => {
-      if (!val) {
+      if (val) {
+        // 打开时查询申请状态，决定是否显示申请按钮
+        fetchApplicationStatus()
+      } else {
         // 关闭时重置表单
         formData.name = ''
         formData.phone = ''
         formData.company = ''
         formData.position = ''
+        applicationStatus.value = 0
       }
     }
   )
@@ -93,7 +106,21 @@
     emit('update:visible', false)
   }
 
-  function handleSubmit() {
+  /**
+   * 查询申请状态，判断是否显示申请按钮
+   */
+  async function fetchApplicationStatus() {
+    try {
+      const res = await getVipApplication()
+      // 无记录时 res.data 为 null，默认可申请
+      applicationStatus.value = res.data?.approvalStatus || 0
+    } catch {
+      // 查询失败时默认允许申请
+      applicationStatus.value = 0
+    }
+  }
+
+  async function handleSubmit() {
     if (!formData.name.trim()) {
       uni.showToast({ title: '请输入姓名', icon: 'none' })
       return
@@ -115,16 +142,25 @@
       return
     }
 
-    // 模拟提交逻辑
+    // 调用申请试用接口
     uni.showLoading({ title: '提交中...' })
-    setTimeout(() => {
+    try {
+      await applyVip({
+        userName: formData.name.trim(),
+        userPhone: formData.phone.trim(),
+        userCompany: formData.company.trim(),
+        userPosition: formData.position.trim()
+      })
       uni.hideLoading()
       uni.showToast({
         title: '申请已提交，请等待审核',
         icon: 'success'
       })
       close()
-    }, 1500)
+    } catch {
+      // 请求失败时接口层已弹出错误提示，这里只需关闭加载框
+      uni.hideLoading()
+    }
   }
   // #endregion
 </script>
@@ -214,6 +250,22 @@
 
       &:active {
         opacity: 0.9;
+      }
+    }
+
+    .pending-tip {
+      width: 280rpx;
+      min-height: 88rpx;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0 auto;
+
+      text {
+        font-size: 26rpx;
+        color: #999999;
+        line-height: 1.5;
+        text-align: center;
       }
     }
   }
