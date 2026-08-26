@@ -50,7 +50,7 @@
           </view>
         </view>
         <view class="star-btn" :class="{ active: isStarred }" @click="toggleStar">
-          <image src="../../static/icons/收藏3.png" mode="aspectFit" />
+          <image src="../../static/icons/收藏1.png" mode="aspectFit" />
         </view>
       </view>
 

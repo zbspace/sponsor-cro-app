@@ -50,8 +50,9 @@
             </uni-data-select>
           </view>
         </view>
-        <view class="star-btn" :class="{ active: isStarred }" @click="toggleStar">
-          <image src="../../static/icons/收藏3.png" mode="aspectFit" />
+        <view class="star-btn" @click="toggleStar">
+          <image src="../../static/icons/收藏1.png" mode="aspectFit" v-if="!isStarred" />
+          <image src="../../static/icons/收藏.png" mode="aspectFit" v-else />
         </view>
       </view>
 
@@ -231,14 +232,17 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, watch } from 'vue'
+  import { ref, reactive, computed, watch } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
   import {
     getOutsourcingRatio,
     getSponsorProjectList,
     getRelatedCompanyList,
-    selectClinicalCroRankList
+    selectClinicalCroRankList,
+    userCollect,
+    cancelUserCollect,
+    getUserCollectList
   } from '@/api'
 
   const activeTab = ref('stat')
@@ -248,6 +252,35 @@
   const currentTimeFilterObj = ref('')
   const isStarred = ref(false)
   const companyOptions = ref<{ value: string; text: string }[]>([])
+
+  // #region 收藏功能
+  // 收藏记录id，用于取消收藏
+  const collectId = ref(0)
+  // 当前页面为申办方统计，收藏类型固定为 sponsor(1)
+  const collectCompanyType = 1
+  // 收藏对象为当前申办方母公司
+  const collectParentCompanyId = computed(() => sponsorParentCompanyId.value)
+
+  /**
+   * 查询当前公司是否已收藏，初始化收藏按钮状态并保存收藏记录id
+   */
+  async function fetchCollectStatus() {
+    const parentCompanyId = collectParentCompanyId.value
+    if (!parentCompanyId) return
+    try {
+      const res = await getUserCollectList({
+        pageNum: 1,
+        pageSize: 50,
+        companyType: collectCompanyType
+      })
+      const record = res.data?.list.find((item) => item.parentCompanyId === parentCompanyId)
+      isStarred.value = !!record
+      collectId.value = record?.id || 0
+    } catch {
+      // 静默处理
+    }
+  }
+  // #endregion
 
   // 时间筛选选项：全部 + 最近三年，值对应接口 lastYear 参数
   const timeOptions = ref([
@@ -522,12 +555,35 @@
     fetchCroRankList()
   })
 
-  const toggleStar = () => {
-    isStarred.value = !isStarred.value
-    uni.showToast({
-      title: isStarred.value ? '已收藏' : '已取消收藏',
-      icon: 'none'
-    })
+  const toggleStar = async () => {
+    const parentCompanyId = collectParentCompanyId.value
+    if (!parentCompanyId) {
+      uni.showToast({ title: '暂无可收藏的公司', icon: 'none' })
+      return
+    }
+    if (isStarred.value) {
+      // 取消收藏
+      if (!collectId.value) return
+      try {
+        await cancelUserCollect(collectId.value)
+        isStarred.value = false
+        collectId.value = 0
+        uni.showToast({ title: '已取消收藏', icon: 'none' })
+      } catch {
+        // 请求失败提示已由拦截器统一处理
+      }
+    } else {
+      // 收藏
+      try {
+        await userCollect(collectCompanyType, parentCompanyId)
+        isStarred.value = true
+        uni.showToast({ title: '已收藏', icon: 'success' })
+        // 收藏成功后刷新收藏记录，保存记录id供取消使用
+        fetchCollectStatus()
+      } catch {
+        // 请求失败提示已由拦截器统一处理
+      }
+    }
   }
 
   const goBack = () => {
@@ -558,6 +614,8 @@
     if (options?.sponsorParentCompanyId) {
       sponsorParentCompanyId.value = Number(options.sponsorParentCompanyId)
     }
+    // 查询当前公司是否已收藏，初始化收藏按钮状态
+    fetchCollectStatus()
     // 读取路由参数中的来源CRO公司ID：从CRO主页跳转进入时，用于CRO合作名单筛选默认选中
     if (options?.partnerParentCompanyId) {
       routeCroCompanyId.value = Number(options.partnerParentCompanyId)

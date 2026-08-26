@@ -50,8 +50,9 @@
             </uni-data-select>
           </view>
         </view>
-        <view class="star-btn" :class="{ active: isStarred }" @click="toggleStar">
-          <image src="../../static/icons/收藏3.png" mode="aspectFit" />
+        <view class="star-btn" @click="toggleStar">
+          <image src="../../static/icons/收藏1.png" mode="aspectFit" v-if="!isStarred" />
+          <image src="../../static/icons/收藏.png" mode="aspectFit" v-else />
         </view>
       </view>
 

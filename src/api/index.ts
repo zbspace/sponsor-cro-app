@@ -533,7 +533,11 @@ export async function getRelatedCompanyList(params: {
  * @returns Promise
  */
 export async function userCollect(companyType: number, parentCompanyId: number) {
-  return post('/api/v1/userCollect/collect', { companyType, parentCompanyId }, true)
+  return post(
+    '/api/v1/userCollect/collect',
+    { companyType, parentCompanyId, serverId: 'searchComCRO' },
+    true
+  )
 }
 
 /**
@@ -552,7 +556,11 @@ export async function cancelUserCollect(id: number) {
  * @returns Promise
  */
 export async function getUserCollectList(data: any) {
-  return get<UserCollectListResponse>('/api/v1/userCollect/getCollectList', data, true)
+  return get<UserCollectListResponse>(
+    '/api/v1/userCollect/getCollectList',
+    { serverId: 'searchComCRO', ...data },
+    true
+  )
 }
 
 // #endregion
