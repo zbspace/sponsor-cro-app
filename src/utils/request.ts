@@ -33,9 +33,10 @@ function getToken(): string {
 function handleResponse<T>(res: UniApp.RequestSuccessCallbackResult): Promise<ApiResponse<T>> {
   return new Promise((resolve, reject) => {
     const response = res.data as ApiResponse<T>
+    console.log(response.code)
     if (response.code === 200) {
       resolve(response)
-    } else {
+    }  else {
       uni.showToast({
         title: response.msg || '请求失败',
         icon: 'none'

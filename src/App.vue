@@ -118,7 +118,7 @@
   }
 
   .container {
-    padding: 80rpx 30rpx 30rpx 30rpx;
+    padding: 60rpx 30rpx 0rpx 30rpx;
   }
 
   .arrow-right-icon {

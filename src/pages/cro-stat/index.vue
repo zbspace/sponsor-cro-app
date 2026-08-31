@@ -111,10 +111,10 @@
         注：同一个项目可能存在多条HGR获批记录，时间按照HGR批准时间统计
       </view>
 
-      <!-- 临床研发排名 -->
-      <!-- #region 临床研发排名视图 -->
+      <!-- 全国临床CRO排名 -->
+      <!-- #region 全国临床CRO排名视图 -->
       <view class="card rank-card" v-if="activeTab === 'stat'">
-        <view class="card-title">临床研发排名</view>
+        <view class="card-title">全国临床CRO排名</view>
         <view class="rank-content">
           <view class="rank-info">
             <view class="info-line">
@@ -302,11 +302,11 @@
   }
   // #endregion
 
-  // #region 临床研发排名数据
+  // #region 全国临床CRO排名数据
   const rankData = ref<CroRankItem | null>(null)
 
   /**
-   * 获取临床研发排名
+   * 获取全国临床CRO排名
    */
   async function fetchCroRank() {
     // 仅在查看 CRO 统计时获取排名
@@ -986,7 +986,7 @@
     // #endregion
   }
 
-  // #region 临床研发排名样式
+  // #region 全国临床CRO排名样式
   .rank-card {
     .rank-content {
       background: #f8f9fb;

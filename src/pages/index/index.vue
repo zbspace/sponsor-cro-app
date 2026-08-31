@@ -99,6 +99,13 @@
     </view>
   </scroll-view>
 
+  <image
+    class="collect-icon"
+    src="../../static/icons/收藏.png"
+    mode="aspectFit"
+    @click="goTo('collect/index')"
+  />
+
   <!-- 数据声明弹窗 -->
   <data-statement-popup v-model:visible="showDataStatement" />
 
@@ -270,7 +277,7 @@
   /* #region 标题 */
   .title-section {
     text-align: center;
-    margin-bottom: 60rpx;
+    margin-bottom: 40rpx;
 
     .main-title {
       font-weight: 400;
@@ -285,7 +292,7 @@
       font-size: 28rpx;
       color: #9199ae;
       line-height: 52rpx;
-      margin-bottom: 60rpx;
+      margin-bottom: 40rpx;
       display: block;
     }
   }
@@ -390,7 +397,7 @@
       .rank-item {
         display: flex;
         align-items: center;
-        padding: 16px 0;
+        padding: 14px 0;
         border-bottom: 1px solid #f5f5f5;
 
         &:last-child {
@@ -478,7 +485,6 @@
       gap: 60rpx;
       font-size: 24rpx;
       color: #666;
-      margin-bottom: 70rpx;
 
       .footer-link-item {
         display: flex;
@@ -515,6 +521,15 @@
         }
       }
     }
+  }
+
+  .collect-icon {
+    position: absolute;
+    z-index: 10;
+    width: 82rpx;
+    height: 82rpx;
+    right: 30rpx;
+    bottom: 180rpx;
   }
   /* #endregion */
 </style>
