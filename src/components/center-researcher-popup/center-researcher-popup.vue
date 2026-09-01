@@ -4,7 +4,7 @@
       <view class="popup-header">
         <text class="popup-title">中心及研究者</text>
         <view class="close-btn" @click="close">
-          <text class="close-icon">×</text>
+          <image class="close-icon" src="../../static/icons/close.png" mode="aspectFit" />
         </view>
       </view>
 
@@ -158,16 +158,15 @@
     align-items: center;
 
     .popup-title {
-      font-size: 34rpx;
       font-weight: bold;
-      color: #333;
+      font-size: 28rpx;
+      color: #293959;
+      line-height: 52rpx;
     }
 
     .close-btn {
       width: 50rpx;
       height: 50rpx;
-      border-radius: 50%;
-      background: #f5f5f5;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -197,8 +196,10 @@
       margin-bottom: 10rpx;
 
       text {
-        font-size: 26rpx;
-        color: #999;
+        font-weight: 400;
+        font-size: 24rpx;
+        color: #9199ae;
+        line-height: 52rpx;
         text-align: center;
       }
     }
@@ -219,8 +220,10 @@
       }
 
       text {
-        font-size: 28rpx;
-        color: #333;
+        font-weight: 400;
+        font-size: 24rpx;
+        color: #293959;
+        line-height: 52rpx;
         text-align: center;
         display: flex;
         align-items: center;
