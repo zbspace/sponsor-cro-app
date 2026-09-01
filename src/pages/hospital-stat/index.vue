@@ -1,6 +1,6 @@
 <template>
   <!-- 头部导航 -->
-  <view class="header header-fixed" :style="{ paddingTop: `${menu.top}px`, zIndex: 999 }">
+  <view class="header" :style="{ paddingTop: `${menu.top}px`, zIndex: 999 }">
     <view class="nav-left" @click="goBack">
       <view class="back-icon">
         <view class="arrow"></view>
@@ -11,9 +11,9 @@
   </view>
 
   <!-- 占位，防止固定定位后内容上移 -->
-  <view :style="{ height: `${menu.top + menu.height}px` }"></view>
+  <!-- <view :style="{ height: `${menu.top + menu.height}px` }"></view> -->
 
-  <!-- <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" /> -->
+  <image class="bg-img" src="../../static/home/head-bg.png" mode="aspectFit" />
 
   <scroll-view
     :scroll-y="activeTab === 'stat'"
@@ -1032,15 +1032,6 @@
 </script>
 
 <style lang="scss" scoped>
-  .header-fixed {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    background: #fff;
-    z-index: 1000;
-  }
-
   .container-scroll-view {
     display: flex;
     flex-direction: column;

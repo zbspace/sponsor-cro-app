@@ -135,4 +135,9 @@
     border-right: 3rpx solid #fff;
     transform: rotate(45deg);
   }
+
+  .close-icon {
+    width: 36rpx;
+    height: 36rpx;
+  }
 </style>

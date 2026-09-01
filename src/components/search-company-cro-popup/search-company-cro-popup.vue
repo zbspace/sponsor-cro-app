@@ -4,7 +4,7 @@
       <view class="popup-header">
         <text class="popup-title">查药企&CRO合作关系</text>
         <view class="close-btn" @click="close">
-          <icon type="clear" size="20" color="#D8D8D8" />
+          <image class="close-icon" src="../../static/icons/close.png" mode="aspectFit" />
         </view>
       </view>
 
@@ -241,9 +241,10 @@
       position: relative;
 
       .popup-title {
-        font-size: 32rpx;
         font-weight: bold;
-        color: #333333;
+        font-size: 28rpx;
+        color: #293959;
+        line-height: 52rpx;
       }
 
       .close-btn {
@@ -257,13 +258,15 @@
     .tabs {
       display: flex;
       justify-content: center;
-      gap: 80rpx;
+      gap: 120rpx;
       margin-bottom: 40rpx;
 
       .tab-item {
         position: relative;
-        font-size: 32rpx;
-        color: #999999;
+        font-weight: 400;
+        font-size: 28rpx;
+        color: #9199ae;
+        line-height: 52rpx;
         padding-bottom: 12rpx;
 
         &.active {
@@ -276,10 +279,10 @@
           bottom: 0;
           left: 50%;
           transform: translateX(-50%);
-          width: 40rpx;
+          width: 48rpx;
           height: 6rpx;
-          background: #499ae6;
-          border-radius: 3rpx;
+          background: linear-gradient(90deg, #4295f3 0%, #2b66ef 100%);
+          border-radius: 20rpx 20rpx 20rpx 20rpx;
         }
       }
     }
@@ -349,14 +352,14 @@
     }
 
     .search-btn {
-      width: 100%;
-      height: 88rpx;
-      background: linear-gradient(135deg, #60a8ff 0%, #499ae6 100%);
-      border-radius: 16rpx;
+      width: 266rpx;
+      height: 100rpx;
+      background: linear-gradient(90deg, #4295f3 0%, #2b66ef 100%);
+      border-radius: 20rpx 20rpx 20rpx 20rpx;
       display: flex;
       justify-content: center;
       align-items: center;
-      box-shadow: 0 8rpx 16rpx rgba(73, 154, 230, 0.3);
+      margin: 0 auto;
 
       text {
         color: #ffffff;

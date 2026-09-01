@@ -3,7 +3,12 @@
     <view class="popup-content" @click.stop>
       <view class="popup-header">
         <text class="popup-title">数据声明</text>
-        <view class="close-btn" @click="close">×</view>
+        <image
+          class="close-icon"
+          src="../../static/icons/close.png"
+          @click="close"
+          mode="aspectFit"
+        />
       </view>
       <scroll-view scroll-y="true" class="popup-body" :show-scrollbar="false">
         <view class="scroll-content">
@@ -176,9 +181,10 @@
     background-color: #fff;
 
     .popup-title {
-      font-size: 32rpx;
       font-weight: bold;
-      color: #333;
+      font-size: 28rpx;
+      color: #293959;
+      line-height: 52rpx;
     }
 
     .close-btn {
