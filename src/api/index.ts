@@ -553,14 +553,11 @@ export async function cancelUserCollect(id: number) {
  * 获取用户收藏列表
  * @param pageNum 页码
  * @param pageSize 每页条数
+ * @param serverId 服务器ID，固定值为searchComCRO
  * @returns Promise
  */
 export async function getUserCollectList(data: any) {
-  return get<UserCollectListResponse>(
-    '/api/v1/userCollect/getCollectList',
-    { serverId: 'searchComCRO', ...data },
-    true
-  )
+  return get<UserCollectListResponse>('/api/v1/userCollect/getCollectList', { ...data }, true)
 }
 
 // #endregion

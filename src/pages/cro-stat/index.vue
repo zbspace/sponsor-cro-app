@@ -315,7 +315,8 @@
       const res = await selectClinicalCroRankList({
         croParentCompanyId: partnerParentCompanyId.value,
         pageNum: 1,
-        pageSize: 10
+        pageSize: 10,
+        lastYear: currentTimeFilterObj.value || undefined
       })
       if (res.data?.list) {
         rankData.value = res.data?.list[0]
