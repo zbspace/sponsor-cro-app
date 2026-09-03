@@ -12,6 +12,18 @@
 
   <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
 
+  <!-- tab -->
+  <scroll-view scroll-x class="tab-bar" :show-scrollbar="false">
+    <view
+      class="tab-item"
+      v-for="tab in serverIdTabs"
+      :key="tab.value"
+      :class="{ active: activeServerId === tab.value }"
+      @click="onTabChange(tab.value)"
+    >
+      <text>{{ tab.label }}</text>
+    </view>
+  </scroll-view>
   <view class="container">
     <!-- 内容卡片 -->
     <view class="rank-table-card">
@@ -28,7 +40,7 @@
         @scrolltolower="onScrollToLower"
         :show-scrollbar="false"
         :style="{
-          height: `calc(100vh - ${menu.top}px - ${menu.height}px - 150px)`
+          height: `calc(100vh - ${menu.top}px - ${menu.height}px - 210px)`
         }"
       >
         <view
@@ -75,6 +87,30 @@
   const noMore = ref(false)
   const page = ref(1)
 
+  // #region tab 模块切换
+  // 各业务模块对应的 serverId
+  const serverIdTabs = [
+    { label: '查客户', value: 'searchCust' },
+    { label: '找客户', value: 'findCust' },
+    { label: '查药企&CRO', value: 'searchComCRO' },
+    { label: '查药企&医院', value: 'searchComHos' },
+    { label: '查药企&实验室', value: 'searchComLab' },
+    { label: '查产品', value: 'searchProduce' }
+  ]
+  // 当前选中的模块，默认查药企&CRO
+  const activeServerId = ref('searchComCRO')
+
+  const onTabChange = (value: string) => {
+    if (activeServerId.value === value) return
+    activeServerId.value = value
+    // 重置分页并重新加载
+    rankList.value = []
+    noMore.value = false
+    page.value = 1
+    fetchRankData()
+  }
+  // #endregion
+
   const goBack = () => {
     uni.navigateBack({
       delta: 1,
@@ -91,7 +127,8 @@
     try {
       const res = await getUserCollectList({
         pageNum: page.value,
-        pageSize: 20
+        pageSize: 20,
+        serverId: activeServerId.value
       })
       const list = res.data?.list || []
       rankList.value = [
@@ -151,6 +188,33 @@
 </script>
 
 <style lang="scss" scoped>
+  /* #region tab 模块切换 */
+  .tab-bar {
+    white-space: nowrap;
+    width: 100%;
+    padding: 20rpx 30rpx 24rpx;
+    box-sizing: border-box;
+
+    .tab-item {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14rpx 32rpx;
+      margin-right: 16rpx;
+      background: #ffffff;
+      border-radius: 40rpx;
+      font-size: 26rpx;
+      color: #666666;
+
+      &.active {
+        background: #499ae6;
+        color: #ffffff;
+        font-weight: 500;
+      }
+    }
+  }
+  /* #endregion */
+
   .rank-table-card {
     background: #ffffff;
     border-radius: 24rpx;

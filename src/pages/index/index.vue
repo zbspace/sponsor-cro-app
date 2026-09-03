@@ -1,8 +1,12 @@
 <template>
   <!-- 头部 -->
   <view class="header" :style="{ paddingTop: `${menu.top}px` }">
-    <view class="vip-btn-wrapper" v-if="isVip !== 1" @click="handleApplyTrialClick">
-      <text>申请试用</text>
+    <view
+      class="vip-btn-wrapper"
+      v-if="VIP_CODE.VIP用户 !== userInfo.vipCode"
+      @click="handleApplyTrialClick"
+    >
+      <text>{{ userInfo.vipCode === VIP_CODE.普通 ? '申请试用' : '试用中' }}</text>
       <view class="arrow-right-icon" style="border-color: #fff"></view>
     </view>
     <view class="vip-badge" v-else @click="goTo('vip/index')">
@@ -143,12 +147,12 @@
   import SearchCompanyLabPopup from '@/components/search-company-lab-popup/search-company-lab-popup.vue'
   import SearchSponsorSitePiPopup from '@/components/search-sponsor-site-pi-popup/search-sponsor-site-pi-popup.vue'
   import SearchCustomerPopup from '@/components/search-customer-popup/search-customer-popup.vue'
+  import { VIP_CODE, VIP_APPLICATION_STATUS } from '@/utils/enums'
 
-  import { getVip, ensureLogin } from '@/api'
+  import { getVipApplication, ensureLogin } from '@/api'
   // #endregion
 
   // #region 状态
-  const isVip = ref(0)
   const showDataStatement = ref(false)
   const showSearchPopup = ref(false)
   const showTrialPopup = ref(false)
@@ -156,6 +160,7 @@
   const showCompanyLabPopup = ref(false)
   const showSponsorSitePiPopup = ref(false)
   const showCustomerCustomerPopup = ref(false)
+  const userInfo = uni.getStorageSync('userInfo') || {}
 
   // 功能网格数据
   const gridItems = [
@@ -228,7 +233,6 @@
   onShow(async () => {
     // 确保登录成功后再获取数据
     await ensureLogin()
-    isVip.value = getVip()
   })
   // #endregion
 
@@ -263,13 +267,32 @@
   }
 
   function handleApplyTrialClick() {
+    if (applicationStatus.value === VIP_APPLICATION_STATUS.待审批) {
+      uni.showToast({ title: '您已提交试用申请，等待电话联系', icon: 'none' })
+      return
+    }
     showTrialPopup.value = true
+  }
+
+  // 查询申请状态
+  // 申请状态
+  const applicationStatus = ref(0)
+  async function fetchApplicationStatus() {
+    try {
+      const res = await getVipApplication()
+      applicationStatus.value = res.data?.approvalStatus || 0
+    } catch {
+      // 查询失败时默认允许申请
+      applicationStatus.value = 0
+    }
   }
 
   onLoad(() => {
     // 获取胶囊位置信息（单位px）
     const info = uni.getMenuButtonBoundingClientRect()
     menu.value = info
+    // 查询申请状态
+    fetchApplicationStatus()
   })
 </script>
 

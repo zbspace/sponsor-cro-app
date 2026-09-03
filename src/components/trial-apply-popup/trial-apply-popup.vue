@@ -60,7 +60,7 @@
 <script setup lang="ts">
   // #region 导入
   import { reactive, ref, watch } from 'vue'
-  import { applyVip, getVipApplication } from '@/api'
+  import { applyVip } from '@/api'
   // #endregion
 
   // #region 属性与事件
@@ -88,7 +88,6 @@
     (val) => {
       if (val) {
         // 打开时查询申请状态，决定是否显示申请按钮
-        fetchApplicationStatus()
       } else {
         // 关闭时重置表单
         formData.name = ''
@@ -104,20 +103,6 @@
   // #region 方法
   function close() {
     emit('update:visible', false)
-  }
-
-  /**
-   * 查询申请状态，判断是否显示申请按钮
-   */
-  async function fetchApplicationStatus() {
-    try {
-      const res = await getVipApplication()
-      // 无记录时 res.data 为 null，默认可申请
-      applicationStatus.value = res.data?.approvalStatus || 0
-    } catch {
-      // 查询失败时默认允许申请
-      applicationStatus.value = 0
-    }
   }
 
   async function handleSubmit() {
