@@ -168,7 +168,7 @@
 
     const params: HospitalStatisticsQuery = {
       companyParentId: props.companyParentId || undefined,
-      hospitalId: props.hospitalId || undefined,
+      hosStandardId: props.hospitalId || undefined,
       researcherId: props.researcherId || undefined,
       year: currentTimeFilter.value || undefined,
       trialStage: stageFilter.value || undefined,
