@@ -3,13 +3,20 @@
   <view class="header" :style="{ paddingTop: `${menu.top}px` }">
     <view
       class="vip-btn-wrapper"
-      v-if="VIP_CODE.VIP用户 !== userInfo.vipCode"
+      v-if="userInfo?.vipCode === VIP_CODE.普通"
       @click="handleApplyTrialClick"
     >
-      <text>{{ userInfo.vipCode === VIP_CODE.普通 ? '申请试用' : '试用中' }}</text>
+      <text>申请试用</text>
       <view class="arrow-right-icon" style="border-color: #fff"></view>
     </view>
-    <view class="vip-badge" v-else @click="goTo('vip/index')">
+    <view class="vip-btn-wrapper" v-if="userInfo?.vipCode === VIP_CODE.VIP试用">
+      <text>试用中</text>
+    </view>
+    <view
+      class="vip-badge"
+      v-if="userInfo?.vipCode === VIP_CODE.VIP用户"
+      @click="goTo('vip/index')"
+    >
       <image class="vip-badge-icon" src="/static/vip-icon.svg" mode="aspectFit" />
       <text>尊享会员</text>
     </view>

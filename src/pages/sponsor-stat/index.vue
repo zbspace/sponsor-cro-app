@@ -692,8 +692,10 @@
           padding: 0;
 
           .uni-select__input-text {
+            font-weight: 400;
             font-size: 28rpx;
-            color: #333;
+            color: #999999;
+            line-height: 52rpx;
           }
         }
 
@@ -730,27 +732,14 @@
     }
 
     .star-btn {
-      width: 100rpx;
-      height: 100rpx;
+      width: 90rpx;
+      height: 90rpx;
       background: #ffffff;
       border-radius: 20rpx;
       display: flex;
       justify-content: center;
       align-items: center;
       box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.02);
-
-      .star-icon {
-        width: 40rpx;
-        height: 40rpx;
-        background-image: url('https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=star+icon+line+art+gray&image_size=square');
-        background-size: contain;
-        background-repeat: no-repeat;
-      }
-
-      &.active {
-        border-style: solid;
-        border-color: #499ae6;
-      }
     }
   }
 
@@ -840,10 +829,11 @@
     box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
 
     .card-title {
-      font-size: 30rpx;
-      font-weight: 500;
-      color: #333;
-      margin-bottom: 30rpx;
+      font-weight: bold;
+      font-size: 28rpx;
+      color: #333333;
+      line-height: 52rpx;
+      margin-bottom: 24rpx;
     }
   }
 
@@ -914,16 +904,26 @@
       display: flex;
       padding: 20rpx 0;
       border-bottom: 2rpx solid #f8f8f8;
-      font-size: 26rpx;
       color: #999;
+
+      background: #f7f8fa;
+      border-radius: 0rpx 0rpx 0rpx 0rpx;
+      border: 2rpx solid #eeeeee;
+
+      font-weight: 400;
+      font-size: 24rpx;
+      color: #333333;
+      line-height: 52rpx;
     }
 
     .table-row {
       display: flex;
-      padding: 30rpx 0;
+      padding: 20rpx 0;
       border-bottom: 2rpx solid #f8f8f8;
-      font-size: 28rpx;
       color: #333;
+      font-weight: 400;
+      font-size: 24rpx;
+      line-height: 48rpx;
 
       &:last-child {
         border-bottom: none;
@@ -971,15 +971,15 @@
       background: #ffffff;
       border-radius: 24rpx;
       padding: 30rpx;
-      margin-bottom: 30rpx;
+      margin-bottom: 24rpx;
       box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
       position: relative;
 
       .project-title {
-        font-size: 30rpx;
-        color: #333;
-        font-weight: 500;
-        line-height: 1.5;
+        font-weight: bold;
+        font-size: 28rpx;
+        color: #333333;
+        line-height: 48rpx;
         margin-bottom: 30rpx;
         display: -webkit-box;
         -webkit-box-orient: vertical;
@@ -998,8 +998,8 @@
           gap: 16rpx;
 
           .info-icon {
-            width: 32rpx;
-            height: 32rpx;
+            width: 34rpx;
+            height: 34rpx;
             image {
               width: 100%;
               height: 100%;
@@ -1007,8 +1007,9 @@
           }
 
           .info-text {
-            font-size: 26rpx;
-            color: #999;
+            font-weight: 400;
+            font-size: 24rpx;
+            color: #999999;
           }
         }
       }
