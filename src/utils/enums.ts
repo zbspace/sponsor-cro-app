@@ -23,14 +23,14 @@ export enum TRIAL_PHASE {
 export enum VIP_CODE {
   '普通' = 0,
   'VIP试用' = 1,
-  'VIP用户' = 100,
+  'VIP用户' = 100
 }
 
 // 申请状态 1-待审批，2-审批通过，3-审批不通过
 export enum VIP_APPLICATION_STATUS {
   '待审批' = 1,
   '审批通过' = 2,
-  '审批不通过' = 3,
+  '审批不通过' = 3
 }
 
 // 将枚举转换为选项数组（{ value: 编码, text: 文案 }）

@@ -130,10 +130,10 @@
           </view>
           <view class="phase-table">
             <view class="table-header">
-              <text>I期</text>
-              <text>I期</text>
-              <text>III期</text>
-              <text>IV期</text>
+              <text>Ⅰ期</text>
+              <text>Ⅱ期</text>
+              <text>Ⅲ期</text>
+              <text>Ⅳ期</text>
               <text>BE</text>
               <text>其他</text>
             </view>
@@ -679,7 +679,7 @@
     const center = { x: width / 2, y: height / 2 }
     const radius = Math.min(width, height) * 0.36
     const sides = 6
-    const labels = ['I期', 'II期', 'III期', 'IV期', 'BE', '其他']
+    const labels = ['Ⅰ期', 'Ⅱ期', 'Ⅲ期', 'Ⅳ期', 'BE', '其他']
     const values = [
       stageCounts.oneClass,
       stageCounts.twoClass,
@@ -840,7 +840,7 @@
     const center = { x: 150, y: 80 }
     const radius = 55
     const sides = 6
-    const labels = ['I期', 'II期', 'III期', 'IV期', 'BE', '其他']
+    const labels = ['Ⅰ期', 'Ⅱ期', 'Ⅲ期', 'Ⅳ期', 'BE', '其他']
     const values = [
       stageCounts.oneClass,
       stageCounts.twoClass,

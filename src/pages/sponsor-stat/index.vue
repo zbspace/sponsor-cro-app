@@ -359,7 +359,9 @@
       const firstRes = await selectClinicalCroRankList({
         sponsorParentCompanyId: sponsorParentCompanyId.value,
         pageNum: 1,
-        pageSize
+        pageSize,
+        sponsorStandardCompanyIdList:
+          currentCompany.value.length > 0 ? currentCompany.value.map(Number) : undefined
       })
       let list = firstRes.data?.list || []
       const pages = firstRes.data?.pages || 1
@@ -368,7 +370,9 @@
         const res = await selectClinicalCroRankList({
           sponsorParentCompanyId: sponsorParentCompanyId.value,
           pageNum: page,
-          pageSize
+          pageSize,
+          sponsorStandardCompanyIdList:
+            currentCompany.value.length > 0 ? currentCompany.value.map(Number) : undefined
         })
         list = [...list, ...(res.data?.list || [])]
       }
@@ -553,6 +557,7 @@
     croPage.value = 1
     croNoMore.value = false
     fetchCroRankList()
+    fetchCroCompanyOptions()
   })
 
   const toggleStar = async () => {
