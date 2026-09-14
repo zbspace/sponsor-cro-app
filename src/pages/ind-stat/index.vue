@@ -1,6 +1,6 @@
 <template>
   <!-- 头部导航 -->
-  <view class="header header-fixed" :style="{ paddingTop: `${menu.top}px`, zIndex: 999 }">
+  <view class="header" :style="{ paddingTop: `${menu.top}px`, zIndex: 999 }">
     <view class="nav-left" @click="goBack">
       <view class="back-icon">
         <view class="arrow"></view>
@@ -9,9 +9,6 @@
     <text class="title">{{ companyName }}</text>
     <view class="nav-right"></view>
   </view>
-
-  <!-- 占位，防止固定定位后内容上移 -->
-  <view :style="{ height: `${menu.top + menu.height}px` }"></view>
 
   <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
 
@@ -23,14 +20,7 @@
       height: `calc(100vh - ${menu.top}px - ${menu.height}px)`
     }"
   >
-    <view
-      class="container"
-      :style="{
-        height: activeTab === 'list' ? '100%' : 'auto',
-        display: activeTab === 'list' ? 'flex' : 'block',
-        flexDirection: 'column'
-      }"
-    >
+    <view class="container">
       <!-- 选项卡 -->
       <view class="tabs">
         <view
@@ -111,11 +101,11 @@
           </view>
           <view class="phase-table">
             <view class="table-header">
-              <text>1类</text>
-              <text>2类</text>
-              <text>3类</text>
-              <text>4类</text>
-              <text>BE类</text>
+              <text>Ⅰ期</text>
+              <text>Ⅱ期</text>
+              <text>Ⅲ期</text>
+              <text>Ⅳ期</text>
+              <text>BE</text>
               <text>其他</text>
             </view>
             <view class="table-body">
@@ -192,6 +182,7 @@
                 v-for="(item, index) in productList"
                 :key="index"
                 :class="{ zebra: index % 2 === 1 }"
+                @click="onResearcherClick"
               >
                 <text class="col-rank">{{ index + 1 }}</text>
                 <text class="col-name">{{ item.drugStandardName }}</text>
@@ -410,6 +401,10 @@
     const idx = Number(e.detail.value)
     productYearFilter.value = yearOptions.value[idx]?.value || ''
     fetchProduct()
+  }
+
+  function onResearcherClick() {
+    activeTab.value = 'list'
   }
   // #endregion
 
@@ -843,6 +838,8 @@
     })
     donutGradient.value = `conic-gradient(${segments.join(', ')})`
   }
+
+  // #endregion
   // #endregion
 
   // #region 生命周期
@@ -890,25 +887,8 @@
 </script>
 
 <style lang="scss" scoped>
-  .header-fixed {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    background: #fff;
-    z-index: 1000;
-  }
-
-  .container-scroll-view {
-    display: flex;
-    flex-direction: column;
-  }
-
   .container {
     padding: 30rpx;
-    padding-bottom: 60rpx;
-    min-height: 100%;
-    box-sizing: border-box;
   }
 
   .detail-content {
@@ -925,20 +905,20 @@
     }
   }
 
+  /* 选项卡 */
   .tabs {
     display: flex;
-    justify-content: center;
-    gap: 120rpx;
-    margin-bottom: 40rpx;
+    justify-content: space-around;
+    margin-bottom: 30rpx;
 
     .tab-item {
       position: relative;
-      font-size: 32rpx;
+      padding: 20rpx 0;
+      font-size: 28rpx;
       color: #999;
-      padding-bottom: 12rpx;
 
       &.active {
-        color: #499ae6;
+        color: #333;
         font-weight: bold;
       }
 
@@ -949,7 +929,7 @@
         transform: translateX(-50%);
         width: 40rpx;
         height: 6rpx;
-        background: #499ae6;
+        background-color: #499ae6;
         border-radius: 3rpx;
       }
     }

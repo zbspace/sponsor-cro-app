@@ -1,51 +1,52 @@
 <template>
   <view class="trial-list-wrapper">
     <!-- 筛选区域 -->
-    <view class="filter-wrapper">
-      <view class="time-filter-wrapper">
-        <uni-data-select
-          v-model="currentDrugFilter"
-          :localdata="drugOptions"
-          :clear="false"
-          placeholder="请选择"
-        ></uni-data-select>
+    <div class="filter-container">
+      <view class="filter-wrapper">
+        <view class="time-filter-wrapper">
+          <uni-data-select
+            v-model="currentDrugFilter"
+            :localdata="drugOptions"
+            :clear="false"
+            placeholder="请选择"
+          ></uni-data-select>
+        </view>
       </view>
-    </view>
-    <view class="filter-wrapper">
-      <view class="time-filter-wrapper">
-        <uni-data-select
-          v-model="currentTimeFilter"
-          :localdata="timeOptions"
-          :clear="false"
-          placeholder="请选择"
-        ></uni-data-select>
+      <view class="filter-wrapper">
+        <view class="time-filter-wrapper">
+          <uni-data-select
+            v-model="currentTimeFilter"
+            :localdata="timeOptions"
+            :clear="false"
+            placeholder="请选择"
+          ></uni-data-select>
+        </view>
+        <view class="time-filter-wrapper">
+          <uni-data-select
+            v-model="statusFilter"
+            :localdata="statusOptions"
+            :clear="false"
+            placeholder="请选择"
+          ></uni-data-select>
+        </view>
+        <view class="time-filter-wrapper">
+          <uni-data-select
+            v-model="stageFilter"
+            :localdata="stageOptions"
+            :clear="false"
+            placeholder="请选择"
+          ></uni-data-select>
+        </view>
       </view>
-      <view class="time-filter-wrapper">
-        <uni-data-select
-          v-model="statusFilter"
-          :localdata="statusOptions"
-          :clear="false"
-          placeholder="请选择"
-        ></uni-data-select>
-      </view>
-      <view class="time-filter-wrapper">
-        <uni-data-select
-          v-model="stageFilter"
-          :localdata="stageOptions"
-          :clear="false"
-          placeholder="请选择"
-        ></uni-data-select>
-      </view>
-    </view>
+    </div>
 
     <!-- 列表区域 -->
     <scroll-view
       scroll-y
       class="list-scroll"
       @scrolltolower="loadMore"
-      :refresher-enabled="true"
-      :refresher-triggered="isRefreshing"
-      @refresherrefresh="onRefresh"
+      :show-scrollbar="false"
+      enhanced
     >
       <view class="trial-card" v-for="(item, index) in list" :key="index">
         <view class="card-header">
@@ -289,8 +290,12 @@
     flex-direction: column;
     flex: 1;
     width: 100%;
-    overflow: hidden;
-    min-height: 0;
+    height: 100%;
+
+    .filter-container {
+      flex-shrink: 0;
+      width: 100%;
+    }
 
     .filter-wrapper {
       display: flex;

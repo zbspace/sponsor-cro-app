@@ -241,6 +241,8 @@
   onShow(async () => {
     // 确保登录成功后再获取数据
     await ensureLogin()
+    // 查询申请状态
+    fetchApplicationStatus()
   })
   // #endregion
 
@@ -299,8 +301,6 @@
     // 获取胶囊位置信息（单位px）
     const info = uni.getMenuButtonBoundingClientRect()
     menu.value = info
-    // 查询申请状态
-    fetchApplicationStatus()
   })
 </script>
 
