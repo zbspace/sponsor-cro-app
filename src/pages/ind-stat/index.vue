@@ -206,9 +206,9 @@
 
       <!-- 详情内容 (复用现有的项目列表样式) -->
       <view v-else class="detail-content">
-        <TrialList
-          class="trial-list-comp"
-          :company-parent-id="companyParentId"
+        <IndList
+          class="ind-list-comp"
+          :company-parent-id="companyId"
           :hospital-id="hospitalId"
           :researcher-id="researcherId"
         />
@@ -224,7 +224,7 @@
   import { ref, reactive, computed, onMounted, watch, getCurrentInstance, nextTick } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
-  import TrialList from '@/components/trial-list/trial-list.vue'
+  import IndList from '@/components/ind-list/ind-list.vue'
 
   import {
     queryHospitalCooperationChange,
@@ -249,7 +249,7 @@
 
   // 路由筛选参数（来自搜索页选中的药企/医院/研究者）
   const companyName = ref('')
-  const companyParentId = ref(0)
+  const companyId = ref(0)
   const hospitalId = ref(0)
   const researcherId = ref(0)
   // #endregion
@@ -312,7 +312,7 @@
     return {
       pageNum: 1,
       pageSize: 10,
-      companyParentId: companyParentId.value || undefined,
+      companyParentId: companyId.value || undefined,
       hosStandardId: hospitalId.value || undefined,
       researcherId: researcherId.value || undefined
     }
@@ -821,9 +821,8 @@
       { key: 'trialingRecruited', name: '进行中-招募完成', color: '#7ED321' },
       { key: 'trialing', name: '进行中-尚未招募', color: '#F5A623' },
       { key: 'completed', name: '已完成', color: '#9013FE' },
-      { key: 'trialingTerminated', name: '主动暂停/终止', color: '#D0021B' },
-      { key: 'trialingNoticeTerminated', name: '责令暂停/终止', color: '#F8E71C' },
-      { key: 'trialingIecTerminated', name: 'IEC/IRB暂停/终止', color: '#50E3C2' }
+      { key: 'trialingTerminated', name: '主动暂停', color: '#D0021B' },
+      { key: 'trialingIecTerminated', name: '被叫停', color: '#50E3C2' }
     ]
 
     const legend = items
@@ -854,8 +853,8 @@
     if (options?.companyName) {
       companyName.value = decodeURIComponent(options.companyName)
     }
-    if (options?.companyParentId) {
-      companyParentId.value = Number(options.companyParentId)
+    if (options?.companyId) {
+      companyId.value = Number(options.companyId)
     }
     if (options?.hosStandardId) {
       hospitalId.value = Number(options.hosStandardId)
@@ -918,7 +917,7 @@
     flex-direction: column;
     min-height: 0;
 
-    .trial-list-comp {
+    .ind-list-comp {
       flex: 1;
       display: flex;
       flex-direction: column;

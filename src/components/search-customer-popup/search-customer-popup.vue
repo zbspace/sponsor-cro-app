@@ -209,15 +209,14 @@
       return
     }
 
-    // 携带已选中的参数跳转到医院/研究者合作统计页
     const query: string[] = []
     if (pharma) {
-      query.push(`companyParentId=${pharma.parentCompanyId}`)
+      query.push(`companyId=${pharma.parentCompanyId}`)
       query.push(`companyName=${encodeURIComponent(pharma.parentCompanyShortName)}`)
     }
 
     uni.navigateTo({
-      url: `/pages/hospital-stat/index?${query.join('&')}`
+      url: `/pages/customer/company-detail?${query.join('&')}`
     })
 
     close()

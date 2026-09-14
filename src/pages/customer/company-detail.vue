@@ -188,7 +188,8 @@
 
   // #region 状态
   const menu = ref({ top: 0, left: 0, height: 0 })
-  const companyName = ref('百济神州')
+  const companyName = ref('')
+  const companyId = ref('')
   const isFavorite = ref(false)
   // 相关公司多选，空数组表示全部
   const isStarred = ref(false)
@@ -200,8 +201,11 @@
   onLoad((options) => {
     const info = uni.getMenuButtonBoundingClientRect()
     menu.value = info
-    if (options?.name) {
-      companyName.value = decodeURIComponent(options.name)
+    if (options?.companyName) {
+      companyName.value = decodeURIComponent(options.companyName)
+    }
+    if (options?.companyId) {
+      companyId.value = decodeURIComponent(options.companyId)
     }
   })
   // #endregion
@@ -220,9 +224,15 @@
   }
 
   const goTo = (tab: string) => {
-    uni.navigateTo({
-      url: `/pages/${tab}/index?name=${encodeURIComponent(companyName.value)}`
-    })
+    const query = [
+      `companyId=${companyId.value}`,
+      `companyName=${encodeURIComponent(companyName.value)}`
+    ]
+    if (tab === 'ind-stat') {
+      uni.navigateTo({
+        url: `/pages/${tab}/index?${query.join('&')}`
+      })
+    }
   }
 </script>
 

@@ -819,9 +819,8 @@
       { key: 'trialingRecruited', name: '进行中-招募完成', color: '#7ED321' },
       { key: 'trialing', name: '进行中-尚未招募', color: '#F5A623' },
       { key: 'completed', name: '已完成', color: '#9013FE' },
-      { key: 'trialingTerminated', name: '主动暂停/终止', color: '#D0021B' },
-      { key: 'trialingNoticeTerminated', name: '责令暂停/终止', color: '#F8E71C' },
-      { key: 'trialingIecTerminated', name: 'IEC/IRB暂停/终止', color: '#50E3C2' }
+      { key: 'trialingTerminated', name: '主动暂停', color: '#D0021B' },
+      { key: 'trialingIecTerminated', name: '被叫停', color: '#50E3C2' }
     ]
 
     const legend = items

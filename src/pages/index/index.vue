@@ -174,7 +174,8 @@
     {
       title: '查客户',
       desc: '立即前往',
-      icon: '/static/home/1.png'
+      icon: '/static/home/1.png',
+      path: 'customer/company-detail'
     },
     {
       title: '找客户',
