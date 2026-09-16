@@ -42,7 +42,17 @@ import type {
   SearchCustIndexReq,
   BusinessClueStatisticsResponse,
   CroAndThirdLabStatisticsResponse,
-  PipelineStatisticsResponse
+  PipelineStatisticsResponse,
+  IndApplicationNumReq,
+  IndApplicationNumItem,
+  IndRegistrationCategoryNumReq,
+  RegistrationCategoryItem,
+  DrugTypeNumReq,
+  DrugTypeNumItem,
+  IndProductRankReq,
+  IndProductRankResponse,
+  IndApplicationListReq,
+  IndApplicationListResponse
 } from '@/types/api'
 
 // #region 登录模块
@@ -738,6 +748,59 @@ export async function croAndThirdLabStatistics(params: SearchCustIndexReq) {
  */
 export async function pipelineStatistics(params: SearchCustIndexReq) {
   return post<PipelineStatisticsResponse>('/api/searchCust/pipelineStatistics', params, true)
+}
+
+// #endregion
+
+// #region 研发管线-IND模块
+
+/**
+ * 研发管线-IND-近五年申请与获批数量
+ * @param params { parentCompanyId, queryType, standardCompanyIdList }
+ * @returns Promise<IndApplicationNumItem[]>
+ */
+export async function getIndApplicationNum(params: IndApplicationNumReq) {
+  return post<IndApplicationNumItem[]>('/api/pipeline/getIndApplicationNum', params, true)
+}
+
+/**
+ * 研发管线-IND-近五年注册分类数量
+ * @param params { drugType, parentCompanyId, standardCompanyIdList }
+ * @returns Promise<RegistrationCategoryItem[]>
+ */
+export async function getIndRegistrationCategoryNum(params: IndRegistrationCategoryNumReq) {
+  return post<RegistrationCategoryItem[]>(
+    '/api/pipeline/getIndRegistrationCategoryNum',
+    params,
+    true
+  )
+}
+
+/**
+ * 研发管线-IND-药品类型数量
+ * @param params { parentCompanyId, queryYear, standardCompanyIdList }
+ * @returns Promise<DrugTypeNumItem[]>
+ */
+export async function getDrugTypeNum(params: DrugTypeNumReq) {
+  return post<DrugTypeNumItem[]>('/api/pipeline/getDrugTypeNum', params, true)
+}
+
+/**
+ * 研发管线-IND-产品IND榜单
+ * @param params { pageNum, pageSize, parentCompanyId, queryYear, standardCompanyIdList }
+ * @returns Promise<IndProductRankResponse>
+ */
+export async function getIndProductRank(params: IndProductRankReq) {
+  return post<IndProductRankResponse>('/api/pipeline/getIndProductRank', params, true)
+}
+
+/**
+ * 研发管线-IND-列表
+ * @param params { cleanedClassification, cleanedDrugType, drugStandardName, pageNum, pageSize, parentCompanyId, queryYear, standardCompanyIdList }
+ * @returns Promise<IndApplicationListResponse>
+ */
+export async function getIndApplicationList(params: IndApplicationListReq) {
+  return post<IndApplicationListResponse>('/api/pipeline/getIndApplicationList', params, true)
 }
 
 // #endregion

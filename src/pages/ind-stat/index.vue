@@ -20,7 +20,14 @@
       height: `calc(100vh - ${menu.top}px - ${menu.height}px)`
     }"
   >
-    <view class="container">
+    <view
+      class="container"
+      :style="{
+        height: activeTab === 'list' ? '100%' : 'auto',
+        display: activeTab === 'list' ? 'flex' : 'block',
+        flexDirection: 'column'
+      }"
+    >
       <!-- 选项卡 -->
       <view class="tabs">
         <view
@@ -51,12 +58,12 @@
               <picker
                 class="filter-picker"
                 mode="selector"
-                :range="changeStageOptions"
+                :range="queryTypeOptions"
                 range-key="text"
-                @change="onChangeStageChange"
+                @change="onQueryTypeChange"
               >
                 <view class="filter-trigger">
-                  <text>{{ changeStageText }}</text>
+                  <text>{{ queryTypeText }}</text>
                   <view class="arrow-down"></view>
                 </view>
               </picker>
@@ -80,12 +87,12 @@
               <picker
                 class="filter-picker"
                 mode="selector"
-                :range="yearOptions"
+                :range="categoryDrugTypeOptions"
                 range-key="text"
-                @change="onStageYearChange"
+                @change="onCategoryDrugTypeChange"
               >
                 <view class="filter-trigger">
-                  <text>{{ stageYearText }}</text>
+                  <text>{{ categoryDrugTypeText }}</text>
                   <view class="arrow-down"></view>
                 </view>
               </picker>
@@ -101,20 +108,12 @@
           </view>
           <view class="phase-table">
             <view class="table-header">
-              <text>Ⅰ期</text>
-              <text>Ⅱ期</text>
-              <text>Ⅲ期</text>
-              <text>Ⅳ期</text>
-              <text>BE</text>
-              <text>其他</text>
+              <text v-for="(item, index) in categoryList" :key="index">{{ item.drugType }}</text>
+              <text v-if="!categoryList.length">暂无数据</text>
             </view>
             <view class="table-body">
-              <text>{{ stageCounts.oneClass }}</text>
-              <text>{{ stageCounts.twoClass }}</text>
-              <text>{{ stageCounts.threeClass }}</text>
-              <text>{{ stageCounts.fourClass }}</text>
-              <text>{{ stageCounts.beClass }}</text>
-              <text>{{ stageCounts.otherClass }}</text>
+              <text v-for="(item, index) in categoryList" :key="index">{{ item.number }}</text>
+              <text v-if="!categoryList.length">-</text>
             </view>
           </view>
         </view>
@@ -129,10 +128,10 @@
                 mode="selector"
                 :range="yearOptions"
                 range-key="text"
-                @change="onStatusYearChange"
+                @change="onDrugTypeYearChange"
               >
                 <view class="filter-trigger">
-                  <text>{{ statusYearText }}</text>
+                  <text>{{ drugTypeYearText }}</text>
                   <view class="arrow-down"></view>
                 </view>
               </picker>
@@ -141,7 +140,7 @@
           <view class="donut-chart-wrapper">
             <view class="donut-chart" :style="{ background: donutGradient }"></view>
             <view class="legend-grid">
-              <view class="legend-item" v-for="(item, index) in statusLegend" :key="index">
+              <view class="legend-item" v-for="(item, index) in drugTypeLegend" :key="index">
                 <view class="dot" :style="{ backgroundColor: item.color }"></view>
                 <text class="name">{{ item.name }}</text>
                 <text class="count">{{ item.count }}</text>
@@ -182,12 +181,12 @@
                 v-for="(item, index) in productList"
                 :key="index"
                 :class="{ zebra: index % 2 === 1 }"
-                @click="onResearcherClick"
+                @click="onProductClick(item)"
               >
-                <text class="col-rank">{{ index + 1 }}</text>
+                <text class="col-rank">{{ item.rankNo || index + 1 }}</text>
                 <text class="col-name">{{ item.drugStandardName }}</text>
-                <text class="col-type">{{ item.trialCount }}</text>
-                <text class="col-count">{{ item.trialCount }}</text>
+                <text class="col-type">{{ item.cleanedClassification }}</text>
+                <text class="col-count">{{ item.indApplicationNum }}</text>
               </view>
               <view class="empty-tip" v-if="!productList.length">暂无数据</view>
             </view>
@@ -195,13 +194,12 @@
         </view>
       </view>
 
-      <!-- 详情内容 (复用现有的项目列表样式) -->
+      <!-- 详情内容 (IND列表) -->
       <view v-else class="detail-content">
-        <IndList
+        <IndApplicationList
           class="ind-list-comp"
-          :company-parent-id="companyId"
-          :hospital-id="hospitalId"
-          :researcher-id="researcherId"
+          :company-parent-id="companyParentId"
+          v-model:product-name="listProductName"
         />
       </view>
     </view>
@@ -212,24 +210,24 @@
 
 <script setup lang="ts">
   // #region 导入
-  import { ref, reactive, computed, onMounted, watch, getCurrentInstance, nextTick } from 'vue'
+  import { ref, computed, onMounted, watch, getCurrentInstance, nextTick } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
-  import IndList from '@/components/ind-list/ind-list.vue'
+  import IndApplicationList from '@/components/ind-application-list/ind-application-list.vue'
 
   import {
-    queryHospitalCooperationChange,
-    queryHospitalTrialStage,
-    queryHospitalTrialStatus,
-    queryHospitalCooperationProduct
+    getIndApplicationNum,
+    getIndRegistrationCategoryNum,
+    getDrugTypeNum,
+    getIndProductRank
   } from '@/api'
   import type {
-    CooperationSumItem,
-    DrugStatisticsItem,
-    HospitalStatisticsQuery,
-    TrialStatusResponse
+    IndApplicationNumItem,
+    RegistrationCategoryItem,
+    DrugTypeNumItem,
+    IndProductRankItem,
+    PipelineCompanyQuery
   } from '@/types/api'
-  import { TRIAL_PHASE, createEnumsToOptions } from '@/utils/enums'
 
   // #endregion
 
@@ -238,172 +236,169 @@
   const activeTab = ref('stat')
   const menu = ref({ top: 0, left: 0, height: 0 })
 
-  // 路由筛选参数（来自搜索页选中的药企/医院/研究者）
+  // 路由筛选参数（来自药企详情页）
   const companyName = ref('')
-  const companyId = ref(0)
-  const hospitalId = ref(0)
-  const researcherId = ref(0)
+  const companyParentId = ref(0)
   // #endregion
 
-  // #region 近五年试验合作变化
-  const changeList = ref<CooperationSumItem[]>([])
-  const changeStageFilter = ref('')
-  const changeStageText = computed(
-    () => changeStageOptions.value.find((o) => o.value === changeStageFilter.value)?.text || '全部'
+  // #region 近五年IND申请与获批
+  // 查询类型(1:申请,2:获批)
+  const queryTypeOptions = [
+    { value: 1, text: '申请' },
+    { value: 2, text: '获批' }
+  ]
+  const applicationList = ref<IndApplicationNumItem[]>([])
+  const queryTypeFilter = ref(1)
+  const queryTypeText = computed(
+    () => queryTypeOptions.find((o) => o.value === queryTypeFilter.value)?.text || '申请'
   )
   // #endregion
 
-  // #region 试验分期
-  const stageCounts = reactive({
-    oneClass: 0,
-    twoClass: 0,
-    threeClass: 0,
-    fourClass: 0,
-    beClass: 0,
-    otherClass: 0
-  })
-  const stageYearFilter = ref('')
+  // #region 近五年IND注册分类
+  // 药品类型（注册分类接口筛选条件）
+  const DRUG_TYPE_VALUES = ['中药', '化药', '治疗生物药', '疫苗']
+  const categoryDrugTypeOptions = [
+    { value: '', text: '药品类型' },
+    ...DRUG_TYPE_VALUES.map((text) => ({ value: text, text }))
+  ]
+  const categoryList = ref<RegistrationCategoryItem[]>([])
+  const categoryDrugTypeFilter = ref('')
+  const categoryDrugTypeText = computed(
+    () =>
+      categoryDrugTypeOptions.find((o) => o.value === categoryDrugTypeFilter.value)?.text ||
+      '药品类型'
+  )
   // #endregion
 
-  // #region 试验状态
-  const statusLegend = ref<{ name: string; count: number; color: string }[]>([])
+  // #region 药物类型
+  const drugTypeList = ref<DrugTypeNumItem[]>([])
+  const drugTypeLegend = ref<{ name: string; count: number; color: string }[]>([])
   const donutGradient = ref('')
-  const statusYearFilter = ref('')
+  const drugTypeYearFilter = ref(0)
   // #endregion
 
-  // #region 合作产品
-  const productList = ref<DrugStatisticsItem[]>([])
-  const productYearFilter = ref('')
+  // #region 产品IND榜单
+  const productList = ref<IndProductRankItem[]>([])
+  const productYearFilter = ref(0)
+  // 榜单点击后带入 IND 列表的药品名称
+  const listProductName = ref('')
   // #endregion
 
   // #region 年份选项
+  // 环形图配色
+  const DONUT_COLORS = ['#499AE6', '#7ED321', '#F5A623', '#9013FE', '#D0021B', '#50E3C2']
   const yearOptions = computed(() => [
-    { value: '', text: '年份' },
+    { value: 0, text: '年份' },
     ...Array.from({ length: 5 }, (_, i) => {
       const year = new Date().getFullYear() - i
-      return { value: String(year), text: `${year}年` }
+      return { value: year, text: `${year}年` }
     })
   ])
-  const stageYearText = computed(
-    () => yearOptions.value.find((o) => o.value === stageYearFilter.value)?.text || '全部'
-  )
-  const statusYearText = computed(
-    () => yearOptions.value.find((o) => o.value === statusYearFilter.value)?.text || '全部'
+  const drugTypeYearText = computed(
+    () => yearOptions.value.find((o) => o.value === drugTypeYearFilter.value)?.text || '年份'
   )
   const productYearText = computed(
-    () => yearOptions.value.find((o) => o.value === productYearFilter.value)?.text || '全部'
+    () => yearOptions.value.find((o) => o.value === productYearFilter.value)?.text || '年份'
   )
   // #endregion
 
   // #region 请求参数构造
   /**
-   * 构造统计接口通用请求参数
+   * 构造研发管线接口通用请求参数（母公司维度）
    */
-  function buildBaseParams(): HospitalStatisticsQuery {
+  function buildCompanyParams(): PipelineCompanyQuery {
     return {
-      pageNum: 1,
-      pageSize: 10,
-      companyParentId: companyId.value || undefined,
-      hosStandardId: hospitalId.value || undefined,
-      researcherId: researcherId.value || undefined
+      parentCompanyId: companyParentId.value || undefined
     }
   }
   // #endregion
 
   // #region 数据请求
-  async function fetchChange() {
+  /** 近五年IND申请/获批数量 */
+  async function fetchApplicationNum() {
     try {
-      const params = buildBaseParams()
-      if (changeStageFilter.value) {
-        params.trialStage = changeStageFilter.value
-      }
-      const res = await queryHospitalCooperationChange(params)
-      changeList.value = res.data?.cooperationSumList || []
+      const res = await getIndApplicationNum({
+        ...buildCompanyParams(),
+        queryType: queryTypeFilter.value
+      })
+      applicationList.value = res.data || []
       drawLineChart()
     } catch {
       // 静默处理
     }
   }
 
-  async function fetchStage() {
+  /** 近五年IND注册分类数量 */
+  async function fetchCategory() {
     try {
-      const params = buildBaseParams()
-      if (stageYearFilter.value) {
-        params.year = stageYearFilter.value
-      }
-      const res = await queryHospitalTrialStage(params)
-      if (res.data) {
-        stageCounts.oneClass = res.data.oneClassCount ?? 0
-        stageCounts.twoClass = res.data.twoClassCount ?? 0
-        stageCounts.threeClass = res.data.threeClassCount ?? 0
-        stageCounts.fourClass = res.data.fourClassCount ?? 0
-        stageCounts.beClass = res.data.beClassCount ?? 0
-        stageCounts.otherClass = res.data.otherClassCount ?? 0
-      }
+      const res = await getIndRegistrationCategoryNum({
+        ...buildCompanyParams(),
+        drugType: categoryDrugTypeFilter.value || undefined
+      })
+      categoryList.value = res.data || []
       drawRadarChart()
     } catch {
       // 静默处理
     }
   }
 
-  async function fetchStatus() {
+  /** IND药品类型数量 */
+  async function fetchDrugType() {
     try {
-      const params = buildBaseParams()
-      if (statusYearFilter.value) {
-        params.year = statusYearFilter.value
-      }
-      const res = await queryHospitalTrialStatus(params)
-      buildStatusLegend(res.data || ({} as TrialStatusResponse))
+      const res = await getDrugTypeNum({
+        ...buildCompanyParams(),
+        queryYear: drugTypeYearFilter.value || undefined
+      })
+      drugTypeList.value = res.data || []
+      buildDrugTypeLegend()
     } catch {
       // 静默处理
     }
   }
 
+  /** 产品IND榜单 */
   async function fetchProduct() {
     try {
-      const params = buildBaseParams()
-      if (productYearFilter.value) {
-        params.year = productYearFilter.value
-      }
-      const res = await queryHospitalCooperationProduct(params)
+      const res = await getIndProductRank({
+        ...buildCompanyParams(),
+        pageNum: 1,
+        pageSize: 10,
+        queryYear: productYearFilter.value || undefined
+      })
       productList.value = res.data?.list || []
     } catch {
       // 静默处理
     }
   }
-
-  const changeStageOptions = computed(() => [
-    { value: '', text: '试验分期' },
-    ...createEnumsToOptions(TRIAL_PHASE)
-  ])
   // #endregion
 
   // #region 筛选联动
-  function onChangeStageChange(e: any) {
-    const idx = Number(e.detail.value)
-    changeStageFilter.value = changeStageOptions.value[idx]?.value || ''
-    fetchChange()
+  function onQueryTypeChange(e: any) {
+    queryTypeFilter.value = queryTypeOptions[Number(e.detail.value)]?.value ?? 1
+    fetchApplicationNum()
   }
 
-  function onStageYearChange(e: any) {
-    const idx = Number(e.detail.value)
-    stageYearFilter.value = yearOptions.value[idx]?.value || ''
-    fetchStage()
+  function onCategoryDrugTypeChange(e: any) {
+    categoryDrugTypeFilter.value = categoryDrugTypeOptions[Number(e.detail.value)]?.value || ''
+    fetchCategory()
   }
 
-  function onStatusYearChange(e: any) {
-    const idx = Number(e.detail.value)
-    statusYearFilter.value = yearOptions.value[idx]?.value || ''
-    fetchStatus()
+  function onDrugTypeYearChange(e: any) {
+    drugTypeYearFilter.value = yearOptions.value[Number(e.detail.value)]?.value || 0
+    fetchDrugType()
   }
 
   function onProductYearChange(e: any) {
-    const idx = Number(e.detail.value)
-    productYearFilter.value = yearOptions.value[idx]?.value || ''
+    productYearFilter.value = yearOptions.value[Number(e.detail.value)]?.value || 0
     fetchProduct()
   }
 
-  function onResearcherClick() {
+  /**
+   * 点击榜单产品：切到IND列表并按该产品名称过滤
+   * @param item 榜单条目
+   */
+  function onProductClick(item: IndProductRankItem) {
+    listProductName.value = item.drugStandardName || ''
     activeTab.value = 'list'
   }
   // #endregion
@@ -468,8 +463,8 @@
     // 清空画布
     ctx.clearRect(0, 0, width, height)
 
-    const data = changeList.value.map((item) => Number(item.cooperationCount) || 0)
-    const years = changeList.value.map((item) => {
+    const data = applicationList.value.map((item) => Number(item.number) || 0)
+    const years = applicationList.value.map((item) => {
       const y = String(item.year)
       return y.length >= 4 ? `${y.slice(2)}年` : y
     })
@@ -556,20 +551,22 @@
     const height = canvas.height
     const center = { x: width / 2, y: height / 2 }
     const radius = Math.min(width, height) * 0.36
-    const sides = 6
-    const labels = ['1类', '2类', '3类', '4类', 'BE类', '其他']
-    const values = [
-      stageCounts.oneClass,
-      stageCounts.twoClass,
-      stageCounts.threeClass,
-      stageCounts.fourClass,
-      stageCounts.beClass,
-      stageCounts.otherClass
-    ]
+    const labels = categoryList.value.map((item) => item.drugType)
+    const values = categoryList.value.map((item) => Number(item.number) || 0)
+    // 雷达图至少 3 条轴才能构成多边形
+    const sides = Math.max(labels.length, 3)
     const maxVal = Math.max(...values, 1)
 
     // 清空画布
     ctx.clearRect(0, 0, width, height)
+
+    // 无数据时展示占位提示
+    if (!labels.length) {
+      ctx.fillStyle = '#999999'
+      ctx.font = '12px sans-serif'
+      ctx.fillText('暂无数据', width / 2 - 24, height / 2)
+      return
+    }
 
     // 绘制背景网格
     ctx.strokeStyle = '#eeeeee'
@@ -592,13 +589,14 @@
     ctx.fillStyle = 'rgba(245, 166, 35, 0.3)'
     ctx.strokeStyle = '#F5A623'
     ctx.beginPath()
-    values.forEach((val, i) => {
+    for (let i = 0; i < sides; i++) {
+      const val = values[i] ?? 0
       const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
       const x = center.x + Math.cos(angle) * radius * (val / maxVal)
       const y = center.y + Math.sin(angle) * radius * (val / maxVal)
       if (i === 0) ctx.moveTo(x, y)
       else ctx.lineTo(x, y)
-    })
+    }
     ctx.closePath()
     ctx.fill()
     ctx.stroke()
@@ -630,8 +628,8 @@
     // 清空画布
     ctx.clearRect(0, 0, width, height)
 
-    const data = changeList.value.map((item) => Number(item.cooperationCount) || 0)
-    const years = changeList.value.map((item) => {
+    const data = applicationList.value.map((item) => Number(item.number) || 0)
+    const years = applicationList.value.map((item) => {
       const y = String(item.year)
       return y.length >= 4 ? `${y.slice(2)}年` : y
     })
@@ -717,20 +715,23 @@
     const ctx = uni.createCanvasContext('radarCanvas')
     const center = { x: 150, y: 80 }
     const radius = 55
-    const sides = 6
-    const labels = ['1类', '2类', '3类', '4类', 'BE类', '其他']
-    const values = [
-      stageCounts.oneClass,
-      stageCounts.twoClass,
-      stageCounts.threeClass,
-      stageCounts.fourClass,
-      stageCounts.beClass,
-      stageCounts.otherClass
-    ]
+    const labels = categoryList.value.map((item) => item.drugType)
+    const values = categoryList.value.map((item) => Number(item.number) || 0)
+    // 雷达图至少 3 条轴才能构成多边形
+    const sides = Math.max(labels.length, 3)
     const maxVal = Math.max(...values, 1)
 
     // 清空画布
     ctx.clearRect(0, 0, 300, 150)
+
+    // 无数据时展示占位提示
+    if (!labels.length) {
+      ctx.setFillStyle('#999999')
+      ctx.setFontSize(12)
+      ctx.fillText('暂无数据', 150 - 24, 80)
+      ctx.draw()
+      return
+    }
 
     // 绘制背景网格
     ctx.setStrokeStyle('#eeeeee')
@@ -753,13 +754,14 @@
     ctx.setFillStyle('rgba(245, 166, 35, 0.3)')
     ctx.setStrokeStyle('#F5A623')
     ctx.beginPath()
-    values.forEach((val, i) => {
+    for (let i = 0; i < sides; i++) {
+      const val = values[i] ?? 0
       const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
       const x = center.x + Math.cos(angle) * radius * (val / maxVal)
       const y = center.y + Math.sin(angle) * radius * (val / maxVal)
       if (i === 0) ctx.moveTo(x, y)
       else ctx.lineTo(x, y)
-    })
+    }
     ctx.closePath()
     ctx.fill()
     ctx.stroke()
@@ -808,22 +810,17 @@
   }
 
   /**
-   * 试验状态：根据接口数据生成环形渐变与图例
+   * 药物类型：根据接口数据生成环形渐变与图例
    */
-  function buildStatusLegend(data: TrialStatusResponse) {
-    const items: { key: keyof TrialStatusResponse; name: string; color: string }[] = [
-      { key: 'trialingRecruiting', name: '进行中-招募中', color: '#499AE6' },
-      { key: 'trialingRecruited', name: '进行中-招募完成', color: '#7ED321' },
-      { key: 'trialing', name: '进行中-尚未招募', color: '#F5A623' },
-      { key: 'completed', name: '已完成', color: '#9013FE' },
-      { key: 'trialingTerminated', name: '主动暂停', color: '#D0021B' },
-      { key: 'trialingIecTerminated', name: '被叫停', color: '#50E3C2' }
-    ]
-
-    const legend = items
-      .filter((item) => (data[item.key] || 0) > 0)
-      .map((item) => ({ name: item.name, count: data[item.key] || 0, color: item.color }))
-    statusLegend.value = legend
+  function buildDrugTypeLegend() {
+    const legend = drugTypeList.value
+      .filter((item) => (Number(item.number) || 0) > 0)
+      .map((item, index) => ({
+        name: item.drugType,
+        count: Number(item.number) || 0,
+        color: DONUT_COLORS[index % DONUT_COLORS.length]
+      }))
+    drugTypeLegend.value = legend
 
     const total = legend.reduce((sum, item) => sum + item.count, 0)
     if (!total) {
@@ -851,17 +848,11 @@
       companyName.value = decodeURIComponent(options.companyName)
     }
     if (options?.companyId) {
-      companyId.value = Number(options.companyId)
+      companyParentId.value = Number(options.companyId)
     }
-    if (options?.hosStandardId) {
-      hospitalId.value = Number(options.hosStandardId)
-    }
-    if (options?.researcherId) {
-      researcherId.value = Number(options.researcherId)
-    }
-    fetchChange()
-    fetchStage()
-    fetchStatus()
+    fetchApplicationNum()
+    fetchCategory()
+    fetchDrugType()
     fetchProduct()
   })
 
@@ -887,8 +878,15 @@
 </script>
 
 <style lang="scss" scoped>
+  .container-scroll-view {
+    display: flex;
+    flex-direction: column;
+  }
+
   .container {
     padding: 30rpx;
+    min-height: 100%;
+    box-sizing: border-box;
   }
 
   .detail-content {

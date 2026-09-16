@@ -563,3 +563,152 @@ export interface PipelineStatisticsResponse {
 }
 
 // #endregion
+
+// #region 研发管线-IND模块
+
+/**
+ * 研发管线-母公司维度查询对象（子公司集合）
+ */
+export interface PipelineCompanyQuery {
+  /** 母公司ID */
+  parentCompanyId?: number
+  /** 子公司ID集合 */
+  standardCompanyIdList?: number[]
+}
+
+/**
+ * 研发管线-IND-申请与获批数量查询对象
+ */
+export interface IndApplicationNumReq extends PipelineCompanyQuery {
+  /** 查询类型(1:申请,2:获批) */
+  queryType?: number
+}
+
+/**
+ * 研发管线-IND-申请与获批数量返回对象
+ */
+export interface IndApplicationNumItem {
+  /** 申请或获批数量 */
+  number: number
+  /** 年份 */
+  year: number
+}
+
+/**
+ * 研发管线-IND-注册分类查询对象
+ */
+export interface IndRegistrationCategoryNumReq extends PipelineCompanyQuery {
+  /** 药品类型(中药,化药,治疗生物药,疫苗) */
+  drugType?: string
+}
+
+/**
+ * 研发管线-IND-注册分类/药品类型返回对象
+ */
+export interface RegistrationCategoryItem {
+  /** 分类(药品类型)名称 */
+  drugType: string
+  /** 分类(药品类型)数量 */
+  number: number
+}
+
+/**
+ * 研发管线-IND-药品类型数量查询对象
+ */
+export interface DrugTypeNumReq extends PipelineCompanyQuery {
+  /** 查询年份 */
+  queryYear?: number
+}
+
+/**
+ * 研发管线-IND-药品类型数量返回对象（与注册分类返回结构一致）
+ */
+export type DrugTypeNumItem = RegistrationCategoryItem
+
+/**
+ * 研发管线-IND-榜单查询对象
+ */
+export interface IndProductRankReq extends PipelineCompanyQuery {
+  /** 当前页数 */
+  pageNum?: number
+  /** 每页条数 */
+  pageSize?: number
+  /** 查询年份 */
+  queryYear?: number
+}
+
+/**
+ * 研发管线-IND-榜单返回对象
+ */
+export interface IndProductRankItem {
+  /** 清洗后分类 */
+  cleanedClassification: string
+  /** 清洗后的药品名称 */
+  drugStandardName: string
+  /** ind申请记录数量 */
+  indApplicationNum: number
+  /** 排名序号 */
+  rankNo: number
+}
+
+/**
+ * 研发管线-IND-榜单分页响应
+ */
+export interface IndProductRankResponse {
+  list: IndProductRankItem[]
+  pages: number
+  total: number
+}
+
+/**
+ * 研发管线-IND-列表查询对象
+ */
+export interface IndApplicationListReq extends PipelineCompanyQuery {
+  /** 清洗后分类 */
+  cleanedClassification?: string
+  /** 清洗后药品类型 */
+  cleanedDrugType?: string
+  /** 清洗后的药品名称 */
+  drugStandardName?: string
+  /** 当前页数 */
+  pageNum?: number
+  /** 每页条数 */
+  pageSize?: number
+  /** 查询年份 */
+  queryYear?: number
+}
+
+/**
+ * 研发管线-IND-列表返回对象
+ */
+export interface IndApplicationItem {
+  /** 受理号 */
+  acceptanceNo: string
+  /** 申请人(标准企业名) */
+  applicationCompany: string
+  /** 申请状态(审核中,备案未通过,备案通过) */
+  applicationStatus: string
+  /** 通过时间 */
+  approvalTime: string
+  /** 清洗后分类 */
+  cleanedClassification: string
+  /** 清洗后药品类型 */
+  cleanedDrugType: string
+  /** 清洗后的药品名称 */
+  drugStandardName: string
+  /** 适应症 */
+  indication: string
+  /** 承办日期 */
+  undertakeDate: string
+}
+
+/**
+ * 研发管线-IND-列表分页响应
+ */
+export interface IndApplicationListResponse {
+  list: IndApplicationItem[]
+  pages: number
+  total: number
+}
+
+// #endregion
