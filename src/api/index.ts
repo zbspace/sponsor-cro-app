@@ -38,7 +38,11 @@ import type {
   ResearcherStatisticsResponse,
   TrialListResponse,
   CenterAndResearcherListResponse,
-  HospitalStatisticsQuery
+  HospitalStatisticsQuery,
+  SearchCustIndexReq,
+  BusinessClueStatisticsResponse,
+  CroAndThirdLabStatisticsResponse,
+  PipelineStatisticsResponse
 } from '@/types/api'
 
 // #region 登录模块
@@ -695,6 +699,45 @@ export async function getChineseQuestionDetail(wordId: number) {
  */
 export async function reviewWord(wordId: number, answerResult: boolean) {
   return post('/word/review/reviewWord', { wordId, answerResult })
+}
+
+// #endregion
+
+// #region 查客户首页模块
+
+/**
+ * 查客户首页-商机线索统计
+ * @param params { parentCompanyId, standardCompanyIdList }
+ * @returns Promise<BusinessClueStatisticsResponse>
+ */
+export async function businessClueStatistics(params: SearchCustIndexReq) {
+  return post<BusinessClueStatisticsResponse>(
+    '/api/searchCust/businessClueStatistics',
+    params,
+    true
+  )
+}
+
+/**
+ * 查客户首页-供应商合作记录统计
+ * @param params { parentCompanyId, standardCompanyIdList }
+ * @returns Promise<CroAndThirdLabStatisticsResponse>
+ */
+export async function croAndThirdLabStatistics(params: SearchCustIndexReq) {
+  return post<CroAndThirdLabStatisticsResponse>(
+    '/api/searchCust/croAndThirdLabStatistics',
+    params,
+    true
+  )
+}
+
+/**
+ * 查客户首页-研发管线总的统计
+ * @param params { parentCompanyId, standardCompanyIdList }
+ * @returns Promise<PipelineStatisticsResponse>
+ */
+export async function pipelineStatistics(params: SearchCustIndexReq) {
+  return post<PipelineStatisticsResponse>('/api/searchCust/pipelineStatistics', params, true)
 }
 
 // #endregion

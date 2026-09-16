@@ -62,21 +62,21 @@
             <view class="item-icon ind">IND</view>
             <view class="item-info">
               <text class="label">新药临床试验申请</text>
-              <text class="value">34</text>
+              <text class="value">{{ pipelineStat.indStatisticsNum }}</text>
             </view>
           </view>
           <view class="grid-item" @click="goTo('hospital-stat')">
             <view class="item-icon cde">CDE</view>
             <view class="item-info">
               <text class="label">临床试验登记</text>
-              <text class="value">234</text>
+              <text class="value">{{ pipelineStat.cdeStatisticsNum }}</text>
             </view>
           </view>
           <view class="grid-item" @click="goTo('nda-stat')">
             <view class="item-icon nda">NDA</view>
             <view class="item-info">
               <text class="label">新药上市申请</text>
-              <text class="value">144</text>
+              <text class="value">{{ pipelineStat.ndaStatisticsNum }}</text>
             </view>
           </view>
         </view>
@@ -90,7 +90,7 @@
             <view class="item-icon cro">CRO</view>
             <view class="item-info">
               <text class="label">CRO公司</text>
-              <text class="value">34</text>
+              <text class="value">{{ supplierStat.croStatisticsNum }}</text>
             </view>
           </view>
           <view class="grid-item" @click="goTo('lab-stat')">
@@ -99,7 +99,7 @@
             </view>
             <view class="item-info">
               <text class="label">中心实验室</text>
-              <text class="value">234</text>
+              <text class="value">{{ supplierStat.thirdLabStatisticsNum }}</text>
             </view>
           </view>
         </view>
@@ -141,7 +141,7 @@
             </view>
             <view class="item-info">
               <text class="label">上市后</text>
-              <text class="value">34</text>
+              <text class="value">{{ businessClueStat.afterListingNum }}</text>
             </view>
           </view>
           <view class="grid-item">
@@ -150,7 +150,7 @@
             </view>
             <view class="item-info">
               <text class="label">上市前</text>
-              <text class="value">234</text>
+              <text class="value">{{ businessClueStat.beforeListingNum }}</text>
             </view>
           </view>
           <view class="grid-item">
@@ -159,7 +159,7 @@
             </view>
             <view class="item-info">
               <text class="label">最值得跟进产品</text>
-              <text class="value">144</text>
+              <text class="value">{{ businessClueStat.worthyProductsNum }}</text>
             </view>
           </view>
           <view class="grid-item">
@@ -168,7 +168,7 @@
             </view>
             <view class="item-info">
               <text class="label">企业联系人</text>
-              <text class="value">144</text>
+              <text class="value">{{ businessClueStat.businessContactNum }}</text>
             </view>
           </view>
         </view>
@@ -181,9 +181,11 @@
 
 <script setup lang="ts">
   // #region 导入
-  import { ref } from 'vue'
+  import { reactive, ref, watch } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
+  import { businessClueStatistics, croAndThirdLabStatistics, pipelineStatistics } from '@/api'
+  import type { SearchCustIndexReq } from '@/types/api'
   // #endregion
 
   // #region 状态
@@ -195,6 +197,24 @@
   const isStarred = ref(false)
   const currentCompany = ref<string[]>([])
   const companyOptions = ref<{ value: string; text: string }[]>([])
+  // 研发管线统计
+  const pipelineStat = reactive({
+    indStatisticsNum: 0,
+    cdeStatisticsNum: 0,
+    ndaStatisticsNum: 0
+  })
+  // 供应商合作记录统计
+  const supplierStat = reactive({
+    croStatisticsNum: 0,
+    thirdLabStatisticsNum: 0
+  })
+  // 商机线索统计
+  const businessClueStat = reactive({
+    afterListingNum: 0,
+    beforeListingNum: 0,
+    worthyProductsNum: 0,
+    businessContactNum: 0
+  })
   // #endregion
 
   // #region 生命周期
@@ -207,6 +227,77 @@
     if (options?.companyId) {
       companyId.value = decodeURIComponent(options.companyId)
     }
+    fetchStatistics()
+  })
+  // #endregion
+
+  // #region 请求参数构造
+  /**
+   * 构造查客户首页统计接口通用请求参数
+   */
+  function buildBaseParams(): SearchCustIndexReq {
+    return {
+      parentCompanyId: companyId.value ? Number(companyId.value) : undefined,
+      standardCompanyIdList: currentCompany.value.length
+        ? currentCompany.value.map((id) => Number(id))
+        : undefined
+    }
+  }
+  // #endregion
+
+  // #region 数据请求
+  /** 研发管线总的统计 */
+  async function fetchPipelineStatistics() {
+    try {
+      const res = await pipelineStatistics(buildBaseParams())
+      if (res.data) {
+        pipelineStat.indStatisticsNum = res.data.indStatisticsNum ?? 0
+        pipelineStat.cdeStatisticsNum = res.data.cdeStatisticsNum ?? 0
+        pipelineStat.ndaStatisticsNum = res.data.ndaStatisticsNum ?? 0
+      }
+    } catch {
+      // 静默处理
+    }
+  }
+
+  /** 供应商合作记录统计 */
+  async function fetchCroAndThirdLabStatistics() {
+    try {
+      const res = await croAndThirdLabStatistics(buildBaseParams())
+      if (res.data) {
+        supplierStat.croStatisticsNum = res.data.croStatisticsNum ?? 0
+        supplierStat.thirdLabStatisticsNum = res.data.thirdLabStatisticsNum ?? 0
+      }
+    } catch {
+      // 静默处理
+    }
+  }
+
+  /** 商机线索统计 */
+  async function fetchBusinessClueStatistics() {
+    try {
+      const res = await businessClueStatistics(buildBaseParams())
+      if (res.data) {
+        businessClueStat.afterListingNum = res.data.afterListingNum ?? 0
+        businessClueStat.beforeListingNum = res.data.beforeListingNum ?? 0
+        businessClueStat.worthyProductsNum = res.data.worthyProductsNum ?? 0
+        businessClueStat.businessContactNum = res.data.businessContactNum ?? 0
+      }
+    } catch {
+      // 静默处理
+    }
+  }
+
+  /** 并发拉取首页各模块统计 */
+  function fetchStatistics() {
+    fetchPipelineStatistics()
+    fetchCroAndThirdLabStatistics()
+    fetchBusinessClueStatistics()
+  }
+
+  // 相关公司筛选变化后重新统计
+  watch(currentCompany, () => {
+    fetchStatistics()
   })
   // #endregion
 

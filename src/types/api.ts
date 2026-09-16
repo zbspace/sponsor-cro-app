@@ -513,3 +513,53 @@ export interface VipRenewResponse {
   lastDay: any
   createTime: any
 }
+
+// #region 查客户首页模块
+
+/**
+ * 查客户首页请求对象
+ */
+export interface SearchCustIndexReq {
+  /** 母公司ID */
+  parentCompanyId?: number
+  /** 子公司ID集合 */
+  standardCompanyIdList?: number[]
+}
+
+/**
+ * 查客户首页商机线索总的统计返回对象
+ */
+export interface BusinessClueStatisticsResponse {
+  /** 上市后 */
+  afterListingNum: number
+  /** 上市前 */
+  beforeListingNum: number
+  /** 企业联系人 */
+  businessContactNum: number
+  /** 最值得跟进产品 */
+  worthyProductsNum: number
+}
+
+/**
+ * 查客户首页供应商合作记录统计返回对象
+ */
+export interface CroAndThirdLabStatisticsResponse {
+  /** CRO公司数 */
+  croStatisticsNum: number
+  /** 中心实验室数 */
+  thirdLabStatisticsNum: number
+}
+
+/**
+ * 查客户首页研发管线总的统计返回对象
+ */
+export interface PipelineStatisticsResponse {
+  /** 新药临床试验申请（IND）数 */
+  indStatisticsNum: number
+  /** 临床试验登记（CDE）数 */
+  cdeStatisticsNum: number
+  /** 新药上市申请（NDA）数 */
+  ndaStatisticsNum: number
+}
+
+// #endregion
