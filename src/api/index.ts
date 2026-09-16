@@ -62,7 +62,15 @@ import type {
   CdeProductRankResponse,
   CdeTrailListReq,
   CdeTrailListResponse,
-  CdeCenterAndResearcherReq
+  CdeCenterAndResearcherReq,
+  NdaDataStatisticsParam,
+  NdaDrugTypeVo,
+  NdaApplyAndApproveParam,
+  NdaLastYearProjectVo,
+  NdaLastYearRegisterCategoryParam,
+  NdaLastYearRegisterCategoryVo,
+  NdaProductDataListResponse,
+  NdaProductRankVo
 } from '@/types/api'
 
 // #region 登录模块
@@ -873,6 +881,59 @@ export async function queryCdeCenterAndResearcherList(params: CdeCenterAndResear
     params,
     true
   )
+}
+
+// #endregion
+
+// #region NDA模块
+
+/**
+ * NDA-药品类型统计
+ * @param params { companyParentId, pageNum, pageSize, trialStage, year }
+ * @returns Promise<NdaDrugTypeVo>
+ */
+export async function queryDrugTypeStatistics(params: NdaDataStatisticsParam) {
+  return post<NdaDrugTypeVo>('/api/v1/ndaData/queryDrugTypeStatistics', params, true)
+}
+
+/**
+ * NDA-近5年申请和获批
+ * @param params { parentCompanyId, queryType, standardCompanyIdList }
+ * @returns Promise<NdaLastYearProjectVo>
+ */
+export async function queryNdaLastYearApplyAndApprove(params: NdaApplyAndApproveParam) {
+  return post<NdaLastYearProjectVo>('/api/v1/ndaData/queryNdaLastYearApplyAndApprove', params, true)
+}
+
+/**
+ * NDA-近5年申请注册分类
+ * @param params { drugTypeCode, parentCompanyId, standardCompanyIdList }
+ * @returns Promise<NdaLastYearRegisterCategoryVo>
+ */
+export async function queryNdaLastYearRegisterCategory(params: NdaLastYearRegisterCategoryParam) {
+  return post<NdaLastYearRegisterCategoryVo>(
+    '/api/v1/ndaData/queryNdaLastYearRegisterCategory',
+    params,
+    true
+  )
+}
+
+/**
+ * NDA-列表
+ * @param params { companyParentId, pageNum, pageSize, trialStage, year }
+ * @returns Promise<NdaProductDataListResponse>
+ */
+export async function queryNdaProductList(params: NdaDataStatisticsParam) {
+  return post<NdaProductDataListResponse>('/api/v1/ndaData/queryNdaProductList', params, true)
+}
+
+/**
+ * NDA-产品NDA榜单
+ * @param params { companyParentId, pageNum, pageSize, trialStage, year }
+ * @returns Promise<NdaProductRankVo[]>
+ */
+export async function queryProjectRank(params: NdaDataStatisticsParam) {
+  return post<NdaProductRankVo[]>('/api/v1/ndaData/queryProjectRank', params, true)
 }
 
 // #endregion

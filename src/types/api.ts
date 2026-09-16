@@ -853,3 +853,154 @@ export interface CdeCenterAndResearcherReq {
 }
 
 // #endregion
+
+// #region NDA模块
+
+/**
+ * NDA-统计公共查询对象
+ */
+export interface NdaDataStatisticsParam {
+  /** 药企母公司ID */
+  companyParentId?: number
+  /** 当前页数 */
+  pageNum?: number
+  /** 每页条数 */
+  pageSize?: number
+  /** 试验分期 */
+  trialStage?: string
+  /** 年份 */
+  year?: string
+}
+
+/**
+ * NDA-药品类型统计返回对象
+ */
+export interface NdaDrugTypeVo {
+  /** 药品类型统计-化药 */
+  drugTypeCountHuaYao?: number
+  /** 药品类型统计-其他 */
+  drugTypeCountOther?: number
+  /** 药品类型统计-预防用生物制品 */
+  drugTypeCountYfShengWu?: number
+  /** 药品类型统计-中药/天然药物 */
+  drugTypeCountZhongYao?: number
+  /** 药品类型统计-治疗用生物制品 */
+  drugTypeCountZlShengWu?: number
+  /** 年份 */
+  year?: string
+}
+
+/**
+ * NDA-近5年申请和获批查询对象
+ */
+export interface NdaApplyAndApproveParam {
+  /** 药企母公司ID */
+  parentCompanyId?: number
+  /** 查询类型 0-申请，1-获批 */
+  queryType?: number
+  /** 子公司ID集合 */
+  standardCompanyIdList?: number[]
+}
+
+/**
+ * NDA-近5年项目统计项
+ */
+export interface NdaProjectSumVo {
+  /** 项目数量 */
+  projectCount?: number
+  /** 年份 */
+  year?: number
+}
+
+/**
+ * NDA-近5年申请和获批返回对象
+ */
+export interface NdaLastYearProjectVo {
+  /** 项目统计 */
+  projectSumList?: NdaProjectSumVo[]
+  /** 查询类型名称 0-申请，1-获批 */
+  queryTypeName?: string
+}
+
+/**
+ * NDA-近5年申请注册分类查询对象
+ */
+export interface NdaLastYearRegisterCategoryParam {
+  /** 药品类型:1-化药,2-预防用生物制品,3-治疗用生物制品,4-中药/天然药物 */
+  drugTypeCode?: number
+  /** 药企母公司ID */
+  parentCompanyId?: number
+  /** 子公司ID集合 */
+  standardCompanyIdList?: number[]
+}
+
+/**
+ * NDA-近5年申请注册分类返回对象
+ */
+export interface NdaLastYearRegisterCategoryVo {
+  /** 药品类型 */
+  drugTypeName?: string
+  /** 注册分类1 */
+  registerCategory1?: number
+  /** 注册分类2 */
+  registerCategory2?: number
+  /** 注册分类3 */
+  registerCategory3?: number
+  /** 注册分类4 */
+  registerCategory4?: number
+  /** 注册分类5 */
+  registerCategory5?: number
+  /** 注册分类-其他 */
+  registerCategoryOther?: number
+}
+
+/**
+ * NDA-列表返回对象
+ */
+export interface NdaProductDataVo {
+  /** 受理号 */
+  acceptanceNo?: string
+  /** 申请日期 */
+  applyDate?: string
+  /** 申请状态 */
+  applyStatus?: string
+  /** 批准日期 */
+  approveDate?: string
+  /** 药品名（清洗后） */
+  cleanedDrugName?: string
+  /** 药品类型(清洗后) */
+  cleanedDrugType?: string
+  /** 签发日期 */
+  issueDate?: string
+  /** 注册分类 */
+  registerCategoryList?: string[]
+  /** 企业名称(标准名) */
+  standardCompanyName?: string
+}
+
+/**
+ * NDA-列表分页响应
+ */
+export interface NdaProductDataListResponse {
+  list?: NdaProductDataVo[]
+  pages?: number
+  total?: number
+}
+
+/**
+ * NDA-产品NDA榜单项
+ */
+export interface NdaProductRankVo {
+  /** 申请数量 */
+  applyCount?: number
+  /** 母公司ID */
+  companyParentId?: number
+  /** 项目名称 */
+  projectName?: string
+  /** 注册分类 */
+  registerCategory?: string
+  /** 注册分类名称 */
+  registerCategoryName?: string
+}
+
+// #endregion

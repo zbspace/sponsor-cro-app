@@ -12,14 +12,6 @@
       </view>
       <view class="time-filter-wrapper">
         <uni-data-select
-          v-model="statusFilter"
-          :localdata="statusOptions"
-          :clear="false"
-          placeholder="请选择"
-        ></uni-data-select>
-      </view>
-      <view class="time-filter-wrapper">
-        <uni-data-select
           v-model="stageFilter"
           :localdata="stageOptions"
           :clear="false"
@@ -41,41 +33,37 @@
         <view class="card-header">
           <view class="title-row">
             <view class="icon-wrap" :class="getRandomColorClass(index)">
-              <text>{{ item.drugName ? item.drugName.charAt(0).toUpperCase() : 'Z' }}</text>
+              <text>{{ item.cleanedDrugName ? item.cleanedDrugName.charAt(0) : 'N' }}</text>
             </view>
-            <text class="title">{{ item.drugName }}</text>
-            <text class="date">{{ item.publishDate }}</text>
+            <text class="title">{{ item.cleanedDrugName }}</text>
+            <text class="date">{{ item.applyDate }}</text>
           </view>
           <view class="tag-row">
-            <view class="tag status">{{ item.trialStatus }}</view>
-            <view class="tag stage">{{ item.trialStage || '未知' }}</view>
+            <view class="tag status">{{ item.applyStatus || '未知' }}</view>
+            <view class="tag stage">{{ item.cleanedDrugType || '未知' }}</view>
           </view>
         </view>
 
         <view class="card-body">
           <view class="info-row">
-            <text class="label">适应症</text>
-            <text class="value">{{ item.indication }}</text>
+            <text class="label">注册分类</text>
+            <text class="value">{{ registerCategoryText(item) }}</text>
           </view>
           <view class="info-row">
-            <text class="label">申办方</text>
-            <text class="value">{{ item.sponsorName }}</text>
+            <text class="label">申请日期</text>
+            <text class="value">{{ item.applyDate || '--' }}</text>
           </view>
           <view class="info-row">
-            <text class="label">申请人(申办方)</text>
-            <text class="value">{{ item.sponsorContacts }}</text>
+            <text class="label">批准日期</text>
+            <text class="value">{{ item.approveDate || '--' }}</text>
           </view>
           <view class="info-row">
-            <text class="label">登记号</text>
-            <text class="value">{{ item.acceptanceNo }}</text>
+            <text class="label">企业名称</text>
+            <text class="value">{{ item.standardCompanyName || '--' }}</text>
           </view>
-        </view>
-
-        <view class="card-footer" @click="showResearcherPopup(item)">
-          <text class="footer-label">中心及研究者</text>
-          <view class="footer-right">
-            <text class="count">{{ item.centerAndResearcherCount }}</text>
-            <view class="arrow-right"></view>
+          <view class="info-row">
+            <text class="label">受理号</text>
+            <text class="value">{{ item.acceptanceNo || '--' }}</text>
           </view>
         </view>
       </view>
@@ -85,51 +73,28 @@
       </view>
       <view class="empty-status" v-if="list.length === 0 && !loading">
         <image src="/static/icons/no.png" mode="aspectFit" />
-        <text>暂无相关试验</text>
+        <text>暂无相关记录</text>
       </view>
     </scroll-view>
-
-    <!-- 中心及研究者弹窗 -->
-    <CenterResearcherPopup
-      v-model:visible="popupVisible"
-      :acceptance-no="currentTrial?.acceptanceNo || ''"
-      :company-parent-id="companyParentId"
-      :year="yearFilter"
-      :trial-stage="stageFilter"
-      :trial-status="statusFilter"
-    />
   </view>
 </template>
 
 <script setup lang="ts">
   import { ref, computed, onMounted, watch } from 'vue'
-  import { queryHospitalTrialList } from '@/api'
-  import { TRIAL_STATUS, TRIAL_PHASE, createEnumsToOptions } from '@/utils/enums'
-  import type { TrialItem, HospitalStatisticsQuery } from '@/types/api'
-  import CenterResearcherPopup from '../center-researcher-popup/center-researcher-popup.vue'
+  import { queryNdaProductList } from '@/api'
+  import type { NdaDataStatisticsParam, NdaProductDataVo } from '@/types/api'
 
   const props = defineProps<{
+    /** 母公司ID */
     companyParentId?: number
-    hospitalId?: number
-    researcherId?: number
   }>()
 
-  // #region 弹窗状态
-  const popupVisible = ref(false)
-  const currentTrial = ref<TrialItem | null>(null)
-
-  function showResearcherPopup(item: TrialItem) {
-    currentTrial.value = item
-    popupVisible.value = true
-  }
-  // #endregion
-
   // #region 筛选状态
-  const yearFilter = ref('')
-  const stageFilter = ref('')
-  const statusFilter = ref('')
-  const currentTimeFilter = ref('')
+  // 试验分期取值与 NDA 统计接口保持一致
+  const NDA_TRIAL_STAGES = ['Ⅰ期', 'Ⅱ期', 'Ⅲ期', 'Ⅳ期', 'BE', '其他']
 
+  const stageFilter = ref('')
+  const currentTimeFilter = ref('')
   const timeOptions = computed(() => [
     { value: '', text: '年份' },
     ...Array.from({ length: 5 }, (_, i) => {
@@ -140,18 +105,12 @@
 
   const stageOptions = computed(() => [
     { value: '', text: '试验分期' },
-    ...createEnumsToOptions(TRIAL_PHASE)
+    ...NDA_TRIAL_STAGES.map((text) => ({ value: text, text }))
   ])
-
-  const statusOptions = computed(() => [
-    { value: '', text: '试验状态' },
-    ...createEnumsToOptions(TRIAL_STATUS)
-  ])
-
   // #endregion
 
   // #region 列表数据
-  const list = ref<TrialItem[]>([])
+  const list = ref<NdaProductDataVo[]>([])
   const pageNum = ref(1)
   const pageSize = 10
   const total = ref(0)
@@ -166,29 +125,27 @@
     }
     loading.value = true
 
-    const params: HospitalStatisticsQuery = {
+    const params: NdaDataStatisticsParam = {
       companyParentId: props.companyParentId || undefined,
-      hosStandardId: props.hospitalId || undefined,
-      researcherId: props.researcherId || undefined,
       year: currentTimeFilter.value || undefined,
       trialStage: stageFilter.value || undefined,
-      trialStatus: statusFilter.value || undefined,
       pageNum: pageNum.value,
       pageSize: pageSize
     }
 
     try {
-      const res = await queryHospitalTrialList(params)
+      const res = await queryNdaProductList(params)
       if (res.data) {
+        const items = res.data.list || []
         if (refresh) {
-          list.value = res.data.list || []
+          list.value = items
         } else {
-          list.value = [...list.value, ...(res.data.list || [])]
+          list.value = [...list.value, ...items]
         }
         total.value = res.data.total || 0
       }
     } catch (e) {
-      console.error('获取试验列表失败', e)
+      console.error('获取NDA列表失败', e)
     } finally {
       loading.value = false
       isRefreshing.value = false
@@ -206,25 +163,28 @@
     isRefreshing.value = true
     fetchList(true)
   }
-
   // #endregion
 
-  // 时间筛选变化时自动重新请求列表数据
+  // 筛选变化时自动重新请求列表数据
   watch(currentTimeFilter, () => {
     fetchList(true)
   })
   watch(stageFilter, () => {
     fetchList(true)
   })
-  watch(statusFilter, () => {
-    fetchList(true)
-  })
-  // #endregion
 
   // #region 辅助函数
   function getRandomColorClass(index: number) {
     const classes = ['blue', 'green', 'purple', 'orange']
     return classes[index % classes.length]
+  }
+
+  /**
+   * 注册分类为字符串数组，展示时以顿号连接
+   */
+  function registerCategoryText(item: NdaProductDataVo) {
+    const categories = item.registerCategoryList || []
+    return categories.length ? categories.join('、') : '--'
   }
   // #endregion
 
@@ -234,7 +194,7 @@
 
   // 监听 props 变化重新加载
   watch(
-    () => [props.companyParentId, props.hospitalId, props.researcherId],
+    () => props.companyParentId,
     () => {
       fetchList(true)
     }

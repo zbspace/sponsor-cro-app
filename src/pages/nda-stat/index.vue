@@ -61,12 +61,12 @@
               <picker
                 class="filter-picker"
                 mode="selector"
-                :range="changeStageOptions"
+                :range="queryTypeOptions"
                 range-key="text"
-                @change="onChangeStageChange"
+                @change="onQueryTypeChange"
               >
                 <view class="filter-trigger">
-                  <text>{{ changeStageText }}</text>
+                  <text>{{ queryTypeText }}</text>
                   <view class="arrow-down"></view>
                 </view>
               </picker>
@@ -90,12 +90,12 @@
               <picker
                 class="filter-picker"
                 mode="selector"
-                :range="yearOptions"
+                :range="drugTypeOptions"
                 range-key="text"
-                @change="onStageYearChange"
+                @change="onDrugTypeChange"
               >
                 <view class="filter-trigger">
-                  <text>{{ stageYearText }}</text>
+                  <text>{{ drugTypeText }}</text>
                   <view class="arrow-down"></view>
                 </view>
               </picker>
@@ -111,20 +111,10 @@
           </view>
           <view class="phase-table">
             <view class="table-header">
-              <text>1类</text>
-              <text>2类</text>
-              <text>3类</text>
-              <text>4类</text>
-              <text>BE类</text>
-              <text>其他</text>
+              <text v-for="item in registerCategoryList" :key="item.label">{{ item.label }}</text>
             </view>
             <view class="table-body">
-              <text>{{ stageCounts.oneClass }}</text>
-              <text>{{ stageCounts.twoClass }}</text>
-              <text>{{ stageCounts.threeClass }}</text>
-              <text>{{ stageCounts.fourClass }}</text>
-              <text>{{ stageCounts.beClass }}</text>
-              <text>{{ stageCounts.otherClass }}</text>
+              <text v-for="item in registerCategoryList" :key="item.label">{{ item.count }}</text>
             </view>
           </view>
         </view>
@@ -139,10 +129,10 @@
                 mode="selector"
                 :range="yearOptions"
                 range-key="text"
-                @change="onStatusYearChange"
+                @change="onDrugTypeYearChange"
               >
                 <view class="filter-trigger">
-                  <text>{{ statusYearText }}</text>
+                  <text>{{ drugTypeYearText }}</text>
                   <view class="arrow-down"></view>
                 </view>
               </picker>
@@ -151,7 +141,7 @@
           <view class="donut-chart-wrapper">
             <view class="donut-chart" :style="{ background: donutGradient }"></view>
             <view class="legend-grid">
-              <view class="legend-item" v-for="(item, index) in statusLegend" :key="index">
+              <view class="legend-item" v-for="(item, index) in drugTypeLegend" :key="index">
                 <view class="dot" :style="{ backgroundColor: item.color }"></view>
                 <text class="name">{{ item.name }}</text>
                 <text class="count">{{ item.count }}</text>
@@ -182,8 +172,9 @@
           <view class="data-table">
             <view class="table-header">
               <text class="col-rank">排名</text>
-              <text class="col-name">产品名称</text>
-              <text class="col-count">临床试验数</text>
+              <text class="col-name">项目名称</text>
+              <text class="col-category">注册分类</text>
+              <text class="col-count">申请数量</text>
             </view>
             <view class="table-body">
               <view
@@ -193,8 +184,9 @@
                 :class="{ zebra: index % 2 === 1 }"
               >
                 <text class="col-rank">{{ index + 1 }}</text>
-                <text class="col-name">{{ item.drugStandardName }}</text>
-                <text class="col-count">{{ item.trialCount }}</text>
+                <text class="col-name">{{ item.projectName }}</text>
+                <text class="col-category">{{ item.registerCategoryName || '--' }}</text>
+                <text class="col-count">{{ item.applyCount }}</text>
               </view>
               <view class="empty-tip" v-if="!productList.length">暂无数据</view>
             </view>
@@ -204,12 +196,7 @@
 
       <!-- 详情内容 (复用现有的项目列表样式) -->
       <view v-else class="detail-content">
-        <TrialList
-          class="trial-list-comp"
-          :company-parent-id="companyParentId"
-          :hospital-id="hospitalId"
-          :researcher-id="researcherId"
-        />
+        <NdaList class="trial-list-comp" :company-parent-id="companyParentId" />
       </view>
     </view>
   </scroll-view>
@@ -219,24 +206,24 @@
 
 <script setup lang="ts">
   // #region 导入
-  import { ref, reactive, computed, onMounted, watch, getCurrentInstance, nextTick } from 'vue'
+  import { ref, computed, onMounted, watch, getCurrentInstance, nextTick } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
-  import TrialList from '@/components/trial-list/trial-list.vue'
+  import NdaList from '@/components/nda-list/nda-list.vue'
 
   import {
-    queryHospitalCooperationChange,
-    queryHospitalTrialStage,
-    queryHospitalTrialStatus,
-    queryHospitalCooperationProduct
+    queryDrugTypeStatistics,
+    queryNdaLastYearApplyAndApprove,
+    queryNdaLastYearRegisterCategory,
+    queryProjectRank
   } from '@/api'
   import type {
-    CooperationSumItem,
-    DrugStatisticsItem,
-    HospitalStatisticsQuery,
-    TrialStatusResponse
+    NdaDataStatisticsParam,
+    NdaDrugTypeVo,
+    NdaLastYearRegisterCategoryVo,
+    NdaProductRankVo,
+    NdaProjectSumVo
   } from '@/types/api'
-  import { TRIAL_PHASE, createEnumsToOptions } from '@/utils/enums'
 
   // #endregion
 
@@ -245,41 +232,49 @@
   const activeTab = ref('stat')
   const menu = ref({ top: 0, left: 0, height: 0 })
 
-  // 路由筛选参数（来自搜索页选中的药企/医院/研究者）
+  // 路由筛选参数（来自搜索页选中的药企）
   const companyName = ref('')
   const companyParentId = ref(0)
-  const hospitalId = ref(0)
-  const researcherId = ref(0)
   // #endregion
 
-  // #region 近五年试验合作变化
-  const changeList = ref<CooperationSumItem[]>([])
-  const changeStageFilter = ref('')
-  const changeStageText = computed(
-    () => changeStageOptions.value.find((o) => o.value === changeStageFilter.value)?.text || '全部'
+  // #region 药品类型下拉选项（注册分类接口按药品类型分别统计）
+  const DRUG_TYPE_OPTIONS = [
+    { value: 1, text: '化药' },
+    { value: 2, text: '预防用生物制品' },
+    { value: 3, text: '治疗用生物制品' },
+    { value: 4, text: '中药/天然药物' }
+  ]
+  const drugTypeOptions = computed(() => DRUG_TYPE_OPTIONS)
+  const drugTypeCode = ref(DRUG_TYPE_OPTIONS[0].value)
+  const drugTypeText = computed(
+    () => DRUG_TYPE_OPTIONS.find((o) => o.value === drugTypeCode.value)?.text || '药品类型'
   )
   // #endregion
 
-  // #region 试验分期
-  const stageCounts = reactive({
-    oneClass: 0,
-    twoClass: 0,
-    threeClass: 0,
-    fourClass: 0,
-    beClass: 0,
-    otherClass: 0
-  })
-  const stageYearFilter = ref('')
+  // #region 近五年NDA申请与获批
+  const projectSumList = ref<NdaProjectSumVo[]>([])
+  const queryTypeOptions = [
+    { value: 0, text: '申请' },
+    { value: 1, text: '获批' }
+  ]
+  const queryType = ref(queryTypeOptions[0].value)
+  const queryTypeText = computed(
+    () => queryTypeOptions.find((o) => o.value === queryType.value)?.text || '申请'
+  )
   // #endregion
 
-  // #region 试验状态
-  const statusLegend = ref<{ name: string; count: number; color: string }[]>([])
+  // #region 注册分类（药品类型下的注册分类数量）
+  const registerCategoryList = ref<{ label: string; count: number }[]>([])
+  // #endregion
+
+  // #region 药物类型
+  const drugTypeLegend = ref<{ name: string; count: number; color: string }[]>([])
   const donutGradient = ref('')
-  const statusYearFilter = ref('')
+  const drugTypeYearFilter = ref('')
   // #endregion
 
-  // #region 合作产品
-  const productList = ref<DrugStatisticsItem[]>([])
+  // #region 产品NDA榜单
+  const productList = ref<NdaProductRankVo[]>([])
   const productYearFilter = ref('')
   // #endregion
 
@@ -291,11 +286,8 @@
       return { value: String(year), text: `${year}年` }
     })
   ])
-  const stageYearText = computed(
-    () => yearOptions.value.find((o) => o.value === stageYearFilter.value)?.text || '全部'
-  )
-  const statusYearText = computed(
-    () => yearOptions.value.find((o) => o.value === statusYearFilter.value)?.text || '全部'
+  const drugTypeYearText = computed(
+    () => yearOptions.value.find((o) => o.value === drugTypeYearFilter.value)?.text || '全部'
   )
   const productYearText = computed(
     () => yearOptions.value.find((o) => o.value === productYearFilter.value)?.text || '全部'
@@ -304,110 +296,98 @@
 
   // #region 请求参数构造
   /**
-   * 构造统计接口通用请求参数
+   * 构造 NDA 统计接口通用请求参数
    */
-  function buildBaseParams(): HospitalStatisticsQuery {
+  function buildBaseParams(): NdaDataStatisticsParam {
     return {
       pageNum: 1,
       pageSize: 10,
-      companyParentId: companyParentId.value || undefined,
-      hosStandardId: hospitalId.value || undefined,
-      researcherId: researcherId.value || undefined
+      companyParentId: companyParentId.value || undefined
     }
   }
   // #endregion
 
   // #region 数据请求
-  async function fetchChange() {
+  async function fetchApplyAndApprove() {
     try {
-      const params = buildBaseParams()
-      if (changeStageFilter.value) {
-        params.trialStage = changeStageFilter.value
-      }
-      const res = await queryHospitalCooperationChange(params)
-      changeList.value = res.data?.cooperationSumList || []
+      const res = await queryNdaLastYearApplyAndApprove({
+        parentCompanyId: companyParentId.value || undefined,
+        queryType: queryType.value
+      })
+      projectSumList.value = res.data?.projectSumList || []
       drawLineChart()
     } catch {
       // 静默处理
     }
   }
 
-  async function fetchStage() {
+  async function fetchRegisterCategory() {
     try {
-      const params = buildBaseParams()
-      if (stageYearFilter.value) {
-        params.year = stageYearFilter.value
-      }
-      const res = await queryHospitalTrialStage(params)
-      if (res.data) {
-        stageCounts.oneClass = res.data.oneClassCount ?? 0
-        stageCounts.twoClass = res.data.twoClassCount ?? 0
-        stageCounts.threeClass = res.data.threeClassCount ?? 0
-        stageCounts.fourClass = res.data.fourClassCount ?? 0
-        stageCounts.beClass = res.data.beClassCount ?? 0
-        stageCounts.otherClass = res.data.otherClassCount ?? 0
-      }
+      const res = await queryNdaLastYearRegisterCategory({
+        parentCompanyId: companyParentId.value || undefined,
+        drugTypeCode: drugTypeCode.value
+      })
+      registerCategoryList.value = buildRegisterCategoryList(res.data)
       drawRadarChart()
     } catch {
       // 静默处理
     }
   }
 
-  async function fetchStatus() {
+  async function fetchDrugType() {
     try {
       const params = buildBaseParams()
-      if (statusYearFilter.value) {
-        params.year = statusYearFilter.value
+      if (drugTypeYearFilter.value) {
+        params.year = drugTypeYearFilter.value
       }
-      const res = await queryHospitalTrialStatus(params)
-      buildStatusLegend(res.data || ({} as TrialStatusResponse))
+      const res = await queryDrugTypeStatistics(params)
+      buildDrugTypeLegend(res.data || ({} as NdaDrugTypeVo))
     } catch {
       // 静默处理
     }
   }
 
-  async function fetchProduct() {
+  async function fetchProductRank() {
     try {
       const params = buildBaseParams()
       if (productYearFilter.value) {
         params.year = productYearFilter.value
       }
-      const res = await queryHospitalCooperationProduct(params)
-      productList.value = res.data?.list || []
+      const res = await queryProjectRank(params)
+      productList.value = res.data || []
     } catch {
       // 静默处理
     }
   }
-
-  const changeStageOptions = computed(() => [
-    { value: '', text: '试验分期' },
-    ...createEnumsToOptions(TRIAL_PHASE)
-  ])
   // #endregion
 
   // #region 筛选联动
-  function onChangeStageChange(e: any) {
+  function onQueryTypeChange(e: any) {
     const idx = Number(e.detail.value)
-    changeStageFilter.value = changeStageOptions.value[idx]?.value || ''
-    fetchChange()
+    const option = queryTypeOptions[idx]
+    if (!option) return
+    queryType.value = option.value
+    fetchApplyAndApprove()
   }
 
-  function onStageYearChange(e: any) {
+  function onDrugTypeChange(e: any) {
     const idx = Number(e.detail.value)
-    stageYearFilter.value = yearOptions.value[idx]?.value || ''
-    fetchStage()
+    const option = DRUG_TYPE_OPTIONS[idx]
+    if (!option) return
+    drugTypeCode.value = option.value
+    fetchRegisterCategory()
   }
 
-  function onStatusYearChange(e: any) {
+  function onDrugTypeYearChange(e: any) {
     const idx = Number(e.detail.value)
-    statusYearFilter.value = yearOptions.value[idx]?.value || ''
-    fetchStatus()
+    drugTypeYearFilter.value = yearOptions.value[idx]?.value || ''
+    fetchDrugType()
   }
 
   function onProductYearChange(e: any) {
     const idx = Number(e.detail.value)
     productYearFilter.value = yearOptions.value[idx]?.value || ''
-    fetchProduct()
+    fetchProductRank()
   }
   // #endregion
 
@@ -471,8 +451,8 @@
     // 清空画布
     ctx.clearRect(0, 0, width, height)
 
-    const data = changeList.value.map((item) => Number(item.cooperationCount) || 0)
-    const years = changeList.value.map((item) => {
+    const data = projectSumList.value.map((item) => Number(item.projectCount) || 0)
+    const years = projectSumList.value.map((item) => {
       const y = String(item.year)
       return y.length >= 4 ? `${y.slice(2)}年` : y
     })
@@ -559,20 +539,20 @@
     const height = canvas.height
     const center = { x: width / 2, y: height / 2 }
     const radius = Math.min(width, height) * 0.36
-    const sides = 6
-    const labels = ['1类', '2类', '3类', '4类', 'BE类', '其他']
-    const values = [
-      stageCounts.oneClass,
-      stageCounts.twoClass,
-      stageCounts.threeClass,
-      stageCounts.fourClass,
-      stageCounts.beClass,
-      stageCounts.otherClass
-    ]
+    const labels = registerCategoryList.value.map((item) => item.label)
+    const values = registerCategoryList.value.map((item) => Number(item.count) || 0)
+    const sides = Math.max(labels.length, 3)
     const maxVal = Math.max(...values, 1)
 
     // 清空画布
     ctx.clearRect(0, 0, width, height)
+
+    if (!labels.length) {
+      ctx.fillStyle = '#999999'
+      ctx.font = '12px sans-serif'
+      ctx.fillText('暂无数据', width / 2 - 24, height / 2)
+      return
+    }
 
     // 绘制背景网格
     ctx.strokeStyle = '#eeeeee'
@@ -633,8 +613,8 @@
     // 清空画布
     ctx.clearRect(0, 0, width, height)
 
-    const data = changeList.value.map((item) => Number(item.cooperationCount) || 0)
-    const years = changeList.value.map((item) => {
+    const data = projectSumList.value.map((item) => Number(item.projectCount) || 0)
+    const years = projectSumList.value.map((item) => {
       const y = String(item.year)
       return y.length >= 4 ? `${y.slice(2)}年` : y
     })
@@ -720,20 +700,21 @@
     const ctx = uni.createCanvasContext('radarCanvas')
     const center = { x: 150, y: 80 }
     const radius = 55
-    const sides = 6
-    const labels = ['1类', '2类', '3类', '4类', 'BE类', '其他']
-    const values = [
-      stageCounts.oneClass,
-      stageCounts.twoClass,
-      stageCounts.threeClass,
-      stageCounts.fourClass,
-      stageCounts.beClass,
-      stageCounts.otherClass
-    ]
+    const labels = registerCategoryList.value.map((item) => item.label)
+    const values = registerCategoryList.value.map((item) => Number(item.count) || 0)
+    const sides = Math.max(labels.length, 3)
     const maxVal = Math.max(...values, 1)
 
     // 清空画布
     ctx.clearRect(0, 0, 300, 150)
+
+    if (!labels.length) {
+      ctx.setFillStyle('#999999')
+      ctx.setFontSize(12)
+      ctx.fillText('暂无数据', 126, 80)
+      ctx.draw()
+      return
+    }
 
     // 绘制背景网格
     ctx.setStrokeStyle('#eeeeee')
@@ -811,22 +792,36 @@
   }
 
   /**
-   * 试验状态：根据接口数据生成环形渐变与图例
+   * 注册分类：接口返回 registerCategory1~5 + other 的对象，转换为雷达图/表格数据
    */
-  function buildStatusLegend(data: TrialStatusResponse) {
-    const items: { key: keyof TrialStatusResponse; name: string; color: string }[] = [
-      { key: 'trialingRecruiting', name: '进行中-招募中', color: '#499AE6' },
-      { key: 'trialingRecruited', name: '进行中-招募完成', color: '#7ED321' },
-      { key: 'trialing', name: '进行中-尚未招募', color: '#F5A623' },
-      { key: 'completed', name: '已完成', color: '#9013FE' },
-      { key: 'trialingTerminated', name: '主动暂停', color: '#D0021B' },
-      { key: 'trialingIecTerminated', name: '被叫停', color: '#50E3C2' }
+  function buildRegisterCategoryList(data?: NdaLastYearRegisterCategoryVo) {
+    if (!data) return []
+    return [
+      { label: '1类', count: Number(data.registerCategory1) || 0 },
+      { label: '2类', count: Number(data.registerCategory2) || 0 },
+      { label: '3类', count: Number(data.registerCategory3) || 0 },
+      { label: '4类', count: Number(data.registerCategory4) || 0 },
+      { label: '5类', count: Number(data.registerCategory5) || 0 },
+      { label: '其他', count: Number(data.registerCategoryOther) || 0 }
+    ]
+  }
+
+  /**
+   * 药物类型：根据接口数据生成环形渐变与图例
+   */
+  function buildDrugTypeLegend(data: NdaDrugTypeVo) {
+    const items: { key: keyof NdaDrugTypeVo; name: string; color: string }[] = [
+      { key: 'drugTypeCountHuaYao', name: '化药', color: '#F5A623' },
+      { key: 'drugTypeCountZhongYao', name: '中药/天然药物', color: '#9013FE' },
+      { key: 'drugTypeCountYfShengWu', name: '预防用生物制品', color: '#499AE6' },
+      { key: 'drugTypeCountZlShengWu', name: '治疗用生物制品', color: '#7ED321' },
+      { key: 'drugTypeCountOther', name: '其他', color: '#D0021B' }
     ]
 
     const legend = items
-      .filter((item) => (data[item.key] || 0) > 0)
-      .map((item) => ({ name: item.name, count: data[item.key] || 0, color: item.color }))
-    statusLegend.value = legend
+      .filter((item) => (Number(data[item.key]) || 0) > 0)
+      .map((item) => ({ name: item.name, count: Number(data[item.key]) || 0, color: item.color }))
+    drugTypeLegend.value = legend
 
     const total = legend.reduce((sum, item) => sum + item.count, 0)
     if (!total) {
@@ -847,23 +842,17 @@
   onLoad((options: any) => {
     const info = uni.getMenuButtonBoundingClientRect()
     menu.value = info
-    // 读取路由筛选参数
+    // 读取路由筛选参数（company-detail 传入 companyId 作为药企母公司ID）
     if (options?.companyName) {
       companyName.value = decodeURIComponent(options.companyName)
     }
-    if (options?.companyParentId) {
-      companyParentId.value = Number(options.companyParentId)
+    if (options?.companyId) {
+      companyParentId.value = Number(options.companyId)
     }
-    if (options?.hosStandardId) {
-      hospitalId.value = Number(options.hosStandardId)
-    }
-    if (options?.researcherId) {
-      researcherId.value = Number(options.researcherId)
-    }
-    fetchChange()
-    fetchStage()
-    fetchStatus()
-    fetchProduct()
+    fetchApplyAndApprove()
+    fetchRegisterCategory()
+    fetchDrugType()
+    fetchProductRank()
   })
 
   onMounted(() => {
@@ -1142,8 +1131,12 @@
       flex: 1;
       text-align: center;
     }
+    .col-category {
+      width: 180rpx;
+      text-align: center;
+    }
     .col-count {
-      width: 200rpx;
+      width: 160rpx;
       text-align: center;
     }
 

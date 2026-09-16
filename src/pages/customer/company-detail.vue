@@ -330,6 +330,12 @@
         url: `/pages/${tab}/index?${query.join('&')}`
       })
     }
+
+    if (tab === 'nda-stat') {
+      uni.navigateTo({
+        url: `/pages/${tab}/index?${query.join('&')}`
+      })
+    }
   }
 </script>
 
