@@ -712,3 +712,144 @@ export interface IndApplicationListResponse {
 }
 
 // #endregion
+
+// #region 研发管线-CDE模块
+
+/**
+ * 研发管线-CDE-近5年临床试验公示查询对象
+ */
+export interface CdeApplicationNumReq extends PipelineCompanyQuery {
+  /** 查询分期(BE,Ⅰ期,Ⅱ期,Ⅲ期,Ⅳ期,其他) */
+  cleanedTrialStages?: string
+}
+
+/**
+ * 研发管线-CDE-近5年临床试验公示返回对象（与申请与获批数量返回结构一致）
+ */
+export type CdeApplicationNumItem = IndApplicationNumItem
+
+/**
+ * 研发管线-CDE-试验分期/试验状态数量查询对象
+ */
+export interface CdeTrialStagesOrStatusNumReq extends PipelineCompanyQuery {
+  /** 查询年份 */
+  queryYear?: number
+}
+
+/**
+ * 研发管线-CDE-试验分期返回对象
+ */
+export interface CdeTrialStageItem {
+  /** 试验分期类型 */
+  cleanedTrialStages: string
+  /** 试验分期数量 */
+  number: number
+}
+
+/**
+ * 研发管线-CDE-试验状态返回对象
+ */
+export interface CdeTrialStatusItem {
+  /** 试验状态类型 */
+  trialStatus: string
+  /** 试验状态数量 */
+  number: number
+}
+
+/**
+ * 研发管线-CDE-榜单查询对象
+ */
+export interface CdeProductRankReq extends PipelineCompanyQuery {
+  /** 当前页数 */
+  pageNum?: number
+  /** 每页条数 */
+  pageSize?: number
+  /** 查询年份 */
+  queryYear?: number
+}
+
+/**
+ * 研发管线-CDE-榜单返回对象
+ */
+export interface CdeProductRankItem {
+  /** cde临床试验数量 */
+  cdeTrialNum: number
+  /** 清洗后的药品名称 */
+  drugStandardName: string
+  /** 排名序号 */
+  rankNo: number
+}
+
+/**
+ * 研发管线-CDE-榜单分页响应
+ */
+export interface CdeProductRankResponse {
+  list: CdeProductRankItem[]
+  pages: number
+  total: number
+}
+
+/**
+ * 研发管线-CDE-试验列表查询对象
+ */
+export interface CdeTrailListReq extends PipelineCompanyQuery {
+  /** 查询分期(BE,Ⅰ期,Ⅱ期,Ⅲ期,Ⅳ期,其他) */
+  cleanedTrialStages?: string
+  /** 清洗后的药品名称 */
+  drugStandardName?: string
+  /** 当前页数 */
+  pageNum?: number
+  /** 每页条数 */
+  pageSize?: number
+  /** 查询年份 */
+  queryYear?: number
+  /** 试验状态类型(主动暂停,已完成,被叫停,进行中) */
+  trialStatus?: string
+}
+
+/**
+ * 研发管线-CDE-试验列表返回对象
+ */
+export interface CdeTrialItem {
+  /** 登记号 */
+  acceptanceNo: string
+  /** 申请方(标准企业名) */
+  applicationCompany: string
+  /** 中心及研究者数量 */
+  centerAndResearcherNum: number
+  /** 试验分期(Ⅰ期,Ⅱ期,Ⅲ期,Ⅳ期,BE,其他) */
+  cleanedTrialStages: string
+  /** 清洗后的药品名称 */
+  drugStandardName: string
+  /** 首次公示日期 */
+  firstPublicityDate: string
+  /** 适应症 */
+  indication: string
+  /** 申请人(申请方) */
+  sponsorContacts: string
+  /** 试验状态 */
+  trialStatus: string
+}
+
+/**
+ * 研发管线-CDE-试验列表分页响应
+ */
+export interface CdeTrailListResponse {
+  list: CdeTrialItem[]
+  pages: number
+  total: number
+}
+
+/**
+ * 研发管线-CDE-中心及研究者查询对象
+ */
+export interface CdeCenterAndResearcherReq {
+  /** 登记号 */
+  acceptanceNo?: string
+  /** 当前页数 */
+  pageNum?: number
+  /** 每页条数 */
+  pageSize?: number
+}
+
+// #endregion

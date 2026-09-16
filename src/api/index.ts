@@ -52,7 +52,17 @@ import type {
   IndProductRankReq,
   IndProductRankResponse,
   IndApplicationListReq,
-  IndApplicationListResponse
+  IndApplicationListResponse,
+  CdeApplicationNumReq,
+  CdeApplicationNumItem,
+  CdeTrialStagesOrStatusNumReq,
+  CdeTrialStageItem,
+  CdeTrialStatusItem,
+  CdeProductRankReq,
+  CdeProductRankResponse,
+  CdeTrailListReq,
+  CdeTrailListResponse,
+  CdeCenterAndResearcherReq
 } from '@/types/api'
 
 // #region 登录模块
@@ -801,6 +811,68 @@ export async function getIndProductRank(params: IndProductRankReq) {
  */
 export async function getIndApplicationList(params: IndApplicationListReq) {
   return post<IndApplicationListResponse>('/api/pipeline/getIndApplicationList', params, true)
+}
+
+// #endregion
+
+// #region 研发管线-CDE模块
+
+/**
+ * 研发管线-CDE-近5年临床试验公示
+ * @param params { cleanedTrialStages, parentCompanyId, standardCompanyIdList }
+ * @returns Promise<CdeApplicationNumItem[]>
+ */
+export async function getCdeApplicationNum(params: CdeApplicationNumReq) {
+  return post<CdeApplicationNumItem[]>('/api/pipeline/getCdeApplicationNum', params, true)
+}
+
+/**
+ * 研发管线-CDE-试验分期数量
+ * @param params { parentCompanyId, queryYear, standardCompanyIdList }
+ * @returns Promise<CdeTrialStageItem[]>
+ */
+export async function getCdeTrialStagesNum(params: CdeTrialStagesOrStatusNumReq) {
+  return post<CdeTrialStageItem[]>('/api/pipeline/getCdeTrialStagesNum', params, true)
+}
+
+/**
+ * 研发管线-CDE-试验状态数量
+ * @param params { parentCompanyId, queryYear, standardCompanyIdList }
+ * @returns Promise<CdeTrialStatusItem[]>
+ */
+export async function getCdeTrialStatusNum(params: CdeTrialStagesOrStatusNumReq) {
+  return post<CdeTrialStatusItem[]>('/api/pipeline/getCdeTrialStatusNum', params, true)
+}
+
+/**
+ * 研发管线-CDE-产品试验榜单
+ * @param params { pageNum, pageSize, parentCompanyId, queryYear, standardCompanyIdList }
+ * @returns Promise<CdeProductRankResponse>
+ */
+export async function getCdeProductRank(params: CdeProductRankReq) {
+  return post<CdeProductRankResponse>('/api/pipeline/getCdeProductRank', params, true)
+}
+
+/**
+ * 研发管线-CDE-试验列表
+ * @param params { cleanedTrialStages, drugStandardName, pageNum, pageSize, parentCompanyId, queryYear, standardCompanyIdList, trialStatus }
+ * @returns Promise<CdeTrailListResponse>
+ */
+export async function getCdeTrailList(params: CdeTrailListReq) {
+  return post<CdeTrailListResponse>('/api/pipeline/getCdeTrailList', params, true)
+}
+
+/**
+ * 研发管线-CDE-试验列表-中心及研究者列表
+ * @param params { acceptanceNo, pageNum, pageSize }
+ * @returns Promise<CenterAndResearcherListResponse>
+ */
+export async function queryCdeCenterAndResearcherList(params: CdeCenterAndResearcherReq) {
+  return post<CenterAndResearcherListResponse>(
+    '/api/pipeline/queryCenterAndResearcherList',
+    params,
+    true
+  )
 }
 
 // #endregion

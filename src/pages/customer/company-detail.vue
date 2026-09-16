@@ -65,7 +65,7 @@
               <text class="value">{{ pipelineStat.indStatisticsNum }}</text>
             </view>
           </view>
-          <view class="grid-item" @click="goTo('hospital-stat')">
+          <view class="grid-item" @click="goTo('ced-stat')">
             <view class="item-icon cde">CDE</view>
             <view class="item-info">
               <text class="label">临床试验登记</text>
@@ -320,6 +320,12 @@
       `companyName=${encodeURIComponent(companyName.value)}`
     ]
     if (tab === 'ind-stat') {
+      uni.navigateTo({
+        url: `/pages/${tab}/index?${query.join('&')}`
+      })
+    }
+
+    if (tab === 'ced-stat') {
       uni.navigateTo({
         url: `/pages/${tab}/index?${query.join('&')}`
       })

@@ -97,7 +97,7 @@
         "navigationStyle": "custom"
       }
     },
-       {
+    {
       "path": "pages/customer/matching-degree",
       "style": {
         "navigationBarTitleText": "匹配度",
@@ -108,6 +108,13 @@
       "path": "pages/customer/company-detail",
       "style": {
         "navigationBarTitleText": "药企详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/ced-stat/index",
+      "style": {
+        "navigationBarTitleText": "临床试验登记统计",
         "navigationStyle": "custom"
       }
     }
