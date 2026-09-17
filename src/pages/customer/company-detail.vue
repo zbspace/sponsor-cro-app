@@ -50,7 +50,8 @@
           </view>
         </view>
         <view class="star-btn" :class="{ active: isStarred }" @click="toggleStar">
-          <image src="../../static/icons/收藏1.png" mode="aspectFit" />
+          <image src="../../static/icons/收藏1.png" mode="aspectFit" v-if="!isStarred" />
+          <image src="../../static/icons/收藏.png" mode="aspectFit" v-else />
         </view>
       </view>
 
@@ -181,14 +182,17 @@
 
 <script setup lang="ts">
   // #region 导入
-  import { reactive, ref, watch } from 'vue'
+  import { computed, reactive, ref, watch } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
   import {
     businessClueStatistics,
     croAndThirdLabStatistics,
     pipelineStatistics,
-    queryStandardCompany
+    queryStandardCompany,
+    userCollect,
+    cancelUserCollect,
+    getUserCollectList
   } from '@/api'
   import type { SearchCustIndexReq } from '@/types/api'
   // #endregion
@@ -197,11 +201,14 @@
   const menu = ref({ top: 0, left: 0, height: 0 })
   const companyName = ref('')
   const companyId = ref('')
-  const isFavorite = ref(false)
   // 相关公司多选，空数组表示全部
   const isStarred = ref(false)
   const currentCompany = ref<string[]>([])
   const companyOptions = ref<{ value: string; text: string }[]>([])
+  // 收藏请求进行中，避免重复点击
+  const collectLoading = ref(false)
+  // 收藏记录id，用于取消收藏
+  const collectId = ref(0)
   // 研发管线统计
   const pipelineStat = reactive({
     indStatisticsNum: 0,
@@ -222,6 +229,70 @@
   })
   // #endregion
 
+  // #region 收藏功能
+  // 查客户页面收藏的是申办方母公司，类型固定为 sponsor(1)
+  const collectCompanyType = 1
+  // 当前页面所属模块：查客户
+  const collectServerId = 'searchCust'
+  // 收藏对象为当前页面展示的母公司
+  const collectParentCompanyId = computed(() => (companyId.value ? Number(companyId.value) : 0))
+
+  /**
+   * 查询当前公司是否已收藏，初始化收藏按钮状态并保存收藏记录id
+   */
+  async function fetchCollectStatus() {
+    const parentCompanyId = collectParentCompanyId.value
+    if (!parentCompanyId) return
+    try {
+      const res = await getUserCollectList({
+        pageNum: 1,
+        pageSize: 50,
+        companyType: collectCompanyType,
+        serverId: collectServerId
+      })
+      const record = res.data?.list.find((item) => item.parentCompanyId === parentCompanyId)
+      isStarred.value = !!record
+      collectId.value = record?.id || 0
+    } catch {
+      // 静默处理
+    }
+  }
+
+  /**
+   * 收藏/取消收藏当前公司
+   */
+  async function toggleStar() {
+    const parentCompanyId = collectParentCompanyId.value
+    if (!parentCompanyId) {
+      uni.showToast({ title: '暂无可收藏的公司', icon: 'none' })
+      return
+    }
+    if (collectLoading.value) return
+    collectLoading.value = true
+    try {
+      if (isStarred.value) {
+        // 取消收藏
+        if (!collectId.value) return
+        await cancelUserCollect(collectId.value)
+        isStarred.value = false
+        collectId.value = 0
+        uni.showToast({ title: '已取消收藏', icon: 'none' })
+      } else {
+        // 收藏
+        await userCollect(collectCompanyType, parentCompanyId, collectServerId)
+        isStarred.value = true
+        uni.showToast({ title: '已收藏', icon: 'none' })
+        // 收藏成功后刷新收藏记录，保存记录id供取消使用
+        fetchCollectStatus()
+      }
+    } catch {
+      // 请求失败提示已由请求拦截统一处理
+    } finally {
+      collectLoading.value = false
+    }
+  }
+  // #endregion
+
   // #region 生命周期
   onLoad((options) => {
     const info = uni.getMenuButtonBoundingClientRect()
@@ -232,6 +303,7 @@
     if (options?.companyId) {
       companyId.value = decodeURIComponent(options.companyId)
     }
+    fetchCollectStatus()
     fetchCompanyOptions()
     fetchStatistics()
   })
@@ -344,14 +416,6 @@
   // #region 方法
   function goBack() {
     uni.navigateBack({ delta: 1, fail: () => uni.reLaunch({ url: '/pages/index/index' }) })
-  }
-
-  const toggleStar = () => {
-    isStarred.value = !isStarred.value
-    uni.showToast({
-      title: isStarred.value ? '已收藏' : '已取消收藏',
-      icon: 'none'
-    })
   }
 
   const goTo = (tab: string) => {
@@ -524,18 +588,9 @@
       justify-content: center;
       align-items: center;
       box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.02);
-
-      .star-icon {
-        width: 40rpx;
-        height: 40rpx;
-        background-image: url('https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=star+icon+line+art+gray&image_size=square');
-        background-size: contain;
-        background-repeat: no-repeat;
-      }
-
-      &.active {
-        border-style: solid;
-        border-color: #499ae6;
+      image {
+        width: 100%;
+        height: 100%;
       }
     }
   }

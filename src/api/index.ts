@@ -563,14 +563,16 @@ export async function getRelatedCompanyList(params: {
  * 收藏公司
  * @param companyType 收藏的公司类型：1-sponsor, 2-cro, 3-thirdLab
  * @param parentCompanyId 收藏的母公司ID
+ * @param serverId 所属模块：searchCust(查客户), findCust(找客户), searchComCRO(查药企&CRO),
+ *                 searchComHos(查药企&医院), searchComLab(查药企&实验室), searchProduce(查产品)，默认查药企&CRO
  * @returns Promise
  */
-export async function userCollect(companyType: number, parentCompanyId: number) {
-  return post(
-    '/api/v1/userCollect/collect',
-    { companyType, parentCompanyId, serverId: 'searchComCRO' },
-    true
-  )
+export async function userCollect(
+  companyType: number,
+  parentCompanyId: number,
+  serverId = 'searchComCRO'
+) {
+  return post('/api/v1/userCollect/collect', { companyType, parentCompanyId, serverId }, true)
 }
 
 /**
@@ -584,9 +586,7 @@ export async function cancelUserCollect(id: number) {
 
 /**
  * 获取用户收藏列表
- * @param pageNum 页码
- * @param pageSize 每页条数
- * @param serverId 服务器ID，固定值为searchComCRO
+ * @param data { pageNum, pageSize, companyType, serverId }，serverId 为所属模块，默认查药企&CRO
  * @returns Promise
  */
 export async function getUserCollectList(data: any) {
