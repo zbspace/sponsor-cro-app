@@ -184,7 +184,12 @@
   import { reactive, ref, watch } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
-  import { businessClueStatistics, croAndThirdLabStatistics, pipelineStatistics } from '@/api'
+  import {
+    businessClueStatistics,
+    croAndThirdLabStatistics,
+    pipelineStatistics,
+    queryStandardCompany
+  } from '@/api'
   import type { SearchCustIndexReq } from '@/types/api'
   // #endregion
 
@@ -227,6 +232,7 @@
     if (options?.companyId) {
       companyId.value = decodeURIComponent(options.companyId)
     }
+    fetchCompanyOptions()
     fetchStatistics()
   })
   // #endregion
@@ -246,6 +252,40 @@
   // #endregion
 
   // #region 数据请求
+  /**
+   * 获取相关公司下拉选项（标准公司信息，不含母公司）
+   */
+  async function fetchCompanyOptions() {
+    const parentId = companyId.value ? Number(companyId.value) : undefined
+    if (!parentId) return
+    try {
+      const pageSize = 100
+      // 先取第一页，拿到总页数
+      const firstRes = await queryStandardCompany({
+        parentCompanyId: parentId,
+        pageNum: 1,
+        pageSize
+      })
+      let list = firstRes.data?.list || []
+      const pages = firstRes.data?.pages || 1
+      // 分页拉取剩余标准公司
+      for (let page = 2; page <= pages; page++) {
+        const res = await queryStandardCompany({
+          parentCompanyId: parentId,
+          pageNum: page,
+          pageSize
+        })
+        list = [...list, ...(res.data?.list || [])]
+      }
+      companyOptions.value = list.map((item) => ({
+        value: String(item.standardId),
+        text: item.companyStandardName || item.companyShortName
+      }))
+    } catch {
+      // 静默处理
+    }
+  }
+
   /** 研发管线总的统计 */
   async function fetchPipelineStatistics() {
     try {

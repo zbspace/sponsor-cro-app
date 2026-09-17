@@ -30,6 +30,7 @@ import type {
   ResearcherListResponse,
   SponsorRankListResponse,
   RelatedCompanyListResponse,
+  StandardCompanyListResponse,
   HospitalStatisticsResponse,
   TrialStageResponse,
   TrialStatusResponse,
@@ -766,6 +767,28 @@ export async function croAndThirdLabStatistics(params: SearchCustIndexReq) {
  */
 export async function pipelineStatistics(params: SearchCustIndexReq) {
   return post<PipelineStatisticsResponse>('/api/searchCust/pipelineStatistics', params, true)
+}
+
+/**
+ * 获取标准公司信息（不包含母公司，用于相关公司筛选下拉）
+ * @param params { companyStandardName, pageNum, pageSize, parentCompanyId }
+ * @returns Promise<StandardCompanyListResponse>
+ */
+export async function queryStandardCompany(params: {
+  /** 标准名，模糊查询 */
+  companyStandardName?: string
+  /** 当前页数 */
+  pageNum?: number
+  /** 每页条数 */
+  pageSize?: number
+  /** 母公司ID */
+  parentCompanyId?: number
+}) {
+  return post<StandardCompanyListResponse>(
+    '/api/v1/base/company/queryStandardCompany',
+    params,
+    true
+  )
 }
 
 // #endregion

@@ -119,6 +119,33 @@ export interface RelatedCompanyListResponse {
 }
 
 /**
+ * 标准公司条目（不含母公司的标准公司信息）
+ */
+export interface StandardCompanyItem {
+  /** 简称 */
+  companyShortName: string
+  /** 标准名 */
+  companyStandardName: string
+  /** 类型 */
+  companyType: string
+  /** 父级ID */
+  parentCompanyId: number
+  /** 父级公司简称 */
+  parentCompanyShortName: string
+  /** 标准库ID */
+  standardId: number
+}
+
+/**
+ * 标准公司列表响应
+ */
+export interface StandardCompanyListResponse {
+  list: StandardCompanyItem[]
+  pages: number
+  total: number
+}
+
+/**
  * CRO 榜单条目
  */
 export interface CroRankItem {
