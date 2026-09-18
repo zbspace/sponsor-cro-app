@@ -589,6 +589,16 @@ export interface PipelineStatisticsResponse {
   ndaStatisticsNum: number
 }
 
+/**
+ * 查客户首页医院&研究者合作记录统计返回对象
+ */
+export interface HospitalAndMainResearcherStatisticsResponse {
+  /** 医院数量 */
+  hosCount: number
+  /** 主要研究者数量 */
+  mainResearcherCount: number
+}
+
 // #endregion
 
 // #region 研发管线-IND模块

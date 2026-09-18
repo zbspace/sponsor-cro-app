@@ -116,7 +116,7 @@
             </view>
             <view class="item-info">
               <text class="label">医院</text>
-              <text class="value">34</text>
+              <text class="value">{{ hospitalStat.hosCount }}</text>
             </view>
           </view>
           <view class="grid-item" @click="goTo('researcher-stat')">
@@ -126,7 +126,7 @@
             </view>
             <view class="item-info">
               <text class="label">主要研究者</text>
-              <text class="value">234</text>
+              <text class="value">{{ hospitalStat.mainResearcherCount }}</text>
             </view>
           </view>
         </view>
@@ -188,6 +188,7 @@
   import {
     businessClueStatistics,
     croAndThirdLabStatistics,
+    hospitalAndMainResearcherStatistics,
     pipelineStatistics,
     queryStandardCompany,
     userCollect,
@@ -226,6 +227,11 @@
     beforeListingNum: 0,
     worthyProductsNum: 0,
     businessContactNum: 0
+  })
+  // 医院&研究者合作记录统计
+  const hospitalStat = reactive({
+    hosCount: 0,
+    mainResearcherCount: 0
   })
   // #endregion
 
@@ -400,11 +406,25 @@
     }
   }
 
+  /** 医院&研究者合作记录统计 */
+  async function fetchHospitalAndMainResearcherStatistics() {
+    try {
+      const res = await hospitalAndMainResearcherStatistics(buildBaseParams())
+      if (res.data) {
+        hospitalStat.hosCount = res.data.hosCount ?? 0
+        hospitalStat.mainResearcherCount = res.data.mainResearcherCount ?? 0
+      }
+    } catch {
+      // 静默处理
+    }
+  }
+
   /** 并发拉取首页各模块统计 */
   function fetchStatistics() {
     fetchPipelineStatistics()
     fetchCroAndThirdLabStatistics()
     fetchBusinessClueStatistics()
+    fetchHospitalAndMainResearcherStatistics()
   }
 
   // 相关公司筛选变化后重新统计

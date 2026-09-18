@@ -44,6 +44,7 @@ import type {
   BusinessClueStatisticsResponse,
   CroAndThirdLabStatisticsResponse,
   PipelineStatisticsResponse,
+  HospitalAndMainResearcherStatisticsResponse,
   IndApplicationNumReq,
   IndApplicationNumItem,
   IndRegistrationCategoryNumReq,
@@ -755,6 +756,19 @@ export async function businessClueStatistics(params: SearchCustIndexReq) {
 export async function croAndThirdLabStatistics(params: SearchCustIndexReq) {
   return post<CroAndThirdLabStatisticsResponse>(
     '/api/searchCust/croAndThirdLabStatistics',
+    params,
+    true
+  )
+}
+
+/**
+ * 查客户首页-医院&研究者合作记录统计
+ * @param params { parentCompanyId, standardCompanyIdList }
+ * @returns Promise<HospitalAndMainResearcherStatisticsResponse>
+ */
+export async function hospitalAndMainResearcherStatistics(params: SearchCustIndexReq) {
+  return post<HospitalAndMainResearcherStatisticsResponse>(
+    '/api/searchCust/hospitalAndMainResearcherStatistics',
     params,
     true
   )
