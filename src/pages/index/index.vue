@@ -156,7 +156,8 @@
   import SearchCustomerPopup from '@/components/search-customer-popup/search-customer-popup.vue'
   import { VIP_CODE, VIP_APPLICATION_STATUS } from '@/utils/enums'
 
-  import { getVipApplication, ensureLogin } from '@/api'
+  import { getVipApplication, ensureLogin, getUserInfo } from '@/api'
+  import type { UserInfo } from '@/types/api'
   // #endregion
 
   // #region 状态
@@ -167,7 +168,8 @@
   const showCompanyLabPopup = ref(false)
   const showSponsorSitePiPopup = ref(false)
   const showCustomerCustomerPopup = ref(false)
-  const userInfo = uni.getStorageSync('userInfo') || {}
+  // 先用本地缓存渲染，登录完成后刷新为最新用户信息
+  const userInfo = ref<UserInfo | null>(getUserInfo())
 
   // 功能网格数据
   const gridItems = [
@@ -240,7 +242,13 @@
   // #endregion
   onShow(async () => {
     // 确保登录成功后再获取数据
-    await ensureLogin()
+    try {
+      await ensureLogin()
+    } catch {
+      // 登录失败时沿用本地缓存的用户信息，避免页面无 VIP 入口
+    }
+    // 登录接口会返回最新的 vipCode，重新读取以刷新左上角 VIP 状态
+    userInfo.value = getUserInfo()
     // 查询申请状态
     fetchApplicationStatus()
   })

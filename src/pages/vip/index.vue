@@ -225,6 +225,8 @@
           const newUserInfo = {
             ...userInfo.value,
             vip: renewRes.data.vip,
+            // 同步会员编码，保证首页等页面刷新后 VIP 状态一致
+            vipCode: renewRes.data.vipCode ?? userInfo.value.vipCode,
             vipExpirationTime: renewRes.data.vipExpirationTime
           }
           setUserInfo(newUserInfo)

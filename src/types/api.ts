@@ -363,6 +363,8 @@ export interface CenterAndResearcherListResponse {
 export interface UserInfo {
   token: string
   vip: boolean
+  /** 会员编码：0-普通用户 1-VIP试用 100-VIP用户 */
+  vipCode?: number
   avatarUrl?: string
   nickname?: string
   phone?: string
@@ -375,6 +377,8 @@ export interface UserInfo {
 export interface LoginResponse {
   token: string
   vip: boolean
+  /** 会员编码：0-普通用户 1-VIP试用 100-VIP用户 */
+  vipCode?: number
   avatarUrl?: string
   nickname?: string
 }
@@ -535,6 +539,8 @@ export interface VirtualPayData {
 export interface VipRenewResponse {
   openid: string | null
   vip: boolean
+  /** 会员编码：0-普通用户 1-VIP试用 100-VIP用户 */
+  vipCode?: number
   vipExpirationTime: string
   streak: any
   lastDay: any
