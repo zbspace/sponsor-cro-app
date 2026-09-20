@@ -87,14 +87,14 @@
       <view class="section-card">
         <view class="section-title">供应商合作记录</view>
         <view class="grid-container">
-          <view class="grid-item" @click="goTo('cro-stat')">
+          <view class="grid-item" @click="goTo('cro-cooperation-stat')">
             <view class="item-icon cro">CRO</view>
             <view class="item-info">
               <text class="label">CRO公司</text>
               <text class="value">{{ supplierStat.croStatisticsNum }}</text>
             </view>
           </view>
-          <view class="grid-item" @click="goTo('lab-stat')">
+          <view class="grid-item" @click="goTo('lab-cooperation-stat')">
             <view class="item-icon lab">
               <image src="../../static/icons/cro.png" mode="aspectFit" />
             </view>
@@ -476,6 +476,18 @@
     if (tab === 'business-contact') {
       uni.navigateTo({
         url: `/pages/corporate-contacts-list/index?${query.join('&')}`
+      })
+    }
+
+    if (tab === 'cro-cooperation-stat') {
+      uni.navigateTo({
+        url: `/pages/${tab}/index?${query.join('&')}`
+      })
+    }
+
+    if (tab === 'lab-cooperation-stat') {
+      uni.navigateTo({
+        url: `/pages/${tab}/index?${query.join('&')}`
       })
     }
   }

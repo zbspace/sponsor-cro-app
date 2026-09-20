@@ -131,6 +131,20 @@
         "navigationBarTitleText": "企业联系人",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/cro-cooperation-stat/index",
+      "style": {
+        "navigationBarTitleText": "cro合作统计",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/lab-cooperation-stat/index",
+      "style": {
+        "navigationBarTitleText": "中心实验室合作统计",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "easycom": {
