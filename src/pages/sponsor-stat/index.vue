@@ -143,6 +143,20 @@
               </view>
             </view>
           </view>
+          <view class="ratio-stats">
+            <view class="stat-item">
+              <text class="label">外包项目数</text>
+              <text class="value">{{ outsourceRate.haveProjectNum }}</text>
+            </view>
+            <view class="stat-item">
+              <text class="label">自研项目数</text>
+              <text class="value">{{ outsourceRate.noProjectNum }}</text>
+            </view>
+            <view class="stat-item">
+              <text class="label">总项目数</text>
+              <text class="value">{{ outsourceRate.totalProjectNum }}</text>
+            </view>
+          </view>
         </view>
 
         <!-- CRO合作名单卡片 -->
@@ -293,7 +307,10 @@
 
   const outsourceRate = reactive({
     cro: 0,
-    self: 0
+    self: 0,
+    haveProjectNum: 0,
+    noProjectNum: 0,
+    totalProjectNum: 0
   })
   // 申办方母公司ID，优先从路由参数获取，默认为 0
   const sponsorParentCompanyId = ref(0)
@@ -313,6 +330,9 @@
       if (res.data) {
         outsourceRate.cro = res.data.outsourcingCroRatio
         outsourceRate.self = res.data.selfRatio
+        outsourceRate.haveProjectNum = res.data.haveProjectNum || 0
+        outsourceRate.noProjectNum = res.data.noProjectNum || 0
+        outsourceRate.totalProjectNum = res.data.totalProjectNum || 0
       }
     } catch {
       // 静默处理
@@ -898,6 +918,32 @@
               color: #333;
             }
           }
+        }
+      }
+    }
+
+    .ratio-stats {
+      margin-top: 40rpx;
+      display: flex;
+      justify-content: space-around;
+      border-top: 2rpx solid #f8f8f8;
+      padding-top: 30rpx;
+
+      .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8rpx;
+
+        .label {
+          font-size: 24rpx;
+          color: #999;
+        }
+
+        .value {
+          font-size: 32rpx;
+          font-weight: bold;
+          color: #333;
         }
       }
     }

@@ -4,6 +4,9 @@
 export interface OutsourcingRatioResponse {
   outsourcingCroRatio: number
   selfRatio: number
+  haveProjectNum?: number
+  noProjectNum?: number
+  totalProjectNum?: number
 }
 
 /**
