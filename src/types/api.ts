@@ -607,6 +607,81 @@ export interface HospitalAndMainResearcherStatisticsResponse {
 
 // #endregion
 
+// #region 商机线索模块
+
+/**
+ * 商机线索通用参数
+ */
+export interface OpportunityParam {
+  pageNum?: number
+  pageSize?: number
+  parentCompanyId?: number
+  standardCompanyIdList?: number[]
+}
+
+/**
+ * 上市前/后商机线索返回对象
+ */
+export interface OpportunityVo {
+  acceptanceNo: string
+  applicationCompany: string
+  /** ind受理状态:(审批中,备案通过)//cde试验状态//NDA申请状态 */
+  applicationStatus: string
+  /** ind通过时间//NDA批准时间 */
+  approvalTime: string
+  /** 商机线索文案 */
+  businessClueText: string
+  /** (ind)清洗后分类或者(cde)分期或者(nda)清洗后分类 */
+  cleanedClassificationOrStages: string
+  /** 清洗后药品类型 */
+  cleanedDrugType: string
+  /** 数据类型:ind,cde,nda */
+  dataType: string
+  /** 清洗后的药品名称 */
+  drugStandardName: string
+  /** 适应症 */
+  indication: string
+  /** 优先审批(非优先审批为空) */
+  ndaPriorityApproval: string
+  /** ind承办日期//cde公示日期//NDA受理日期 */
+  undertakeDate: string
+}
+
+/**
+ * 商机线索分页响应
+ */
+export interface OpportunityListResponse {
+  list: OpportunityVo[]
+  pages: number
+  total: number
+}
+
+/**
+ * 企业联系人商机线索返回对象
+ */
+export interface OpportunityContactVo {
+  acceptanceNo: string
+  /** cde登记试验数 */
+  acceptanceNoNum: string
+  /** 最早一次登记时间 */
+  earliestRegistrationTime: string
+  /** 最近一次登记时间 */
+  latestRegistrationTime: string
+  /** 申办方联系人 */
+  sponsorContacts: string
+}
+
+/**
+ * 企业联系人分页响应
+ */
+export interface OpportunityContactListResponse {
+  list: OpportunityContactVo[]
+  pages: number
+  total: number
+}
+
+// #endregion
+
 // #region 研发管线-IND模块
 
 /**

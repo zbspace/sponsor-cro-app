@@ -136,7 +136,7 @@
       <view class="section-card">
         <view class="section-title">商机线索</view>
         <view class="grid-container">
-          <view class="grid-item">
+          <view class="grid-item" @click="goTo('after-listing')">
             <view class="item-icon leads-post">
               <image src="../../static/icons/time.png" mode="aspectFit" />
             </view>
@@ -145,7 +145,7 @@
               <text class="value">{{ businessClueStat.afterListingNum }}</text>
             </view>
           </view>
-          <view class="grid-item">
+          <view class="grid-item" @click="goTo('before-listing')">
             <view class="item-icon leads-pre">
               <image src="../../static/icons/time.png" mode="aspectFit" />
             </view>
@@ -163,7 +163,7 @@
               <text class="value">{{ businessClueStat.worthyProductsNum }}</text>
             </view>
           </view>
-          <view class="grid-item">
+          <view class="grid-item" @click="goTo('business-contact')">
             <view class="item-icon contact">
               <image src="../../static/icons/sponsor.png" mode="aspectFit" />
             </view>
@@ -458,6 +458,24 @@
     if (tab === 'nda-stat') {
       uni.navigateTo({
         url: `/pages/${tab}/index?${query.join('&')}`
+      })
+    }
+
+    if (tab === 'after-listing') {
+      uni.navigateTo({
+        url: `/pages/business-club-list/index?${query.join('&')}&type=after`
+      })
+    }
+
+    if (tab === 'before-listing') {
+      uni.navigateTo({
+        url: `/pages/business-club-list/index?${query.join('&')}&type=before`
+      })
+    }
+
+    if (tab === 'business-contact') {
+      uni.navigateTo({
+        url: `/pages/corporate-contacts-list/index?${query.join('&')}`
       })
     }
   }

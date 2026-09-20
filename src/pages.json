@@ -117,6 +117,20 @@
         "navigationBarTitleText": "临床试验登记统计",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/business-club-list/index",
+      "style": {
+        "navigationBarTitleText": "上市前/上市后商机线索",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/corporate-contacts-list/index",
+      "style": {
+        "navigationBarTitleText": "企业联系人",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "easycom": {

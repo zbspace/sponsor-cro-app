@@ -45,6 +45,9 @@ import type {
   CroAndThirdLabStatisticsResponse,
   PipelineStatisticsResponse,
   HospitalAndMainResearcherStatisticsResponse,
+  OpportunityParam,
+  OpportunityListResponse,
+  OpportunityContactListResponse,
   IndApplicationNumReq,
   IndApplicationNumItem,
   IndRegistrationCategoryNumReq,
@@ -800,6 +803,43 @@ export async function queryStandardCompany(params: {
 }) {
   return post<StandardCompanyListResponse>(
     '/api/v1/base/company/queryStandardCompany',
+    params,
+    true
+  )
+}
+
+// #endregion
+
+// #region 商机线索模块
+
+/**
+ * 获取上市后商机线索列表
+ */
+export async function getAfterListingBusinessClueList(params: OpportunityParam) {
+  return post<OpportunityListResponse>(
+    '/api/v1/pa/opportunity/getAfterListingBusinessClueList',
+    params,
+    true
+  )
+}
+
+/**
+ * 获取上市前商机线索列表
+ */
+export async function getBeforeListingBusinessClueList(params: OpportunityParam) {
+  return post<OpportunityListResponse>(
+    '/api/v1/pa/opportunity/getBeforeListingBusinessClueList',
+    params,
+    true
+  )
+}
+
+/**
+ * 获取企业联系人商机线索列表
+ */
+export async function getBusinessContactList(params: OpportunityParam) {
+  return post<OpportunityContactListResponse>(
+    '/api/v1/pa/opportunity/getBusinessContactList',
     params,
     true
   )
