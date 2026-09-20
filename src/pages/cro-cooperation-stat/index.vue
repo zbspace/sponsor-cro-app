@@ -38,7 +38,27 @@
       <view v-if="activeTab === 'stat'" class="stat-content p-16px">
         <!-- 外包比例卡片 -->
         <view class="card ratio-card">
-          <view class="card-title">外包比例</view>
+          <!-- <view class="card-title">外包比例</view> -->
+          <view class="card-header">
+            <view class="flex items-center">
+              <view class="title-indicator"></view>
+              <view class="card-title">外包比例</view>
+            </view>
+            <view class="filter-dropdown">
+              <picker
+                class="filter-picker"
+                mode="selector"
+                :range="yearOptions"
+                range-key="text"
+                @change="onProductYearChange"
+              >
+                <view class="filter-trigger">
+                  <text>{{ productYearText }}</text>
+                  <view class="arrow-down"></view>
+                </view>
+              </picker>
+            </view>
+          </view>
           <view class="ratio-content">
             <view class="pie-chart-wrapper">
               <view
@@ -83,9 +103,29 @@
 
         <!-- CRO合作名单卡片 -->
         <view class="card list-card">
-          <view class="card-title">CRO合作名单</view>
+          <!-- <view class="card-title">CRO合作榜单</view> -->
+          <view class="card-header">
+            <view class="flex items-center">
+              <view class="title-indicator"></view>
+              <view class="card-title">CRO合作榜单</view>
+            </view>
+            <view class="filter-dropdown">
+              <picker
+                class="filter-picker"
+                mode="selector"
+                :range="yearOptions"
+                range-key="text"
+                @change="onCroYearChange"
+              >
+                <view class="filter-trigger">
+                  <text>{{ croYearText }}</text>
+                  <view class="arrow-down"></view>
+                </view>
+              </picker>
+            </view>
+          </view>
           <view class="table-header">
-            <text class="col-rank">排序</text>
+            <text class="col-rank">排名</text>
             <text class="col-name">CRO公司</text>
             <text class="col-count">合作项目数</text>
           </view>
@@ -212,6 +252,33 @@
   }
   // #endregion
 
+  const yearOptions = computed(() => [
+    { value: '', text: '年份' },
+    ...Array.from({ length: 5 }, (_, i) => {
+      const year = new Date().getFullYear() - i
+      return { value: String(year), text: `${year}年` }
+    })
+  ])
+
+  const productYearText = computed(
+    () => yearOptions.value.find((o) => o.value === productYearFilter.value)?.text || '年份'
+  )
+  const croYearText = computed(
+    () => yearOptions.value.find((o) => o.value === croYearFilter.value)?.text || '年份'
+  )
+
+  const productYearFilter = ref('')
+  const croYearFilter = ref('')
+  function onProductYearChange(e: any) {
+    productYearFilter.value = yearOptions.value[Number(e.detail.value)]?.value || ''
+    fetchOutsourcingRatio()
+  }
+
+  function onCroYearChange(e: any) {
+    croYearFilter.value = yearOptions.value[Number(e.detail.value)]?.value || ''
+    fetchCroRankList()
+  }
+
   // #region 外包CRO统计
   const outsourceRate = reactive({
     cro: 0,
@@ -231,7 +298,8 @@
     try {
       const res = await getOutsourcingRatio({
         companyType: 'cro',
-        sponsorParentCompanyId: sponsorParentCompanyId.value
+        sponsorParentCompanyId: sponsorParentCompanyId.value,
+        lastYear: productYearFilter.value ? Number(productYearFilter.value) : undefined
       })
       if (res.data) {
         outsourceRate.cro = res.data.outsourcingCroRatio
@@ -449,6 +517,38 @@
         color: #333333;
         line-height: 52rpx;
         margin-bottom: 24rpx;
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30rpx;
+      }
+    }
+
+    .filter-dropdown {
+      display: flex;
+      align-items: center;
+      font-size: 24rpx;
+      color: #999;
+
+      .filter-picker {
+        display: flex;
+      }
+
+      .filter-trigger {
+        display: flex;
+        align-items: center;
+      }
+
+      .arrow-down {
+        width: 0;
+        height: 0;
+        border-left: 8rpx solid transparent;
+        border-right: 8rpx solid transparent;
+        border-top: 10rpx solid #999;
+        margin-left: 10rpx;
       }
     }
 
