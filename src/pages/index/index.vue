@@ -217,7 +217,6 @@
     {
       title: '中国临床CRO公司榜单',
       icon: 'CRO',
-      iconColor: '/static/home/10.png',
       path: 'cro-rank/index'
     },
     {

@@ -109,22 +109,10 @@ function logError(url: string, err: any) {
  * @returns Promise<ApiResponse<T>>
  */
 export function request<T = any>(config: RequestConfig): Promise<ApiResponse<T>> {
-  const { url, method = 'GET', data, needToken = true, mockData } = config
+  const { url, method = 'GET', data, needToken = true } = config
 
   // 打印接口请求日志（接口名 + 入参）
   logRequest(url, method, data)
-
-  // region Mock 逻辑
-  const useMock = import.meta.env.VITE_USE_MOCK === 'true'
-  if (useMock && mockData) {
-    console.log(`[Mock Request] ${url}`, mockData)
-    return Promise.resolve({
-      code: 200,
-      msg: 'success (mock)',
-      data: mockData as T
-    })
-  }
-  // endregion
 
   const header: any = {
     'Content-Type': 'application/json'
@@ -163,21 +151,14 @@ export function request<T = any>(config: RequestConfig): Promise<ApiResponse<T>>
  * @param url 请求地址
  * @param data 请求参数
  * @param needToken 是否需要 Token
- * @param mockData 可选的 mock 数据
  * @returns Promise<ApiResponse<T>>
  */
-export function get<T = any>(
-  url: string,
-  data?: any,
-  needToken = true,
-  mockData?: any
-): Promise<ApiResponse<T>> {
+export function get<T = any>(url: string, data?: any, needToken = true): Promise<ApiResponse<T>> {
   return request<T>({
     url,
     method: 'GET',
     data,
-    needToken,
-    mockData
+    needToken
   })
 }
 
@@ -186,21 +167,14 @@ export function get<T = any>(
  * @param url 请求地址
  * @param data 请求参数
  * @param needToken 是否需要 Token
- * @param mockData 可选的 mock 数据
  * @returns Promise<ApiResponse<T>>
  */
-export function post<T = any>(
-  url: string,
-  data?: any,
-  needToken = true,
-  mockData?: any
-): Promise<ApiResponse<T>> {
+export function post<T = any>(url: string, data?: any, needToken = true): Promise<ApiResponse<T>> {
   return request<T>({
     url,
     method: 'POST',
     data,
-    needToken,
-    mockData
+    needToken
   })
 }
 

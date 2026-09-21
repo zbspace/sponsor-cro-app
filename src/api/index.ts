@@ -1,13 +1,4 @@
 import { get, post } from '@/utils/request'
-import {
-  mockCroRankList,
-  mockOutsourcingRatio,
-  mockCroProjectList,
-  mockParentShortNameList,
-  mockSponsorRankList,
-  mockRelatedCompanyList
-} from '@/mock'
-import * as mock from '@/mock'
 import type {
   UserInfo,
   LoginResponse,
@@ -86,12 +77,10 @@ import type {
  * @returns Promise<LoginResponse>
  */
 export async function wechatLogin(code: string) {
-  // return post<LoginResponse>('/word/wechat/login', { jsCode: code }, false, mock.mockLogin)
   return post<LoginResponse>(
     '/api/v1/wechat/searchComCRO/login',
     { code: code, serverId: 'searchComCRO' },
-    false,
-    mock.mockLogin
+    false
   )
 }
 
@@ -157,7 +146,7 @@ export async function bandPhone(code: string) {
  * @returns Promise<PayParams>
  */
 export async function createOrder() {
-  return post<PayParams>('/pay/createOrder', {}, true, mock.mockPayParams)
+  return post<PayParams>('/pay/createOrder', {}, true)
 }
 
 /**
@@ -165,7 +154,7 @@ export async function createOrder() {
  * @returns Promise<PayQueryResponse>
  */
 export async function queryPayResult() {
-  return get<PayQueryResponse>('/pay/queryPayResult', {}, true, mock.mockPayQuery)
+  return get<PayQueryResponse>('/pay/queryPayResult', {}, true)
 }
 
 /**
@@ -246,7 +235,7 @@ export async function getVipApplication() {
  * @returns Promise<IndexInfoResponse>
  */
 export async function getIndexInfo() {
-  return get<IndexInfoResponse>('/word/index/getIndexInfo', {}, true, mock.mockIndexInfo)
+  return get<IndexInfoResponse>('/word/index/getIndexInfo', {}, true)
 }
 
 /**
@@ -257,12 +246,7 @@ export async function getIndexInfo() {
  * * @returns Promise<CroRankListResponse>
  */
 export async function selectClinicalCroRankList(data: any) {
-  return post<CroRankListResponse>(
-    '/api/v1/hgr/selectClinicalCroRankList',
-    { ...data },
-    true,
-    mockCroRankList
-  )
+  return post<CroRankListResponse>('/api/v1/hgr/selectClinicalCroRankList', { ...data }, true)
 }
 
 /**
@@ -273,12 +257,7 @@ export async function selectClinicalCroRankList(data: any) {
  * * @returns Promise<CroRankListResponse>
  */
 export async function selectClinicalThirdLabRankList(data: any) {
-  return post<CroRankListResponse>(
-    '/api/v1/hgr/selectClinicalThirdLabRankList',
-    { ...data },
-    true,
-    mockCroRankList
-  )
+  return post<CroRankListResponse>('/api/v1/hgr/selectClinicalThirdLabRankList', { ...data }, true)
 }
 
 /**
@@ -292,12 +271,7 @@ export async function getOutsourcingRatio(params: {
   sponsorParentCompanyId: number
   sponsorStandardCompanyIdList?: number[]
 }) {
-  return post<OutsourcingRatioResponse>(
-    '/api/v1/hgr/selectOutsourcingRatio',
-    params,
-    true,
-    mockOutsourcingRatio
-  )
+  return post<OutsourcingRatioResponse>('/api/v1/hgr/selectOutsourcingRatio', params, true)
 }
 
 /**
@@ -314,12 +288,7 @@ export async function getCroProjectList(params: {
   partnerStandardCompanyIdList?: number[]
   sponsorParentCompanyIdList?: number[]
 }) {
-  return post<CroProjectListResponse>(
-    '/api/v1/hgr/selectCroProjectList',
-    params,
-    true,
-    mockCroProjectList
-  )
+  return post<CroProjectListResponse>('/api/v1/hgr/selectCroProjectList', params, true)
 }
 
 /**
@@ -336,12 +305,7 @@ export async function getSponsorProjectList(params: {
   sponsorParentCompanyId?: number
   sponsorStandardCompanyIdList?: number[]
 }) {
-  return post<CroProjectListResponse>(
-    '/api/v1/hgr/selectSponsorProjectList',
-    params,
-    true,
-    mockCroProjectList
-  )
+  return post<CroProjectListResponse>('/api/v1/hgr/selectSponsorProjectList', params, true)
 }
 
 /**
@@ -355,12 +319,7 @@ export async function getParentShortNameList(params: {
   pageSize: number
   shortName?: string
 }) {
-  return get<ParentCompanyListResponse>(
-    '/api/v1/hgr/selectParentShortNameOfHGRList',
-    params,
-    true,
-    mockParentShortNameList
-  )
+  return get<ParentCompanyListResponse>('/api/v1/hgr/selectParentShortNameOfHGRList', params, true)
 }
 
 /**
@@ -532,12 +491,7 @@ export async function getClinicalSponsorRankList(params: {
   partnerParentCompanyId?: number
   partnerStandardCompanyIdList?: number[]
 }) {
-  return post<SponsorRankListResponse>(
-    '/api/v1/hgr/selectClinicalSponsorRankList',
-    params,
-    true,
-    mockSponsorRankList
-  )
+  return post<SponsorRankListResponse>('/api/v1/hgr/selectClinicalSponsorRankList', params, true)
 }
 
 /**
@@ -551,12 +505,7 @@ export async function getRelatedCompanyList(params: {
   pageSize: number
   parentCompanyId: number
 }) {
-  return get<RelatedCompanyListResponse>(
-    '/api/v1/hgr/selectRelatedCompanyList',
-    params,
-    true,
-    mockRelatedCompanyList
-  )
+  return get<RelatedCompanyListResponse>('/api/v1/hgr/selectRelatedCompanyList', params, true)
 }
 
 // #endregion
@@ -607,12 +556,7 @@ export async function getUserCollectList(data: any) {
  * @returns Promise<EnglishQuestionResponse>
  */
 export async function getEnglishQuestionDetailByWordId(wordId: number) {
-  return get<EnglishQuestionResponse>(
-    '/word/recite/getEnglishQuestionDetailByWordId',
-    { wordId },
-    true,
-    mock.mockEnglishQuestion
-  )
+  return get<EnglishQuestionResponse>('/word/recite/getEnglishQuestionDetailByWordId', { wordId })
 }
 
 /**
@@ -622,7 +566,7 @@ export async function getEnglishQuestionDetailByWordId(wordId: number) {
  * @returns Promise
  */
 export async function reciteWord(wordId: number, answerResult: boolean) {
-  return post('/word/recite/reciteWord', { wordId, answerResult }, true, null)
+  return post('/word/recite/reciteWord', { wordId, answerResult }, true)
 }
 
 // #endregion
@@ -636,12 +580,7 @@ export async function reciteWord(wordId: number, answerResult: boolean) {
  * @returns Promise<CollectListResponse>
  */
 export async function getReciteWordList(pageNum: number = 1, pageSize: number = 20) {
-  return get<CollectListResponse>(
-    '/word/word/getReciteWordList',
-    { pageNum, pageSize },
-    true,
-    mock.mockCollectList
-  )
+  return get<CollectListResponse>('/word/word/getReciteWordList', { pageNum, pageSize }, true)
 }
 
 /**
@@ -651,12 +590,7 @@ export async function getReciteWordList(pageNum: number = 1, pageSize: number = 
  * @returns Promise<CollectListResponse>
  */
 export async function getReviewWordList(pageNum: number = 1, pageSize: number = 20) {
-  return get<CollectListResponse>(
-    '/word/word/getReviewWordList',
-    { pageNum, pageSize },
-    true,
-    mock.mockCollectList
-  )
+  return get<CollectListResponse>('/word/word/getReviewWordList', { pageNum, pageSize }, true)
 }
 
 /**
@@ -666,12 +600,7 @@ export async function getReviewWordList(pageNum: number = 1, pageSize: number = 
  * @returns Promise<WordDetailResponse>
  */
 export async function getWordDetailByWordId(wordId: number, wordType: string) {
-  return get<WordDetailResponse>(
-    '/word/word/getWordDetailByWordId',
-    { wordId, wordType },
-    true,
-    mock.mockWordDetail
-  )
+  return get<WordDetailResponse>('/word/word/getWordDetailByWordId', { wordId, wordType }, true)
 }
 
 // #endregion
@@ -685,12 +614,7 @@ export async function getWordDetailByWordId(wordId: number, wordType: string) {
  * @returns Promise<CollectListResponse>
  */
 export async function getCollectList(pageNum: number = 1, pageSize: number = 20) {
-  return get<CollectListResponse>(
-    '/word/word/getCollectWordList',
-    { pageNum, pageSize },
-    true,
-    mock.mockCollectList
-  )
+  return get<CollectListResponse>('/word/word/getCollectWordList', { pageNum, pageSize }, true)
 }
 
 /**

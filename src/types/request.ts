@@ -16,5 +16,4 @@ export interface RequestConfig {
   data?: any
   header?: any
   needToken?: boolean
-  mockData?: any // 新增 mock 数据字段
 }
