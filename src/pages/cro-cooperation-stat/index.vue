@@ -333,7 +333,8 @@
       const res = await selectClinicalCroRankList({
         sponsorParentCompanyId: sponsorParentCompanyId.value,
         pageNum: croPage.value,
-        pageSize: croPageSize.value
+        pageSize: croPageSize.value,
+        lastYear: croYearFilter.value ? Number(croYearFilter.value) : undefined
       })
       if (res.data?.list) {
         const newList = res.data.list.map((item) => ({
