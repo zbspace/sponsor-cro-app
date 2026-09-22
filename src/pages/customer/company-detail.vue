@@ -110,7 +110,7 @@
       <view class="section-card">
         <view class="section-title">医院&研究者合作记录</view>
         <view class="grid-container">
-          <view class="grid-item" @click="goTo('hospital-stat')">
+          <view class="grid-item" @click="goTo('hospital-cooperation-stat')">
             <view class="item-icon hospital">
               <text style="color: #52c41a; font-size: 24rpx">H</text>
             </view>
@@ -486,6 +486,12 @@
     }
 
     if (tab === 'lab-cooperation-stat') {
+      uni.navigateTo({
+        url: `/pages/${tab}/index?${query.join('&')}`
+      })
+    }
+
+    if (tab === 'hospital-cooperation-stat') {
       uni.navigateTo({
         url: `/pages/${tab}/index?${query.join('&')}`
       })

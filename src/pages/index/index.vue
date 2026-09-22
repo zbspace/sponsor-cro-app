@@ -33,7 +33,7 @@
       height: `calc(100vh - ${menu.top}px - ${menu.height}px)`
     }"
   >
-    <view class="container">
+    <view class="container" style="padding-bottom: calc(120rpx + env(safe-area-inset-bottom))">
       <!-- 标题 -->
       <view class="title-section">
         <text class="main-title">药研查-商务版</text>
@@ -140,12 +140,16 @@
 
   <!-- 查客户弹窗 -->
   <search-customer-popup v-model:visible="showCustomerCustomerPopup" />
+
+  <!-- 底部导航 -->
+  <tab-bar active="home" />
 </template>
 
 <script setup lang="ts">
   // #region 导入
   import { ref } from 'vue'
   import { onShow, onLoad } from '@dcloudio/uni-app'
+  import TabBar from '@/components/tab-bar/index.vue'
   import DataStatementPopup from '../../components/data-statement-popup/data-statement-popup.vue'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
   import SearchCompanyPopup from '@/components/search-company-cro-popup/search-company-cro-popup.vue'

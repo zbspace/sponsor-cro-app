@@ -1,7 +1,7 @@
 <template>
   <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
 
-  <view class="container">
+  <view class="container" style="padding-bottom: calc(120rpx + env(safe-area-inset-bottom))">
     <!-- 用户资料 -->
     <view class="user-card">
       <view class="user-info">
@@ -102,6 +102,9 @@
         </view>
       </view>
     </view>
+
+    <!-- 底部导航 -->
+    <tab-bar active="mine" />
   </view>
 
   <!-- 手机号绑定弹窗 -->
@@ -111,6 +114,7 @@
 <script setup lang="ts">
   // #region 导入
   import { ref, onMounted } from 'vue'
+  import TabBar from '@/components/tab-bar/index.vue'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
   import {
     getVipList,

@@ -145,6 +145,20 @@
         "navigationBarTitleText": "中心实验室合作统计",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/pi-cooperation-stat/index",
+      "style": {
+        "navigationBarTitleText": "主要研究者合作记录",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/hospital-cooperation-stat/index",
+      "style": {
+        "navigationBarTitleText": "医院合作记录",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "easycom": {
