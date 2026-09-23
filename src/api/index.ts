@@ -223,6 +223,8 @@ export async function getVipApplication() {
     applicateDate?: string
     userName?: string
     userPhone?: string
+    haveFirstApplication?: boolean
+    havePendingApplication?: boolean
   } | null>('/api/vip/getVipApplication', {}, true)
 }
 

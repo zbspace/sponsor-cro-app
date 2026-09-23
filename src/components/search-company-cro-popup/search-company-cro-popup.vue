@@ -299,6 +299,10 @@
         display: flex;
         align-items: center;
 
+        .search-icon {
+          margin-right: 20rpx;
+        }
+
         input {
           flex: 1;
           font-size: 28rpx;

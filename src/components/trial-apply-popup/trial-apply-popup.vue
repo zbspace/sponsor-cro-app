@@ -68,7 +68,7 @@
     visible: boolean
   }>()
 
-  const emit = defineEmits(['update:visible'])
+  const emit = defineEmits(['update:visible', 'success'])
   // #endregion
 
   // #region 状态
@@ -141,6 +141,7 @@
         title: '申请已提交，请等待审核',
         icon: 'success'
       })
+      emit('success')
       close()
     } catch {
       // 请求失败时接口层已弹出错误提示，这里只需关闭加载框

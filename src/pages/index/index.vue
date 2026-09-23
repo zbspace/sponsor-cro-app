@@ -117,6 +117,19 @@
     @click="goTo('collect/index')"
   />
 
+  <!-- #region 免费领VIP -->
+  <view class="free-vip-banner-container">
+    <free-vip-banner
+      v-if="userInfo?.vipCode === VIP_CODE.普通"
+      :visible="showFreeVipBanner"
+      @apply="handleBannerApply"
+      @close="showFreeVipBanner = false"
+      @success="fetchVipApplicationStatus"
+    />
+  </view>
+
+  <!-- #endregion -->
+
   <!-- 数据声明弹窗 -->
   <data-statement-popup v-model:visible="showDataStatement" />
 
@@ -133,7 +146,7 @@
   <search-sponsor-site-pi-popup v-model:visible="showSponsorSitePiPopup" />
 
   <!-- 申请试用弹窗 -->
-  <trial-apply-popup v-model:visible="showTrialPopup" />
+  <trial-apply-popup v-model:visible="showTrialPopup" @success="fetchVipApplicationStatus" />
 
   <!-- 找客户弹窗 -->
   <find-customer-popup v-model:visible="showFindPopup" />
@@ -143,23 +156,26 @@
 
   <!-- 底部导航 -->
   <tab-bar active="home" />
+
+  <!-- VIP过期弹窗 -->
+  <vip-expired-popup v-model:visible="showVipExpiredPopup" @apply="showTrialPopup = true" />
 </template>
 
 <script setup lang="ts">
   // #region 导入
   import { ref } from 'vue'
-  import { onShow, onLoad } from '@dcloudio/uni-app'
+  import { onLoad } from '@dcloudio/uni-app'
   import TabBar from '@/components/tab-bar/index.vue'
+  import FreeVipBanner from '@/components/free-vip-banner/free-vip-banner.vue'
   import DataStatementPopup from '../../components/data-statement-popup/data-statement-popup.vue'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
-  import SearchCompanyPopup from '@/components/search-company-cro-popup/search-company-cro-popup.vue'
   import TrialApplyPopup from '@/components/trial-apply-popup/trial-apply-popup.vue'
   import FindCustomerPopup from '@/components/find-customer-popup/find-customer-popup.vue'
   import SearchCompanyLabPopup from '@/components/search-company-lab-popup/search-company-lab-popup.vue'
   import SearchSponsorSitePiPopup from '@/components/search-sponsor-site-pi-popup/search-sponsor-site-pi-popup.vue'
   import SearchCustomerPopup from '@/components/search-customer-popup/search-customer-popup.vue'
+  import VipExpiredPopup from '@/components/vip-expired-popup/vip-expired-popup.vue'
   import { VIP_CODE, VIP_APPLICATION_STATUS } from '@/utils/enums'
-
   import { getVipApplication, ensureLogin, getUserInfo } from '@/api'
   import type { UserInfo } from '@/types/api'
   // #endregion
@@ -172,6 +188,7 @@
   const showCompanyLabPopup = ref(false)
   const showSponsorSitePiPopup = ref(false)
   const showCustomerCustomerPopup = ref(false)
+  const showFreeVipBanner = ref(false)
   // 先用本地缓存渲染，登录完成后刷新为最新用户信息
   const userInfo = ref<UserInfo | null>(getUserInfo())
 
@@ -243,26 +260,6 @@
     }
   ]
   // #endregion
-  onShow(async () => {
-    // 确保登录成功后再获取数据
-    try {
-      await ensureLogin()
-    } catch {
-      // 登录失败时沿用本地缓存的用户信息，避免页面无 VIP 入口
-    }
-    // 登录接口会返回最新的 vipCode，重新读取以刷新左上角 VIP 状态
-    userInfo.value = getUserInfo()
-    // 查询申请状态
-    fetchApplicationStatus()
-  })
-  // #endregion
-
-  // 胶囊位置信息
-  const menu = ref({
-    top: 0,
-    left: 0,
-    height: 0
-  })
 
   function goTo(path: string, query?: string) {
     const url = query ? `/pages/${path}?${query}` : `/pages/${path}`
@@ -270,6 +267,10 @@
   }
 
   function handleGridClick(item: any) {
+    if (!checkPermission()) {
+      return
+    }
+
     if (item.title === '查药企&CRO\n合作关系') {
       showSearchPopup.value = true
     } else if (item.title === '找客户') {
@@ -295,23 +296,99 @@
     showTrialPopup.value = true
   }
 
-  // 查询申请状态
-  // 申请状态
-  const applicationStatus = ref(0)
-  async function fetchApplicationStatus() {
-    try {
-      const res = await getVipApplication()
-      applicationStatus.value = res.data?.approvalStatus || 0
-    } catch {
-      // 查询失败时默认允许申请
-      applicationStatus.value = 0
+  function handleBannerApply() {
+    if (applicationStatus.value === VIP_APPLICATION_STATUS.待审批) {
+      uni.showToast({ title: '您已提交试用申请，等待电话联系', icon: 'none' })
+      return
     }
   }
 
-  onLoad(() => {
+  // #region VIP状态
+  // 申请审批状态：0-无记录/可申请，1-待审批，2-审批通过，3-审批不通过
+  const applicationStatus = ref(0)
+  // VIP 申请详情信息
+  const applicationInfo = ref<{
+    haveFirstApplication: boolean
+    havePendingApplication: boolean
+  }>({
+    haveFirstApplication: true,
+    havePendingApplication: false
+  })
+  const showVipExpiredPopup = ref(false)
+
+  //  统一查询 VIP 申请状态并更新相关视图状态
+  async function fetchVipApplicationStatus() {
+    try {
+      const res = await getVipApplication()
+      if (res.data) {
+        applicationStatus.value = res.data.approvalStatus || 0
+
+        applicationInfo.value.haveFirstApplication = res.data.haveFirstApplication ?? true
+        applicationInfo.value.havePendingApplication = res.data.havePendingApplication ?? false
+
+        if (!applicationInfo.value.haveFirstApplication) {
+          showFreeVipBanner.value = true
+        } else {
+          showFreeVipBanner.value = false
+        }
+      }
+    } catch {
+      applicationStatus.value = 0
+      showFreeVipBanner.value = false
+    }
+  }
+
+  // 检查权限逻辑
+  function checkPermission() {
+    const userInfo = getUserInfo()
+    const vipCode = userInfo?.vipCode ?? 0
+
+    // 可申请试用
+    if (
+      applicationInfo.value.haveFirstApplication &&
+      !applicationInfo.value.havePendingApplication &&
+      vipCode === 0
+    ) {
+      showVipExpiredPopup.value = true
+      return false
+    }
+    // 审核中
+    if (
+      applicationInfo.value.haveFirstApplication &&
+      applicationInfo.value.havePendingApplication &&
+      vipCode === 0
+    ) {
+      uni.showToast({
+        title: '您的申请正在审核中，请稍后再试，或者直接联系我们',
+        icon: 'none',
+        duration: 3000
+      })
+      return false
+    }
+    return true
+  }
+  // #endregion
+
+  const menu = ref({
+    top: 0,
+    left: 0,
+    height: 0
+  })
+  onLoad(async () => {
     // 获取胶囊位置信息（单位px）
     const info = uni.getMenuButtonBoundingClientRect()
     menu.value = info
+
+    // 确保登录成功后再获取数据
+    try {
+      await ensureLogin()
+    } catch {
+      // 登录失败时沿用本地缓存的用户信息，避免页面无 VIP 入口
+    }
+    // 登录接口会返回最新的 vipCode，重新读取以刷新左上角 VIP 状态
+    userInfo.value = getUserInfo()
+    // 查询申请状态
+    fetchVipApplicationStatus()
   })
 </script>
 
@@ -574,4 +651,11 @@
     bottom: 180rpx;
   }
   /* #endregion */
+
+  .free-vip-banner-container {
+    position: fixed;
+    bottom: 100rpx;
+    left: 0;
+    right: 0;
+  }
 </style>

@@ -139,7 +139,7 @@
     {
       key: 'opportunity',
       text: '商机',
-      path: '/pages/business-club-list/index'
+      path: '/pages/business-leads/index'
     },
     {
       key: 'mine',

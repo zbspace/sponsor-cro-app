@@ -159,6 +159,13 @@
         "navigationBarTitleText": "医院合作记录",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/business-leads/index",
+      "style": {
+        "navigationBarTitleText": "商机线索",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "easycom": {
