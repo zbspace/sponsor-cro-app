@@ -51,37 +51,36 @@
     }"
     @scrolltolower="loadMore"
   >
-    <view class="trial-card" v-for="(item, index) in list" :key="index">
+    <view
+      class="trial-card"
+      v-for="(item, index) in list"
+      :key="item.hosStandardId + '-' + item.researcherName"
+    >
       <view class="card-header">
         <view class="title-row">
           <view class="icon-wrap" :class="getRandomColorClass(index)">
-            <text>{{ item.drugStandardName ? item.drugStandardName.charAt(0) : 'C' }}</text>
+            <text>{{ item.researcherName ? item.researcherName.charAt(0) : '研' }}</text>
           </view>
-          <text class="title">{{ item.drugStandardName }}</text>
-          <text class="date">{{ item.firstPublicityDate }}</text>
-        </view>
-        <view class="tag-row">
-          <view class="tag status">
-            {{ item.cleanedTrialStages }}
-          </view>
-          <view class="tag stage">
-            {{ item.trialStatus || '未知' }}
-          </view>
+          <text class="title">{{ item.researcherName }}</text>
         </view>
       </view>
 
       <view class="card-body">
         <view class="info-row">
           <text class="label">排名</text>
-          <text class="value">{{ item.indication || '--' }}</text>
+          <text class="value">{{ index + 1 }}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">研究者</text>
+          <text class="value">{{ item.researcherName || '--' }}</text>
         </view>
         <view class="info-row">
           <text class="label">医院</text>
-          <text class="value">{{ item.applicationCompany || '--' }}</text>
+          <text class="value">{{ item.hosStandardName || '--' }}</text>
         </view>
         <view class="info-row">
           <text class="label">临床试验数</text>
-          <text class="value">{{ item.acceptanceNo || '--' }}</text>
+          <text class="value">{{ item.trialCnt ?? '--' }}</text>
         </view>
       </view>
     </view>
@@ -100,39 +99,13 @@
       <text>暂无相关合作记录</text>
     </view>
   </scroll-view>
-
-  <!-- 中心及研究者弹窗 -->
-  <CdeCenterResearcherPopup
-    v-model:visible="popupVisible"
-    :acceptance-no="currentTrial?.acceptanceNo || ''"
-  />
 </template>
 
 <script setup lang="ts">
   import { ref, computed, onMounted, watch } from 'vue'
-  import { getCdeTrailList } from '@/api'
-  import type { CdeTrialItem, CdeTrailListReq } from '@/types/api'
-  import CdeCenterResearcherPopup from '../../components/cde-center-researcher-popup/cde-center-researcher-popup.vue'
+  import { researcherTrialStatistic } from '@/api'
+  import type { HospitalTrialStatisticParam, ResearcherTrialStatisticItem } from '@/types/api'
   import { onLoad } from '@dcloudio/uni-app'
-
-  const props = defineProps<{
-    /** 母公司ID */
-    companyParentId?: number
-    /** 药品名称（榜单点击带入） */
-    drugName?: string
-    /** 年份（榜单年份带入） */
-    year?: string
-  }>()
-
-  // #region 弹窗状态
-  const popupVisible = ref(false)
-  const currentTrial = ref<CdeTrialItem | null>(null)
-
-  function showResearcherPopup(item: CdeTrialItem) {
-    currentTrial.value = item
-    popupVisible.value = true
-  }
-  // #endregion
 
   // #region 筛选状态
   // 试验分期/试验状态取值与 CDE 接口文档保持一致
@@ -163,7 +136,7 @@
   // #endregion
 
   // #region 列表数据
-  const list = ref<CdeTrialItem[]>([])
+  const list = ref<ResearcherTrialStatisticItem[]>([])
   const pageNum = ref(1)
   const pageSize = 10
   const total = ref(0)
@@ -178,18 +151,17 @@
     }
     loading.value = true
 
-    const params: CdeTrailListReq = {
-      parentCompanyId: props.companyParentId || undefined,
-      drugStandardName: props.drugName || undefined,
-      queryYear: Number(currentTimeFilter.value) || Number(props.year) || undefined,
-      cleanedTrialStages: stageFilter.value || undefined,
+    const params: HospitalTrialStatisticParam = {
+      parentCompanyId: companyParentId.value || undefined,
+      year: currentTimeFilter.value || undefined,
+      trialStage: stageFilter.value || undefined,
       trialStatus: statusFilter.value || undefined,
       pageNum: pageNum.value,
       pageSize: pageSize
     }
 
     try {
-      const res = await getCdeTrailList(params)
+      const res = await researcherTrialStatistic(params)
       if (res.data) {
         if (refresh) {
           list.value = res.data.list || []
@@ -199,7 +171,7 @@
         total.value = res.data.total || 0
       }
     } catch (e) {
-      console.error('获取试验列表失败', e)
+      console.error('获取研究者合作记录失败', e)
     } finally {
       loading.value = false
       isRefreshing.value = false
@@ -260,23 +232,8 @@
   })
 
   onMounted(() => {
-    // 外部传入年份时，同步到年份下拉框（由年份 watch 触发首次加载，避免重复请求）
-    if (props.year) {
-      currentTimeFilter.value = props.year
-    } else {
-      fetchList(true)
-    }
+    fetchList(true)
   })
-
-  // 监听 props 变化重新加载
-  watch(
-    () => [props.companyParentId, props.drugName, props.year],
-    () => {
-      // 外部年份变化时同步到年份下拉框
-      currentTimeFilter.value = props.year || ''
-      fetchList(true)
-    }
-  )
 </script>
 
 <script lang="ts">

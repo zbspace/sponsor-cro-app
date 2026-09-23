@@ -43,10 +43,10 @@
           <view
             class="dropdown-item"
             v-for="item in searchResults"
-            :key="item.parentCompanyId"
+            :key="item.standardId"
             @click="selectCompany(item)"
           >
-            <text class="dropdown-name">{{ item.parentCompanyShortName }}</text>
+            <text class="dropdown-name">{{ item.companyStandardName }}</text>
           </view>
         </scroll-view>
         <view class="dropdown-empty" v-if="searchResults.length === 0">
@@ -171,9 +171,9 @@
   import {
     getAfterListingBusinessClueList,
     getBeforeListingBusinessClueList,
-    getParentShortNameList
+    queryStandardCompany
   } from '@/api'
-  import type { OpportunityVo, OpportunityParam, ParentCompanyItem } from '@/types/api'
+  import type { OpportunityVo, OpportunityParam, StandardCompanyItem } from '@/types/api'
   // #endregion
 
   // #region 状态
@@ -194,8 +194,8 @@
   const finished = ref(false)
   const searchKeyword = ref('')
   let searchTimer: ReturnType<typeof setTimeout> | null = null
-  const selectedCompany = ref(null)
-  const searchResults = ref<ParentCompanyItem[]>([])
+  const selectedCompany = ref<StandardCompanyItem | null>(null)
+  const searchResults = ref<StandardCompanyItem[]>([])
   const showDropdown = ref(false)
   const searchLoading = ref(false)
 
@@ -329,11 +329,10 @@
     showDropdown.value = true
 
     try {
-      const res = await getParentShortNameList({
-        companyType: '',
+      const res = await queryStandardCompany({
+        companyStandardName: keyword,
         pageNum: 1,
-        pageSize: 20,
-        shortName: keyword
+        pageSize: 99
       })
       searchResults.value = res.data?.list || []
     } catch {
@@ -343,8 +342,8 @@
     }
   }
 
-  function selectCompany(item: any) {
-    searchKeyword.value = item.parentCompanyShortName
+  function selectCompany(item: StandardCompanyItem) {
+    searchKeyword.value = item.companyStandardName
     selectedCompany.value = item
     showDropdown.value = false
   }

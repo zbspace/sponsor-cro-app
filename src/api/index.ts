@@ -30,6 +30,9 @@ import type {
   ResearcherStatisticsResponse,
   TrialListResponse,
   CenterAndResearcherListResponse,
+  HospitalTrialStatisticParam,
+  HospitalTrialStatisticResponse,
+  ResearcherTrialStatisticResponse,
   HospitalStatisticsQuery,
   SearchCustIndexReq,
   BusinessClueStatisticsResponse,
@@ -473,6 +476,32 @@ export async function queryHospitalTrialList(params: HospitalStatisticsQuery) {
 export async function queryCenterAndResearcherList(params: HospitalStatisticsQuery) {
   return post<CenterAndResearcherListResponse>(
     '/api/v1/companyHospital/queryCenterAndResearcherList',
+    params,
+    true
+  )
+}
+
+/**
+ * 医院合作记录(首页下钻)列表
+ * @param params 医院合作记录查询参数
+ * @returns Promise<HospitalTrialStatisticResponse>
+ */
+export async function hospitalTrialStatistic(params: HospitalTrialStatisticParam) {
+  return post<HospitalTrialStatisticResponse>(
+    '/api/v1/companyHospital/hospitalTrialStatistic',
+    params,
+    true
+  )
+}
+
+/**
+ * 主要研究者合作记录列表
+ * @param params 医院合作记录查询参数
+ * @returns Promise<ResearcherTrialStatisticResponse>
+ */
+export async function researcherTrialStatistic(params: HospitalTrialStatisticParam) {
+  return post<ResearcherTrialStatisticResponse>(
+    '/api/v1/companyHospital/researcherTrialStatistic',
     params,
     true
   )

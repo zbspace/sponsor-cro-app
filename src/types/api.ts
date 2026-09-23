@@ -361,6 +361,64 @@ export interface CenterAndResearcherListResponse {
 }
 
 /**
+ * 医院合作记录(首页下钻)查询参数
+ */
+export interface HospitalTrialStatisticParam extends HospitalStatisticsQuery {
+  /** 母公司ID */
+  parentCompanyId?: number
+  /** 子公司ID集合 */
+  standardCompanyIdList?: number[]
+}
+
+/**
+ * 医院合作记录(首页下钻)条目
+ */
+export interface HospitalTrialStatisticItem {
+  /** 标准医院ID */
+  hosStandardId: number
+  /** 标准医院名称 */
+  hosStandardName: string
+  /** 母公司ID */
+  parentCompanyId: number
+  /** 试验数量 */
+  trialCnt: number
+}
+
+/**
+ * 医院合作记录(首页下钻)分页响应
+ */
+export interface HospitalTrialStatisticResponse {
+  list: HospitalTrialStatisticItem[]
+  pages: number
+  total: number
+}
+
+/**
+ * 主要研究者合作记录条目
+ */
+export interface ResearcherTrialStatisticItem {
+  /** 标准医院ID */
+  hosStandardId: number
+  /** 标准医院名称 */
+  hosStandardName: string
+  /** 母公司ID */
+  parentCompanyId: number
+  /** 研究者姓名 */
+  researcherName: string
+  /** 试验数量 */
+  trialCnt: number
+}
+
+/**
+ * 主要研究者合作记录分页响应
+ */
+export interface ResearcherTrialStatisticResponse {
+  list: ResearcherTrialStatisticItem[]
+  pages: number
+  total: number
+}
+
+/**
  * 用户信息接口
  */
 export interface UserInfo {
