@@ -119,7 +119,7 @@
               <text class="value">{{ hospitalStat.hosCount }}</text>
             </view>
           </view>
-          <view class="grid-item" @click="goTo('researcher-stat')">
+          <view class="grid-item" @click="goTo('pi-cooperation-stat')">
             <view class="item-icon researcher">
               <image src="../../static/icons/sponsor.png" mode="aspectFit" v-if="false" />
               <text style="color: #9013fe; font-size: 24rpx">R</text>
@@ -492,6 +492,12 @@
     }
 
     if (tab === 'hospital-cooperation-stat') {
+      uni.navigateTo({
+        url: `/pages/${tab}/index?${query.join('&')}`
+      })
+    }
+
+    if (tab === 'pi-cooperation-stat') {
       uni.navigateTo({
         url: `/pages/${tab}/index?${query.join('&')}`
       })
