@@ -10,7 +10,7 @@
     <view class="nav-right"></view>
   </view>
 
-  <image class="bg-img" src="../../static/home/head-bg.png" mode="aspectFit" />
+  <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
 
   <scroll-view
     :scroll-y="activeTab === 'stat'"
@@ -885,7 +885,6 @@
 
   .container {
     padding: 30rpx;
-    padding-bottom: 60rpx;
     min-height: 100%;
     box-sizing: border-box;
   }

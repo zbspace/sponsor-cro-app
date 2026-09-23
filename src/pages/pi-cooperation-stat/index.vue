@@ -13,92 +13,81 @@
 
   <image class="bg-img" src="../../static/home/head-bg.png" mode="aspectFit" />
 
-  <!-- 筛选区域 -->
-  <view class="filter-wrapper">
-    <view class="time-filter-wrapper">
-      <uni-data-select
-        v-model="currentTimeFilter"
-        :localdata="timeOptions"
-        :clear="false"
-        placeholder="请选择"
-      ></uni-data-select>
+  <view class="container">
+    <!-- 筛选区域 -->
+    <view class="filter-wrapper">
+      <view class="time-filter-wrapper">
+        <uni-data-select
+          v-model="currentTimeFilter"
+          :localdata="timeOptions"
+          :clear="false"
+          placeholder="请选择"
+        ></uni-data-select>
+      </view>
+      <view class="time-filter-wrapper">
+        <uni-data-select
+          v-model="statusFilter"
+          :localdata="statusOptions"
+          :clear="false"
+          placeholder="请选择"
+        ></uni-data-select>
+      </view>
+      <view class="time-filter-wrapper">
+        <uni-data-select
+          v-model="stageFilter"
+          :localdata="stageOptions"
+          :clear="false"
+          placeholder="请选择"
+        ></uni-data-select>
+      </view>
     </view>
-    <view class="time-filter-wrapper">
-      <uni-data-select
-        v-model="statusFilter"
-        :localdata="statusOptions"
-        :clear="false"
-        placeholder="请选择"
-      ></uni-data-select>
-    </view>
-    <view class="time-filter-wrapper">
-      <uni-data-select
-        v-model="stageFilter"
-        :localdata="stageOptions"
-        :clear="false"
-        placeholder="请选择"
-      ></uni-data-select>
-    </view>
-  </view>
 
-  <!-- 列表区域 -->
-  <scroll-view
-    class="container-scroll-view"
-    :show-scrollbar="false"
-    lower-threshold="100"
-    :style="{
-      height: `calc(100vh - ${menu.top}px - ${menu.height}px - 100px)`
-    }"
-    @scrolltolower="loadMore"
-  >
-    <view
-      class="trial-card"
-      v-for="(item, index) in list"
-      :key="item.hosStandardId + '-' + item.researcherName"
+    <!-- 列表区域 -->
+    <scroll-view
+      class="container-scroll-view"
+      :show-scrollbar="false"
+      lower-threshold="100"
+      :style="{
+        height: `calc(100vh - ${menu.top}px - ${menu.height}px - 100px)`
+      }"
+      @scrolltolower="loadMore"
     >
-      <view class="card-header">
-        <view class="title-row">
-          <view class="icon-wrap" :class="getRandomColorClass(index)">
-            <text>{{ item.researcherName ? item.researcherName.charAt(0) : '研' }}</text>
+      <!-- 研究者合作名单表格 -->
+      <view class="card list-card">
+        <view class="table-header">
+          <text class="col-rank">排序</text>
+          <text class="col-name">研究者</text>
+          <text class="col-hospital">所在医院</text>
+          <text class="col-count">临床试验数</text>
+        </view>
+        <view class="table-body">
+          <view
+            class="table-row"
+            v-for="(item, index) in list"
+            :key="item.hosStandardId + '-' + item.researcherName"
+            hover-class="row-hover"
+            @click="onResearcherClick(item)"
+          >
+            <text class="col-rank">{{ index + 1 }}</text>
+            <text class="col-name">{{ item.researcherName || '--' }}</text>
+            <text class="col-hospital">{{ item.hosStandardName || '--' }}</text>
+            <text class="col-count highlight">{{ item.trialCnt ?? '--' }}</text>
           </view>
-          <text class="title">{{ item.researcherName }}</text>
+        </view>
+
+        <!-- 加载状态提示 -->
+        <view class="load-status" v-if="loading && list.length > 0">
+          <text>加载中...</text>
+        </view>
+        <view class="load-status" v-else-if="!hasMore && list.length > 0">
+          <text>没有更多了</text>
+        </view>
+        <view class="load-status" v-if="!loading && list.length === 0">
+          <text>暂无数据</text>
         </view>
       </view>
-
-      <view class="card-body">
-        <view class="info-row">
-          <text class="label">排名</text>
-          <text class="value">{{ index + 1 }}</text>
-        </view>
-        <view class="info-row">
-          <text class="label">研究者</text>
-          <text class="value">{{ item.researcherName || '--' }}</text>
-        </view>
-        <view class="info-row">
-          <text class="label">医院</text>
-          <text class="value">{{ item.hosStandardName || '--' }}</text>
-        </view>
-        <view class="info-row">
-          <text class="label">临床试验数</text>
-          <text class="value">{{ item.trialCnt ?? '--' }}</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 加载更多 -->
-    <view class="loading-status" v-if="list.length > 0">
-      <view class="spinner" v-if="hasMore"></view>
-      <text>{{ hasMore ? '正在加载...' : '没有更多了' }}</text>
-    </view>
-    <!-- 初始/筛选加载中 -->
-    <view class="loading-status empty" v-if="list.length === 0 && loading">
-      <view class="spinner"></view>
-      <text>加载中...</text>
-    </view>
-    <view class="empty-status" v-if="list.length === 0 && !loading">
-      <text>暂无相关合作记录</text>
-    </view>
-  </scroll-view>
+    </scroll-view>
+  </view>
 </template>
 
 <script setup lang="ts">
@@ -204,9 +193,15 @@
   })
 
   // #region 辅助函数
-  function getRandomColorClass(index: number) {
-    const classes = ['blue', 'green', 'purple', 'orange']
-    return classes[index % classes.length]
+  /** 点击研究者行，跳转到合作情况统计页的「试验列表」tab */
+  function onResearcherClick(item: ResearcherTrialStatisticItem) {
+    uni.navigateTo({
+      url: `/pages/hospital-stat/index?companyParentId=${
+        companyParentId.value || ''
+      }&hosStandardId=${item.hosStandardId}&researcherName=${encodeURIComponent(
+        item.researcherName || ''
+      )}&tab=list`
+    })
   }
 
   function goBack() {
@@ -246,6 +241,10 @@
 </script>
 
 <style lang="scss" scoped>
+  .container {
+    padding: 30rpx;
+  }
+
   .header {
     margin-bottom: 50rpx;
   }
@@ -349,184 +348,78 @@
     box-sizing: border-box;
   }
 
-  .trial-card {
+  // #region 卡片与表格
+  .card {
     background: #ffffff;
     border-radius: 24rpx;
     padding: 30rpx;
     margin-bottom: 30rpx;
-    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.02);
+    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
+  }
 
-    .card-header {
-      margin-bottom: 24rpx;
+  .list-card {
+    .table-header {
+      display: flex;
+      padding: 20rpx 0;
+      border-bottom: 2rpx solid #f8f8f8;
+      font-size: 26rpx;
+      color: #999;
+    }
 
-      .title-row {
-        display: flex;
-        align-items: center;
-        margin-bottom: 20rpx;
+    .table-row {
+      display: flex;
+      padding: 30rpx 0;
+      border-bottom: 2rpx solid #f8f8f8;
+      font-size: 28rpx;
+      color: #333;
 
-        .icon-wrap {
-          width: 50rpx;
-          height: 50rpx;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 24rpx;
-          color: #ffffff;
-          font-weight: bold;
-          margin-right: 20rpx;
-
-          &.blue {
-            background: #499ae6;
-          }
-          &.green {
-            background: #50e3c2;
-          }
-          &.purple {
-            background: #9013fe;
-          }
-          &.orange {
-            background: #f5a623;
-          }
-        }
-
-        .title {
-          flex: 1;
-          font-size: 30rpx;
-          color: #333;
-          font-weight: 500;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .date {
-          font-size: 24rpx;
-          color: #cccccc;
-          margin-left: 20rpx;
-        }
+      &:last-child {
+        border-bottom: none;
       }
 
-      .tag-row {
-        display: flex;
-        gap: 16rpx;
-
-        .tag {
-          font-size: 22rpx;
-          padding: 4rpx 16rpx;
-          border-radius: 8rpx;
-
-          &.status {
-            background: #f3e9ff;
-            color: #9013fe;
-          }
-          &.stage {
-            background: #e9f4ff;
-            color: #499ae6;
-          }
-        }
+      // 点击反馈
+      &.row-hover {
+        background-color: #f2f7fc;
       }
     }
 
-    .card-body {
-      background: #f8f9fb;
-      border-radius: 16rpx;
-      padding: 24rpx;
-      display: flex;
-      flex-direction: column;
-      gap: 16rpx;
+    .col-rank {
+      width: 100rpx;
+      text-align: center;
+    }
 
-      .info-row {
-        display: flex;
-        font-size: 26rpx;
+    .col-name {
+      flex: 1;
+      text-align: center;
+      word-break: break-all;
+    }
 
-        .label {
-          color: #999;
-          width: 200rpx;
-        }
+    .col-hospital {
+      flex: 1.4;
+      text-align: center;
+      word-break: break-all;
+    }
 
-        .value {
-          color: #333;
-          flex: 1;
-        }
+    .col-count {
+      width: 180rpx;
+      text-align: center;
+
+      &.highlight {
+        color: #499ae6;
       }
     }
 
-    .card-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 24rpx;
-      padding-top: 20rpx;
+    // #region 加载状态
+    .load-status {
+      padding: 40rpx 0;
+      text-align: center;
 
-      .footer-label {
-        font-size: 26rpx;
+      text {
+        font-size: 24rpx;
         color: #999;
       }
-
-      .footer-right {
-        display: flex;
-        align-items: center;
-
-        .count {
-          font-size: 28rpx;
-          color: #333;
-          margin-right: 10rpx;
-        }
-
-        .arrow-right {
-          width: 12rpx;
-          height: 12rpx;
-          border-top: 2rpx solid #cccccc;
-          border-right: 2rpx solid #cccccc;
-          transform: rotate(45deg);
-        }
-      }
     }
+    // #endregion
   }
-
-  .loading-status,
-  .empty-status {
-    padding: 40rpx 0;
-    text-align: center;
-    font-size: 24rpx;
-    color: #999;
-  }
-
-  .loading-status {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12rpx;
-
-    &.empty {
-      padding: 80rpx 0;
-    }
-  }
-
-  .spinner {
-    width: 32rpx;
-    height: 32rpx;
-    border: 4rpx solid #e5e5e5;
-    border-top-color: #499ae6;
-    border-radius: 50%;
-    animation: trial-list-spin 0.8s linear infinite;
-  }
-
-  @keyframes trial-list-spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  .empty-status {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20rpx;
-    image {
-      width: 200rpx;
-      height: 200rpx;
-    }
-  }
+  // #endregion
 </style>

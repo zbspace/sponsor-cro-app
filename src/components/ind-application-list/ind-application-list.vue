@@ -28,6 +28,33 @@
       </view>
     </view>
 
+    <view class="filter-container">
+      <view class="filter-wrapper">
+        <view class="time-filter-wrapper">
+          <uni-data-select
+            v-model="cleanedClassification"
+            :localdata="classificationOptions"
+            :clear="false"
+            placeholder="请选择"
+          ></uni-data-select>
+        </view>
+        <view class="time-filter-wrapper">
+          <uni-data-select
+            v-model="drugTypeFilter"
+            :localdata="drugTypeOptions"
+            :clear="false"
+            placeholder="请选择"
+          ></uni-data-select>
+        </view>
+      </view>
+
+      <!-- 榜单点击带入的药品名称过滤 -->
+      <view class="product-filter" v-if="productName" @click="clearProductFilter">
+        <text class="product-name">{{ productName }}</text>
+        <text class="close-icon">×</text>
+      </view>
+    </view>
+
     <!-- 列表区域 -->
     <scroll-view
       scroll-y
@@ -133,8 +160,18 @@
     ...DRUG_TYPE_VALUES.map((text) => ({ value: text, text }))
   ]
 
+  // 注册分类
+  const DRUG_TYPE_OPTIONS = [
+    { value: 1, text: '化药' },
+    { value: 2, text: '预防用生物制品' },
+    { value: 3, text: '治疗用生物制品' },
+    { value: 4, text: '中药/天然药物' }
+  ]
+  const classificationOptions = [{ value: '', text: '注册分类' }, ...DRUG_TYPE_OPTIONS]
+
   const currentYearFilter = ref('')
   const drugTypeFilter = ref('')
+  const cleanedClassification = ref('')
 
   /** 清空榜单带入的药品名称过滤 */
   function clearProductFilter() {
