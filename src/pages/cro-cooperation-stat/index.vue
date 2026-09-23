@@ -1,39 +1,41 @@
 <!-- cro合作统计 -->
 <template>
-  <view class="page-container">
-    <!-- #region 头部导航 -->
-    <view class="header-nav" :style="{ paddingTop: `${statusBarHeight}px` }">
-      <view class="nav-content">
-        <view class="back-btn" @click="goBack">
-          <uni-icons type="left" size="24" color="#333"></uni-icons>
-        </view>
-        <text class="title">{{ companyName || '百济神州' }}</text>
-        <view class="nav-placeholder"></view>
+  <!-- #region 头部导航 -->
+  <view class="header-nav" :style="{ paddingTop: `${statusBarHeight}px` }">
+    <view class="nav-content">
+      <view class="back-btn" @click="goBack">
+        <uni-icons type="left" size="24" color="#333"></uni-icons>
       </view>
+      <text class="title">{{ companyName || '百济神州' }}</text>
+      <view class="nav-placeholder"></view>
     </view>
-    <!-- #endregion -->
+  </view>
+  <!-- #endregion -->
 
-    <!-- #region 选项卡 -->
-    <view class="tabs-wrapper">
-      <view
-        class="tab-item"
-        v-for="tab in tabs"
-        :key="tab.key"
-        :class="{ active: activeTab === tab.key }"
-        @click="activeTab = tab.key"
-      >
-        <text class="tab-text">{{ tab.label }}</text>
-        <view class="active-line" v-if="activeTab === tab.key"></view>
-      </view>
-    </view>
-    <!-- #endregion -->
+  <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
 
-    <scroll-view
-      scroll-y
-      class="content-scroll"
-      :show-scrollbar="false"
-      @scrolltolower="onScrollToLower"
+  <!-- #region 选项卡 -->
+  <view class="tabs-wrapper">
+    <view
+      class="tab-item"
+      v-for="tab in tabs"
+      :key="tab.key"
+      :class="{ active: activeTab === tab.key }"
+      @click="activeTab = tab.key"
     >
+      <text class="tab-text">{{ tab.label }}</text>
+      <view class="active-line" v-if="activeTab === tab.key"></view>
+    </view>
+  </view>
+  <!-- #endregion -->
+
+  <scroll-view
+    scroll-y
+    class="container-scroll-view"
+    :show-scrollbar="false"
+    @scrolltolower="onScrollToLower"
+  >
+    <view class="container">
       <!-- #region 统计内容 -->
       <view v-if="activeTab === 'stat'" class="stat-content p-16px">
         <!-- 外包比例卡片 -->
@@ -158,52 +160,53 @@
       <!-- #endregion -->
 
       <!-- #region 项目列表 -->
-      <view v-if="activeTab === 'list'" class="project-list p-16px">
-        <view class="project-card" v-for="(item, index) in projectList" :key="index">
-          <view class="project-title">{{ item.title }}</view>
-          <view class="info-list">
-            <view class="info-item">
-              <view class="info-icon time">
-                <image src="../../static/icons/time.png" mode="aspectFit" />
-              </view>
-              <text class="info-text">批入时间：{{ item.approveTime }}</text>
-            </view>
-            <view class="info-item">
-              <view class="info-icon sponsor">
-                <image src="../../static/icons/sponsor.png" mode="aspectFit" />
-              </view>
-              <text class="info-text">申办方：{{ item.sponsor }}</text>
-            </view>
-            <view class="info-item">
-              <view class="info-icon no">
-                <image src="../../static/icons/no.png" mode="aspectFit" />
-              </view>
-              <text class="info-text">审批号/备案号：{{ item.approveNo }}</text>
-            </view>
-            <view class="info-item">
-              <view class="info-icon cro">
-                <image src="../../static/icons/cro.png" mode="aspectFit" />
-              </view>
-              <text class="info-text">合作CRO：{{ item.cro }}</text>
-            </view>
-          </view>
-          <view class="action-btn">{{ item.tag }}</view>
-        </view>
+    </view>
 
-        <!-- 加载状态提示 -->
-        <view class="load-status" v-if="loading">
-          <text>加载中...</text>
+    <view v-if="activeTab === 'list'" class="project-list p-16px">
+      <view class="project-card" v-for="(item, index) in projectList" :key="index">
+        <view class="project-title">{{ item.title }}</view>
+        <view class="info-list">
+          <view class="info-item">
+            <view class="info-icon time">
+              <image src="../../static/icons/time.png" mode="aspectFit" />
+            </view>
+            <text class="info-text">批入时间：{{ item.approveTime }}</text>
+          </view>
+          <view class="info-item">
+            <view class="info-icon sponsor">
+              <image src="../../static/icons/sponsor.png" mode="aspectFit" />
+            </view>
+            <text class="info-text">申办方：{{ item.sponsor }}</text>
+          </view>
+          <view class="info-item">
+            <view class="info-icon no">
+              <image src="../../static/icons/no.png" mode="aspectFit" />
+            </view>
+            <text class="info-text">审批号/备案号：{{ item.approveNo }}</text>
+          </view>
+          <view class="info-item">
+            <view class="info-icon cro">
+              <image src="../../static/icons/cro.png" mode="aspectFit" />
+            </view>
+            <text class="info-text">合作CRO：{{ item.cro }}</text>
+          </view>
         </view>
-        <view class="load-status" v-else-if="noMore && projectList.length > 0">
-          <text>没有更多了</text>
-        </view>
-        <view class="load-status" v-if="!loading && !projectList.length">
-          <text>暂无数据</text>
-        </view>
+        <view class="action-btn">{{ item.tag }}</view>
       </view>
-      <!-- #endregion -->
-    </scroll-view>
-  </view>
+
+      <!-- 加载状态提示 -->
+      <view class="load-status" v-if="loading">
+        <text>加载中...</text>
+      </view>
+      <view class="load-status" v-else-if="noMore && projectList.length > 0">
+        <text>没有更多了</text>
+      </view>
+      <view class="load-status" v-if="!loading && !projectList.length">
+        <text>暂无数据</text>
+      </view>
+    </view>
+    <!-- #endregion -->
+  </scroll-view>
 </template>
 
 <script setup lang="ts">
@@ -438,348 +441,340 @@
 </script>
 
 <style lang="scss" scoped>
-  .page-container {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    background-color: #f8f9fb;
+  .container {
+    padding: 30rpx;
+  }
 
-    .header-nav {
-      background-color: #fff;
-      flex-shrink: 0;
-      .nav-content {
-        height: 44px;
-        display: flex;
-        align-items: center;
-        padding: 0 16px;
-        .back-btn {
-          width: 40px;
-        }
-        .title {
-          flex: 1;
-          text-align: center;
-          font-size: 18px;
+  .header-nav {
+    background-color: #fff;
+    flex-shrink: 0;
+    .nav-content {
+      height: 44px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      .back-btn {
+        width: 40px;
+      }
+      .title {
+        flex: 1;
+        text-align: center;
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+      }
+      .nav-placeholder {
+        width: 40px;
+      }
+    }
+  }
+
+  .tabs-wrapper {
+    display: flex;
+    background-color: #fff;
+    padding: 10px 0;
+    flex-shrink: 0;
+    .tab-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      .tab-text {
+        font-size: 16px;
+        color: #999;
+        margin-bottom: 6px;
+      }
+      &.active {
+        .tab-text {
+          color: #00a0e9;
           font-weight: bold;
-          color: #333;
         }
-        .nav-placeholder {
-          width: 40px;
+        .active-line {
+          width: 24px;
+          height: 3px;
+          background-color: #00a0e9;
+          border-radius: 2px;
+        }
+      }
+    }
+  }
+
+  /* 卡片通用样式 */
+  .card {
+    background: #ffffff;
+    border-radius: 24rpx;
+    padding: 30rpx;
+    margin-bottom: 30rpx;
+    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
+
+    .card-title {
+      font-weight: bold;
+      font-size: 28rpx;
+      color: #333333;
+      line-height: 52rpx;
+      margin-bottom: 24rpx;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30rpx;
+    }
+  }
+
+  .filter-dropdown {
+    display: flex;
+    align-items: center;
+    font-size: 24rpx;
+    color: #999;
+
+    .filter-picker {
+      display: flex;
+    }
+
+    .filter-trigger {
+      display: flex;
+      align-items: center;
+    }
+
+    .arrow-down {
+      width: 0;
+      height: 0;
+      border-left: 8rpx solid transparent;
+      border-right: 8rpx solid transparent;
+      border-top: 10rpx solid #999;
+      margin-left: 10rpx;
+    }
+  }
+
+  /* 外包比例 */
+  .ratio-card {
+    .ratio-content {
+      display: flex;
+      align-items: center;
+      gap: 130rpx;
+      padding: 20rpx 0;
+      justify-content: center;
+
+      .pie-chart-wrapper {
+        .pie-chart {
+          width: 200rpx;
+          height: 200rpx;
+          border-radius: 50%;
+        }
+      }
+
+      .ratio-legend {
+        display: flex;
+        flex-direction: column;
+        gap: 30rpx;
+
+        .legend-item {
+          display: flex;
+          align-items: center;
+          gap: 20rpx;
+
+          .dot {
+            width: 16rpx;
+            height: 16rpx;
+            border-radius: 4rpx;
+
+            &.blue {
+              background-color: #499ae6;
+            }
+            &.green {
+              background-color: #7ed321;
+            }
+          }
+
+          .legend-info {
+            display: flex;
+            flex-direction: column;
+
+            .label {
+              font-size: 24rpx;
+              color: #999;
+              margin-bottom: 4rpx;
+            }
+
+            .value {
+              font-size: 28rpx;
+              font-weight: bold;
+              color: #333;
+            }
+          }
         }
       }
     }
 
-    .tabs-wrapper {
+    .ratio-stats {
+      margin-top: 40rpx;
       display: flex;
-      background-color: #fff;
-      padding: 10px 0;
-      flex-shrink: 0;
-      .tab-item {
-        flex: 1;
+      justify-content: space-around;
+      border-top: 2rpx solid #f8f8f8;
+      padding-top: 30rpx;
+
+      .stat-item {
         display: flex;
         flex-direction: column;
         align-items: center;
-        position: relative;
-        .tab-text {
-          font-size: 16px;
+        gap: 8rpx;
+
+        .label {
+          font-size: 24rpx;
           color: #999;
-          margin-bottom: 6px;
         }
-        &.active {
-          .tab-text {
-            color: #00a0e9;
-            font-weight: bold;
-          }
-          .active-line {
-            width: 24px;
-            height: 3px;
-            background-color: #00a0e9;
-            border-radius: 2px;
-          }
+
+        .value {
+          font-size: 32rpx;
+          font-weight: bold;
+          color: #333;
         }
       }
     }
+  }
 
-    .content-scroll {
-      flex: 1;
-      overflow: hidden;
+  /* 合作名单列表 */
+  .list-card {
+    .table-header {
+      display: flex;
+      padding: 20rpx 0;
+      border-bottom: 2rpx solid #f8f8f8;
+      color: #999;
+
+      background: #f7f8fa;
+      border-radius: 0rpx 0rpx 0rpx 0rpx;
+      border: 2rpx solid #eeeeee;
+
+      font-weight: 400;
+      font-size: 24rpx;
+      color: #333333;
+      line-height: 52rpx;
     }
 
-    /* 卡片通用样式 */
-    .card {
+    .table-row {
+      display: flex;
+      padding: 20rpx 0;
+      border-bottom: 2rpx solid #f8f8f8;
+      color: #333;
+      font-weight: 400;
+      font-size: 24rpx;
+      line-height: 48rpx;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      // 点击反馈
+      &.row-hover {
+        background-color: #f2f7fc;
+      }
+    }
+
+    .col-rank {
+      width: 120rpx;
+      text-align: center;
+    }
+
+    .col-name {
+      flex: 1;
+      text-align: center;
+    }
+
+    .col-count {
+      width: 200rpx;
+      text-align: center;
+
+      &.highlight {
+        color: #499ae6;
+      }
+    }
+
+    .load-status {
+      padding: 40rpx 0;
+      text-align: center;
+
+      text {
+        font-size: 24rpx;
+        color: #999;
+      }
+    }
+  }
+
+  /* 项目列表卡片 */
+  .project-list {
+    .project-card {
       background: #ffffff;
       border-radius: 24rpx;
       padding: 30rpx;
-      margin-bottom: 30rpx;
+      margin-bottom: 24rpx;
       box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
+      position: relative;
 
-      .card-title {
+      .project-title {
         font-weight: bold;
         font-size: 28rpx;
         color: #333333;
-        line-height: 52rpx;
-        margin-bottom: 24rpx;
-      }
-
-      .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30rpx;
-      }
-    }
-
-    .filter-dropdown {
-      display: flex;
-      align-items: center;
-      font-size: 24rpx;
-      color: #999;
-
-      .filter-picker {
-        display: flex;
-      }
-
-      .filter-trigger {
-        display: flex;
-        align-items: center;
-      }
-
-      .arrow-down {
-        width: 0;
-        height: 0;
-        border-left: 8rpx solid transparent;
-        border-right: 8rpx solid transparent;
-        border-top: 10rpx solid #999;
-        margin-left: 10rpx;
-      }
-    }
-
-    /* 外包比例 */
-    .ratio-card {
-      .ratio-content {
-        display: flex;
-        align-items: center;
-        gap: 130rpx;
-        padding: 20rpx 0;
-        justify-content: center;
-
-        .pie-chart-wrapper {
-          .pie-chart {
-            width: 200rpx;
-            height: 200rpx;
-            border-radius: 50%;
-          }
-        }
-
-        .ratio-legend {
-          display: flex;
-          flex-direction: column;
-          gap: 30rpx;
-
-          .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 20rpx;
-
-            .dot {
-              width: 16rpx;
-              height: 16rpx;
-              border-radius: 4rpx;
-
-              &.blue {
-                background-color: #499ae6;
-              }
-              &.green {
-                background-color: #7ed321;
-              }
-            }
-
-            .legend-info {
-              display: flex;
-              flex-direction: column;
-
-              .label {
-                font-size: 24rpx;
-                color: #999;
-                margin-bottom: 4rpx;
-              }
-
-              .value {
-                font-size: 28rpx;
-                font-weight: bold;
-                color: #333;
-              }
-            }
-          }
-        }
-      }
-
-      .ratio-stats {
-        margin-top: 40rpx;
-        display: flex;
-        justify-content: space-around;
-        border-top: 2rpx solid #f8f8f8;
-        padding-top: 30rpx;
-
-        .stat-item {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 8rpx;
-
-          .label {
-            font-size: 24rpx;
-            color: #999;
-          }
-
-          .value {
-            font-size: 32rpx;
-            font-weight: bold;
-            color: #333;
-          }
-        }
-      }
-    }
-
-    /* 合作名单列表 */
-    .list-card {
-      .table-header {
-        display: flex;
-        padding: 20rpx 0;
-        border-bottom: 2rpx solid #f8f8f8;
-        color: #999;
-
-        background: #f7f8fa;
-        border-radius: 0rpx 0rpx 0rpx 0rpx;
-        border: 2rpx solid #eeeeee;
-
-        font-weight: 400;
-        font-size: 24rpx;
-        color: #333333;
-        line-height: 52rpx;
-      }
-
-      .table-row {
-        display: flex;
-        padding: 20rpx 0;
-        border-bottom: 2rpx solid #f8f8f8;
-        color: #333;
-        font-weight: 400;
-        font-size: 24rpx;
         line-height: 48rpx;
-
-        &:last-child {
-          border-bottom: none;
-        }
-
-        // 点击反馈
-        &.row-hover {
-          background-color: #f2f7fc;
-        }
+        margin-bottom: 30rpx;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        overflow: hidden;
       }
 
-      .col-rank {
-        width: 120rpx;
-        text-align: center;
-      }
+      .info-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20rpx;
 
-      .col-name {
-        flex: 1;
-        text-align: center;
-      }
-
-      .col-count {
-        width: 200rpx;
-        text-align: center;
-
-        &.highlight {
-          color: #499ae6;
-        }
-      }
-
-      .load-status {
-        padding: 40rpx 0;
-        text-align: center;
-
-        text {
-          font-size: 24rpx;
-          color: #999;
-        }
-      }
-    }
-
-    /* 项目列表卡片 */
-    .project-list {
-      .project-card {
-        background: #ffffff;
-        border-radius: 24rpx;
-        padding: 30rpx;
-        margin-bottom: 24rpx;
-        box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
-        position: relative;
-
-        .project-title {
-          font-weight: bold;
-          font-size: 28rpx;
-          color: #333333;
-          line-height: 48rpx;
-          margin-bottom: 30rpx;
-          display: -webkit-box;
-          -webkit-box-orient: vertical;
-          -webkit-line-clamp: 3;
-          overflow: hidden;
-        }
-
-        .info-list {
+        .info-item {
           display: flex;
-          flex-direction: column;
-          gap: 20rpx;
+          align-items: center;
+          gap: 16rpx;
 
-          .info-item {
-            display: flex;
-            align-items: center;
-            gap: 16rpx;
-
-            .info-icon {
-              width: 34rpx;
-              height: 34rpx;
-              image {
-                width: 100%;
-                height: 100%;
-              }
-            }
-
-            .info-text {
-              font-weight: 400;
-              font-size: 24rpx;
-              color: #999999;
+          .info-icon {
+            width: 34rpx;
+            height: 34rpx;
+            image {
+              width: 100%;
+              height: 100%;
             }
           }
-        }
 
-        .action-btn {
-          position: absolute;
-          right: 30rpx;
-          bottom: 30rpx;
-          background: #499ae6;
-          color: #ffffff;
-          font-size: 26rpx;
-          padding: 12rpx 30rpx;
-          border-radius: 40rpx;
-          box-shadow: 0 4rpx 12rpx rgba(73, 154, 230, 0.3);
+          .info-text {
+            font-weight: 400;
+            font-size: 24rpx;
+            color: #999999;
+          }
         }
       }
 
-      // #region 加载状态
-      .load-status {
-        padding: 40rpx 0;
-        text-align: center;
-
-        text {
-          font-size: 24rpx;
-          color: #999;
-        }
+      .action-btn {
+        position: absolute;
+        right: 30rpx;
+        bottom: 30rpx;
+        background: #499ae6;
+        color: #ffffff;
+        font-size: 26rpx;
+        padding: 12rpx 30rpx;
+        border-radius: 40rpx;
+        box-shadow: 0 4rpx 12rpx rgba(73, 154, 230, 0.3);
       }
-      // #endregion
     }
+
+    // #region 加载状态
+    .load-status {
+      padding: 40rpx 0;
+      text-align: center;
+
+      text {
+        font-size: 24rpx;
+        color: #999;
+      }
+    }
+    // #endregion
   }
 </style>
