@@ -980,6 +980,10 @@
     if (options?.researcherName) {
       researcherName.value = decodeURIComponent(options.researcherName)
     }
+    // 支持从其它页面直接跳转到「试验列表」tab
+    if (options?.tab === 'list') {
+      activeTab.value = 'list'
+    }
     fetchSummary()
     fetchChange()
     fetchStage()
