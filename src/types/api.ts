@@ -1040,7 +1040,7 @@ export interface CdeCenterAndResearcherReq {
  */
 export interface NdaDataStatisticsParam {
   /** 药企母公司ID */
-  companyParentId?: number
+  parentCompanyId?: number
   /** 当前页数 */
   pageNum?: number
   /** 每页条数 */

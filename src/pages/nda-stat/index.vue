@@ -302,7 +302,7 @@
     return {
       pageNum: 1,
       pageSize: 10,
-      companyParentId: companyParentId.value || undefined
+      parentCompanyId: companyParentId.value || undefined
     }
   }
   // #endregion

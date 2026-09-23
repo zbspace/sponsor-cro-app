@@ -85,11 +85,6 @@
     }"
   >
     <view class="container">
-      <!-- 顶部注记 -->
-      <view class="note-box">
-        <text class="note-text">{{ noteText }}</text>
-      </view>
-
       <!-- 列表内容 -->
       <view class="list-container">
         <view class="clue-card" v-for="(item, index) in list" :key="index">
@@ -209,16 +204,6 @@
   })
   // #endregion
 
-  // #region 计算属性
-  const noteText = computed(() => {
-    if (type.value === 'before') {
-      return '注：IND一般60个工作日以内获批，申请及获批后，申请及获批1年内，申办方一般启动相关临床试验，所以此处只展示1年内IND申请及获批记录'
-    } else if (type.value === 'after') {
-      return '注：由于1、2类创新药上市获批后，3年内大概率会开展相关上市后临床研究，所以此处只展示3年内申请及获批1、2类创新药记录'
-    }
-    return ''
-  })
-
   function getClueClass(item: OpportunityVo) {
     if (type.value === 'before') return 'before-clue'
     if (type.value === 'after') return 'after-clue'
@@ -257,14 +242,12 @@
         parentCompanyId: companyId.value
       }
 
-      let resData: any = null
-      if (type.value === 'after') {
-        const res = await getAfterListingBusinessClueList(params)
-        resData = res.data
-      } else {
-        const res = await getBeforeListingBusinessClueList(params)
-        resData = res.data
-      }
+      // 注意：后端接口命名与线索类型相反
+      // 上市前 -> getAfterListingBusinessClueList，上市后 -> getBeforeListingBusinessClueList
+      const fetchApi =
+        type.value === 'before' ? getAfterListingBusinessClueList : getBeforeListingBusinessClueList
+      const res = await fetchApi(params)
+      const resData = res.data
 
       if (resData) {
         const newList = resData.list || []
