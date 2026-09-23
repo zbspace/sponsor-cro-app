@@ -13,6 +13,16 @@
 
   <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
 
+  <!-- #region 免费领VIP -->
+  <view class="free-vip-banner-container" v-if="userInfo?.vipCode === VIP_CODE.普通">
+    <free-vip-banner
+      :visible="showFreeVipBanner"
+      @apply="handleBannerApply"
+      @close="showFreeVipBanner = false"
+      @success="fetchVipApplicationStatus"
+    />
+  </view>
+
   <!-- 查询公司 -->
   <view class="search-input-section">
     <view class="input-wrapper">
@@ -166,9 +176,13 @@
   import {
     getAfterListingBusinessClueList,
     getBeforeListingBusinessClueList,
-    queryStandardCompany
+    queryStandardCompany,
+    getVipApplication,
+    getUserInfo
   } from '@/api'
   import type { OpportunityVo, OpportunityParam, StandardCompanyItem } from '@/types/api'
+  import { VIP_CODE, VIP_APPLICATION_STATUS } from '@/utils/enums'
+  import FreeVipBanner from '@/components/free-vip-banner/free-vip-banner.vue'
   // #endregion
 
   // #region 状态
@@ -193,6 +207,10 @@
   const searchResults = ref<StandardCompanyItem[]>([])
   const showDropdown = ref(false)
   const searchLoading = ref(false)
+  // 先用本地缓存渲染，登录完成后刷新为最新用户信息
+  const userInfo = ref(getUserInfo())
+  const showTrialPopup = ref(false)
+  const showFreeVipBanner = ref(false)
 
   // 下拉列表高度：单行约 88rpx，最多展示约 400rpx，超出可上下滚动
   const DROPDOWN_ITEM_HEIGHT = 88
@@ -289,6 +307,9 @@
   }
 
   function onSearchInput() {
+    if (!checkPermission()) {
+      return
+    }
     if (searchTimer) clearTimeout(searchTimer)
     selectedCompany.value = null // 输入时重置已选公司
 
@@ -330,6 +351,79 @@
     selectedCompany.value = item
     showDropdown.value = false
   }
+
+  function handleBannerApply() {
+    if (applicationStatus.value === VIP_APPLICATION_STATUS.待审批) {
+      uni.showToast({ title: '您已提交试用申请，等待电话联系', icon: 'none' })
+      return
+    }
+  }
+
+  // #region VIP状态
+  // 申请审批状态：0-无记录/可申请，1-待审批，2-审批通过，3-审批不通过
+  const applicationStatus = ref(0)
+  // VIP 申请详情信息
+  const applicationInfo = ref<{
+    haveFirstApplication: boolean
+    havePendingApplication: boolean
+  }>({
+    haveFirstApplication: true,
+    havePendingApplication: false
+  })
+  const showVipExpiredPopup = ref(false)
+
+  //  统一查询 VIP 申请状态并更新相关视图状态
+  async function fetchVipApplicationStatus() {
+    try {
+      const res = await getVipApplication()
+      if (res.data) {
+        applicationStatus.value = res.data.approvalStatus || 0
+
+        applicationInfo.value.haveFirstApplication = res.data.haveFirstApplication ?? true
+        applicationInfo.value.havePendingApplication = res.data.havePendingApplication ?? false
+
+        if (!applicationInfo.value.haveFirstApplication) {
+          showFreeVipBanner.value = true
+        } else {
+          showFreeVipBanner.value = false
+        }
+      }
+    } catch {
+      applicationStatus.value = 0
+      showFreeVipBanner.value = false
+    }
+  }
+
+  // 检查权限逻辑
+  function checkPermission() {
+    const userInfo = getUserInfo()
+    const vipCode = userInfo?.vipCode ?? 0
+
+    // 可申请试用
+    if (
+      applicationInfo.value.haveFirstApplication &&
+      !applicationInfo.value.havePendingApplication &&
+      vipCode === 0
+    ) {
+      showVipExpiredPopup.value = true
+      return false
+    }
+    // 审核中
+    if (
+      applicationInfo.value.haveFirstApplication &&
+      applicationInfo.value.havePendingApplication &&
+      vipCode === 0
+    ) {
+      uni.showToast({
+        title: '您的申请正在审核中，请稍后再试，或者直接联系我们',
+        icon: 'none',
+        duration: 3000
+      })
+      return false
+    }
+    return true
+  }
+  // #endregion
   // #endregion
 </script>
 
