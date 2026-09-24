@@ -169,24 +169,40 @@
           <view class="data-table">
             <view class="table-header">
               <text class="col-rank">排名</text>
-              <text class="col-name">项目名称</text>
+              <text class="col-name">产品</text>
               <text class="col-category">注册分类</text>
-              <text class="col-count">申请数量</text>
+              <text class="col-count">NDA申请记录</text>
+              <text class="col-count">NDA获批记录</text>
             </view>
-            <view class="table-body">
-              <view
-                class="table-row"
-                v-for="(item, index) in productList"
-                :key="index"
-                :class="{ zebra: index % 2 === 1 }"
-              >
-                <text class="col-rank">{{ index + 1 }}</text>
-                <text class="col-name">{{ item.projectName }}</text>
-                <text class="col-category">{{ item.registerCategoryName || '--' }}</text>
-                <text class="col-count">{{ item.applyCount }}</text>
+            <!-- #region 产品榜单滚动加载 -->
+            <scroll-view
+              scroll-y
+              class="table-scroll"
+              :show-scrollbar="false"
+              enhanced
+              @scrolltolower="loadMoreProduct"
+            >
+              <view class="table-body">
+                <view
+                  class="table-row"
+                  v-for="(item, index) in productList"
+                  :key="index"
+                  :class="{ zebra: index % 2 === 1 }"
+                >
+                  <text class="col-rank">{{ index + 1 }}</text>
+                  <text class="col-name">{{ item.projectName }}</text>
+                  <text class="col-category">{{ item.registerCategoryName || '--' }}</text>
+                  <text class="col-count">{{ item.applyCount }}</text>
+                </view>
+                <view class="empty-tip" v-if="!productList.length && !productLoading">
+                  暂无数据
+                </view>
+                <view class="loading-tip" v-if="productList.length">
+                  <text>{{ productHasMore ? '正在加载...' : '没有更多了' }}</text>
+                </view>
               </view>
-              <view class="empty-tip" v-if="!productList.length">暂无数据</view>
-            </view>
+            </scroll-view>
+            <!-- #endregion -->
           </view>
         </view>
       </view>
@@ -273,6 +289,11 @@
   // #region 产品NDA榜单
   const productList = ref<NdaProductRankVo[]>([])
   const productYearFilter = ref('')
+  const productPageNum = ref(1)
+  const productPageSize = 10
+  const productLoading = ref(false)
+  // 接口未返回 total，以「本页数量是否达到 pageSize」判断是否还有下一页
+  const productHasMore = ref(false)
   // #endregion
 
   // #region 年份选项
@@ -344,16 +365,38 @@
     }
   }
 
-  async function fetchProductRank() {
+  async function fetchProductRank(refresh = false) {
+    if (productLoading.value) return
+    if (refresh) {
+      productPageNum.value = 1
+    }
+    productLoading.value = true
+
     try {
       const params = buildBaseParams()
       if (productYearFilter.value) {
         params.year = productYearFilter.value
       }
-      const res = await queryProjectRank(params)
-      productList.value = res.data || []
+      const res = await queryProjectRank({
+        ...params,
+        pageNum: productPageNum.value,
+        pageSize: productPageSize
+      })
+      const list = res.data || []
+      productList.value = refresh ? list : [...productList.value, ...list]
+      productHasMore.value = list.length >= productPageSize
     } catch {
       // 静默处理
+    } finally {
+      productLoading.value = false
+    }
+  }
+
+  /** 产品榜单滚动到底部加载更多 */
+  function loadMoreProduct() {
+    if (productHasMore.value && !productLoading.value) {
+      productPageNum.value++
+      fetchProductRank()
     }
   }
   // #endregion
@@ -384,7 +427,7 @@
   function onProductYearChange(e: any) {
     const idx = Number(e.detail.value)
     productYearFilter.value = yearOptions.value[idx]?.value || ''
-    fetchProductRank()
+    fetchProductRank(true)
   }
   // #endregion
 
@@ -1099,6 +1142,13 @@
       border-bottom: 1rpx solid #f8f8f8;
     }
 
+    /* #region 产品榜单滚动区域 */
+    .table-scroll {
+      height: 600rpx;
+      box-sizing: border-box;
+    }
+    /* #endregion */
+
     .table-row {
       display: flex;
       padding: 24rpx 0;
@@ -1129,6 +1179,13 @@
 
     .empty-tip {
       padding: 40rpx 0;
+      text-align: center;
+      font-size: 24rpx;
+      color: #999;
+    }
+
+    .loading-tip {
+      padding: 24rpx 0;
       text-align: center;
       font-size: 24rpx;
       color: #999;

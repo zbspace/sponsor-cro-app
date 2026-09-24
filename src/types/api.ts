@@ -809,7 +809,7 @@ export interface IndRegistrationCategoryNumReq extends PipelineCompanyQuery {
  */
 export interface RegistrationCategoryItem {
   /** 分类(药品类型)名称 */
-  drugType: string
+  category: string
   /** 分类(药品类型)数量 */
   number: number
 }

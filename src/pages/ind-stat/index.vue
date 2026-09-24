@@ -108,7 +108,7 @@
           </view>
           <view class="phase-table">
             <view class="table-header">
-              <text v-for="(item, index) in categoryList" :key="index">{{ item.drugType }}</text>
+              <text v-for="(item, index) in categoryList" :key="index">{{ item.category }}</text>
               <text v-if="!categoryList.length">暂无数据</text>
             </view>
             <view class="table-body">
@@ -175,21 +175,36 @@
               <text class="col-type">注册分类</text>
               <text class="col-count">IND申请记录</text>
             </view>
-            <view class="table-body">
-              <view
-                class="table-row"
-                v-for="(item, index) in productList"
-                :key="index"
-                :class="{ zebra: index % 2 === 1 }"
-                @click="onProductClick(item)"
-              >
-                <text class="col-rank">{{ item.rankNo || index + 1 }}</text>
-                <text class="col-name">{{ item.drugStandardName }}</text>
-                <text class="col-type">{{ item.cleanedClassification }}</text>
-                <text class="col-count">{{ item.indApplicationNum }}</text>
+            <!-- #region 产品榜单滚动加载 -->
+            <scroll-view
+              scroll-y
+              class="table-scroll"
+              :show-scrollbar="false"
+              enhanced
+              @scrolltolower="loadMoreProduct"
+            >
+              <view class="table-body">
+                <view
+                  class="table-row"
+                  v-for="(item, index) in productList"
+                  :key="index"
+                  :class="{ zebra: index % 2 === 1 }"
+                  @click="onProductClick(item)"
+                >
+                  <text class="col-rank">{{ item.rankNo || index + 1 }}</text>
+                  <text class="col-name">{{ item.drugStandardName }}</text>
+                  <text class="col-type">{{ item.cleanedClassification }}</text>
+                  <text class="col-count">{{ item.indApplicationNum }}</text>
+                </view>
+                <view class="empty-tip" v-if="!productList.length && !productLoading">
+                  暂无数据
+                </view>
+                <view class="loading-tip" v-if="productList.length">
+                  <text>{{ productHasMore ? '正在加载...' : '没有更多了' }}</text>
+                </view>
               </view>
-              <view class="empty-tip" v-if="!productList.length">暂无数据</view>
-            </view>
+            </scroll-view>
+            <!-- #endregion -->
           </view>
         </view>
       </view>
@@ -280,6 +295,11 @@
   // #region 产品IND榜单
   const productList = ref<IndProductRankItem[]>([])
   const productYearFilter = ref(0)
+  const productPageNum = ref(1)
+  const productPageSize = 10
+  const productTotal = ref(0)
+  const productLoading = ref(false)
+  const productHasMore = computed(() => productList.value.length < productTotal.value)
   // 榜单点击后带入 IND 列表的药品名称
   const listProductName = ref('')
   // #endregion
@@ -357,17 +377,35 @@
   }
 
   /** 产品IND榜单 */
-  async function fetchProduct() {
+  async function fetchProduct(refresh = false) {
+    if (productLoading.value) return
+    if (refresh) {
+      productPageNum.value = 1
+    }
+    productLoading.value = true
+
     try {
       const res = await getIndProductRank({
         ...buildCompanyParams(),
-        pageNum: 1,
-        pageSize: 10,
+        pageNum: productPageNum.value,
+        pageSize: productPageSize,
         queryYear: productYearFilter.value || undefined
       })
-      productList.value = res.data?.list || []
+      const list = res.data?.list || []
+      productList.value = refresh ? list : [...productList.value, ...list]
+      productTotal.value = res.data?.total || 0
     } catch {
       // 静默处理
+    } finally {
+      productLoading.value = false
+    }
+  }
+
+  /** 产品榜单滚动到底部加载更多 */
+  function loadMoreProduct() {
+    if (productHasMore.value && !productLoading.value) {
+      productPageNum.value++
+      fetchProduct()
     }
   }
   // #endregion
@@ -390,7 +428,7 @@
 
   function onProductYearChange(e: any) {
     productYearFilter.value = yearOptions.value[Number(e.detail.value)]?.value || 0
-    fetchProduct()
+    fetchProduct(true)
   }
 
   /**
@@ -551,7 +589,7 @@
     const height = canvas.height
     const center = { x: width / 2, y: height / 2 }
     const radius = Math.min(width, height) * 0.36
-    const labels = categoryList.value.map((item) => item.drugType)
+    const labels = categoryList.value.map((item) => item.category)
     const values = categoryList.value.map((item) => Number(item.number) || 0)
     // 雷达图至少 3 条轴才能构成多边形
     const sides = Math.max(labels.length, 3)
@@ -715,7 +753,7 @@
     const ctx = uni.createCanvasContext('radarCanvas')
     const center = { x: 150, y: 80 }
     const radius = 55
-    const labels = categoryList.value.map((item) => item.drugType)
+    const labels = categoryList.value.map((item) => item.category)
     const values = categoryList.value.map((item) => Number(item.number) || 0)
     // 雷达图至少 3 条轴才能构成多边形
     const sides = Math.max(labels.length, 3)
@@ -816,7 +854,7 @@
     const legend = drugTypeList.value
       .filter((item) => (Number(item.number) || 0) > 0)
       .map((item, index) => ({
-        name: item.drugType,
+        name: item.category,
         count: Number(item.number) || 0,
         color: DONUT_COLORS[index % DONUT_COLORS.length]
       }))
@@ -1103,6 +1141,13 @@
       border-bottom: 1rpx solid #f8f8f8;
     }
 
+    /* #region 产品榜单滚动区域 */
+    .table-scroll {
+      height: 600rpx;
+      box-sizing: border-box;
+    }
+    /* #endregion */
+
     .table-row {
       display: flex;
       padding: 24rpx 0;
@@ -1133,6 +1178,13 @@
 
     .empty-tip {
       padding: 40rpx 0;
+      text-align: center;
+      font-size: 24rpx;
+      color: #999;
+    }
+
+    .loading-tip {
+      padding: 24rpx 0;
       text-align: center;
       font-size: 24rpx;
       color: #999;
