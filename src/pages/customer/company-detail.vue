@@ -60,21 +60,27 @@
         <view class="section-title">研发管线</view>
         <view class="grid-container">
           <view class="grid-item" @click="goTo('ind-stat')">
-            <view class="item-icon ind">IND</view>
+            <view class="item-icon">
+              <image src="/static/search-customer/ind.png" mode="aspectFit" />
+            </view>
             <view class="item-info">
               <text class="label">新药临床试验申请</text>
               <text class="value">{{ pipelineStat.indStatisticsNum }}</text>
             </view>
           </view>
           <view class="grid-item" @click="goTo('ced-stat')">
-            <view class="item-icon cde">CDE</view>
+            <view class="item-icon">
+              <image src="/static/search-customer/cde.png" mode="aspectFit" />
+            </view>
             <view class="item-info">
               <text class="label">临床试验登记</text>
               <text class="value">{{ pipelineStat.cdeStatisticsNum }}</text>
             </view>
           </view>
           <view class="grid-item" @click="goTo('nda-stat')">
-            <view class="item-icon nda">NDA</view>
+            <view class="item-icon">
+              <image src="/static/search-customer/nda.png" mode="aspectFit" />
+            </view>
             <view class="item-info">
               <text class="label">新药上市申请</text>
               <text class="value">{{ pipelineStat.ndaStatisticsNum }}</text>
@@ -88,7 +94,9 @@
         <view class="section-title">供应商合作记录</view>
         <view class="grid-container">
           <view class="grid-item" @click="goTo('cro-cooperation-stat')">
-            <view class="item-icon cro">CRO</view>
+            <view class="item-icon cro">
+              <image src="/static/search-customer/cro.png" mode="aspectFit" />
+            </view>
             <view class="item-info">
               <text class="label">CRO公司</text>
               <text class="value">{{ supplierStat.croStatisticsNum }}</text>
@@ -96,7 +104,7 @@
           </view>
           <view class="grid-item" @click="goTo('lab-cooperation-stat')">
             <view class="item-icon lab">
-              <image src="../../static/icons/cro.png" mode="aspectFit" />
+              <image src="/static/search-customer/1.png" mode="aspectFit" />
             </view>
             <view class="item-info">
               <text class="label">中心实验室</text>
@@ -112,7 +120,7 @@
         <view class="grid-container">
           <view class="grid-item" @click="goTo('hospital-cooperation-stat')">
             <view class="item-icon hospital">
-              <text style="color: #52c41a; font-size: 24rpx">H</text>
+              <image src="/static/search-customer/2.png" mode="aspectFit" />
             </view>
             <view class="item-info">
               <text class="label">医院</text>
@@ -121,8 +129,7 @@
           </view>
           <view class="grid-item" @click="goTo('pi-cooperation-stat')">
             <view class="item-icon researcher">
-              <image src="../../static/icons/sponsor.png" mode="aspectFit" v-if="false" />
-              <text style="color: #9013fe; font-size: 24rpx">R</text>
+              <image src="/static/search-customer/3.png" mode="aspectFit" />
             </view>
             <view class="item-info">
               <text class="label">主要研究者</text>
@@ -138,7 +145,7 @@
         <view class="grid-container">
           <view class="grid-item" @click="goTo('after-listing')">
             <view class="item-icon leads-post">
-              <image src="../../static/icons/time.png" mode="aspectFit" />
+              <image src="/static/search-customer/4.png" mode="aspectFit" />
             </view>
             <view class="item-info">
               <text class="label">上市后</text>
@@ -147,7 +154,7 @@
           </view>
           <view class="grid-item" @click="goTo('before-listing')">
             <view class="item-icon leads-pre">
-              <image src="../../static/icons/time.png" mode="aspectFit" />
+              <image src="/static/search-customer/5.png" mode="aspectFit" />
             </view>
             <view class="item-info">
               <text class="label">上市前</text>
@@ -156,7 +163,7 @@
           </view>
           <view class="grid-item">
             <view class="item-icon product">
-              <image src="../../static/home/3.png" mode="aspectFit" />
+              <image src="/static/search-customer/6.png" mode="aspectFit" />
             </view>
             <view class="item-info">
               <text class="label">最值得跟进产品</text>
@@ -165,7 +172,7 @@
           </view>
           <view class="grid-item" @click="goTo('business-contact')">
             <view class="item-icon contact">
-              <image src="../../static/icons/sponsor.png" mode="aspectFit" />
+              <image src="/static/search-customer/7.png" mode="aspectFit" />
             </view>
             <view class="item-info">
               <text class="label">企业联系人</text>
@@ -700,40 +707,16 @@
         .item-icon {
           width: 80rpx;
           height: 80rpx;
-          border-radius: 20rpx;
           display: flex;
           justify-content: center;
           align-items: center;
           font-weight: bold;
-          font-size: 20rpx;
-          background: #ffffff;
           flex-shrink: 0;
           image {
-            width: 40rpx;
-            height: 40rpx;
+            width: 80rpx;
+            height: 80rpx;
           }
 
-          &.ind {
-            color: #9013fe;
-          }
-          &.cde {
-            color: #499ae6;
-          }
-          &.nda {
-            color: #52c41a;
-          }
-          &.cro {
-            color: #9013fe;
-          }
-          &.lab {
-            background: #e6f7ff;
-          }
-          &.hospital {
-            background: #f6ffed;
-          }
-          &.researcher {
-            background: #f9f0ff;
-          }
           &.leads-post,
           &.leads-pre {
             background: #f0f5ff;
