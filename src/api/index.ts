@@ -69,7 +69,8 @@ import type {
   NdaLastYearRegisterCategoryParam,
   NdaLastYearRegisterCategoryVo,
   NdaProductDataListResponse,
-  NdaProductRankVo
+  NdaProductRankVo,
+  DrugShortListResponse
 } from '@/types/api'
 
 // #region 登录模块
@@ -371,6 +372,20 @@ export async function queryResearcherData(params: {
   searchKey?: string
 }) {
   return post<ResearcherListResponse>('/api/v1/companyHospital/queryResearcherData', params, true)
+}
+
+/**
+ * 查询产品（药品标准名）信息（搜索下拉）
+ * @param params { id, pageNum, pageSize, searchKey }
+ * @returns Promise<DrugShortListResponse>
+ */
+export async function queryStandardDrug(params: {
+  id?: number
+  pageNum?: number
+  pageSize?: number
+  searchKey?: string
+}) {
+  return post<DrugShortListResponse>('/api/v1/companyHospital/queryStandardDrug', params, true)
 }
 
 // #endregion

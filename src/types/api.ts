@@ -85,6 +85,29 @@ export interface ResearcherListResponse {
 }
 
 /**
+ * 产品（药品标准名）信息条目
+ */
+export interface DrugShortItem {
+  /** 代号编码 */
+  drugCd: string
+  /** 标准名 */
+  drugStandardName: string
+  /** 类型 */
+  drugType: string
+  /** 标准ID */
+  standardId: number
+}
+
+/**
+ * 产品（药品标准名）信息列表响应
+ */
+export interface DrugShortListResponse {
+  list: DrugShortItem[]
+  pages: number
+  total: number
+}
+
+/**
  * CRO/中心实验室 sponsor合作名单条目
  */
 export interface SponsorRankItem {

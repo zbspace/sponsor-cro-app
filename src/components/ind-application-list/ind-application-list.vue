@@ -22,10 +22,10 @@
       </view>
 
       <!-- 榜单点击带入的药品名称过滤 -->
-      <view class="product-filter" v-if="productName" @click="clearProductFilter">
+      <!-- <view class="product-filter" v-if="productName" @click="clearProductFilter">
         <text class="product-name">{{ productName }}</text>
         <text class="close-icon">×</text>
-      </view>
+      </view> -->
     </view>
 
     <view class="filter-container">
@@ -40,8 +40,8 @@
         </view>
         <view class="time-filter-wrapper">
           <uni-data-select
-            v-model="drugTypeFilter"
-            :localdata="drugTypeOptions"
+            v-model="productFilter"
+            :localdata="productOptions"
             :clear="false"
             placeholder="请选择"
           ></uni-data-select>
@@ -49,10 +49,10 @@
       </view>
 
       <!-- 榜单点击带入的药品名称过滤 -->
-      <view class="product-filter" v-if="productName" @click="clearProductFilter">
+      <!-- <view class="product-filter" v-if="productName" @click="clearProductFilter">
         <text class="product-name">{{ productName }}</text>
         <text class="close-icon">×</text>
-      </view>
+      </view> -->
     </view>
 
     <!-- 列表区域 -->
@@ -126,8 +126,8 @@
 <script setup lang="ts">
   // #region 导入
   import { ref, computed, onMounted, watch } from 'vue'
-  import { getIndApplicationList } from '@/api'
-  import type { IndApplicationItem, IndApplicationListReq } from '@/types/api'
+  import { getIndApplicationList, queryStandardDrug } from '@/api'
+  import type { IndApplicationItem, IndApplicationListReq, DrugShortItem } from '@/types/api'
   // #endregion
 
   // #region 组件属性
@@ -172,6 +172,33 @@
   const currentYearFilter = ref('')
   const drugTypeFilter = ref('')
   const cleanedClassification = ref('')
+
+  // #region 产品下拉（数据来源于 queryStandardDrug 接口）
+  const productList = ref<DrugShortItem[]>([])
+  const productOptions = computed(() => [
+    { value: '', text: '产品' },
+    ...productList.value.map((item) => ({
+      value: item.drugStandardName,
+      text: item.drugStandardName
+    }))
+  ])
+
+  /** 产品筛选与 productName 属性双向绑定，保证榜单带入与下拉选择共用同一数据源 */
+  const productFilter = computed({
+    get: () => props.productName || '',
+    set: (value: string) => emit('update:productName', value)
+  })
+
+  /** 查询产品下拉选项 */
+  async function fetchProductOptions() {
+    try {
+      const res = await queryStandardDrug({ pageNum: 1, pageSize: 100 })
+      productList.value = res.data?.list || []
+    } catch (e) {
+      console.error('获取产品下拉选项失败', e)
+    }
+  }
+  // #endregion
 
   /** 清空榜单带入的药品名称过滤 */
   function clearProductFilter() {
@@ -258,6 +285,7 @@
   // #region 生命周期
   onMounted(() => {
     fetchList(true)
+    fetchProductOptions()
   })
 
   // 外部参数变化时重新加载列表
