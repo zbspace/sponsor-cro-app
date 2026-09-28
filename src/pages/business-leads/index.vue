@@ -188,7 +188,7 @@
   // #region 状态
   const menu = ref({ top: 0, left: 0, height: 0 })
   const companyName = ref('')
-  const companyId = ref(0)
+  const companyId = ref()
   const type = ref<'before' | 'after'>('before')
 
   const typeOptions = [
