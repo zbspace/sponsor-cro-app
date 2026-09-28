@@ -1,22 +1,51 @@
 <template>
   <view class="trial-list-wrapper">
     <!-- 筛选区域 -->
-    <view class="filter-wrapper">
-      <view class="time-filter-wrapper">
-        <uni-data-select
-          v-model="currentTimeFilter"
-          :localdata="timeOptions"
-          :clear="false"
-          placeholder="请选择"
-        ></uni-data-select>
+    <view class="filter-container">
+      <view class="filter-wrapper">
+        <view class="time-filter-wrapper">
+          <uni-data-select
+            v-model="currentYearFilter"
+            :localdata="yearOptions"
+            :clear="false"
+            placeholder="请选择"
+          ></uni-data-select>
+        </view>
+        <view class="time-filter-wrapper">
+          <uni-data-select
+            v-model="drugTypeFilter"
+            :localdata="drugTypeOptions"
+            :clear="false"
+            placeholder="请选择"
+          ></uni-data-select>
+        </view>
       </view>
-      <view class="time-filter-wrapper">
-        <uni-data-select
-          v-model="stageFilter"
-          :localdata="stageOptions"
-          :clear="false"
-          placeholder="请选择"
-        ></uni-data-select>
+
+      <!-- 榜单点击带入的药品名称过滤 -->
+      <!-- <view class="product-filter" v-if="productName" @click="clearProductFilter">
+        <text class="product-name">{{ productName }}</text>
+        <text class="close-icon">×</text>
+      </view> -->
+    </view>
+
+    <view class="filter-container">
+      <view class="filter-wrapper">
+        <view class="time-filter-wrapper">
+          <uni-data-select
+            v-model="cleanedClassification"
+            :localdata="classificationOptions"
+            :clear="false"
+            placeholder="请选择"
+          ></uni-data-select>
+        </view>
+        <view class="time-filter-wrapper">
+          <uni-data-select
+            v-model="productFilter"
+            :localdata="productOptions"
+            :clear="false"
+            placeholder="请选择"
+          ></uni-data-select>
+        </view>
       </view>
     </view>
 
@@ -33,13 +62,13 @@
         <view class="card-header">
           <view class="title-row">
             <view class="icon-wrap" :class="getRandomColorClass(index)">
-              <text>{{ item.cleanedDrugName ? item.cleanedDrugName.charAt(0) : 'N' }}</text>
+              <text>{{ item.productName ? item.productName.charAt(0) : 'N' }}</text>
             </view>
-            <text class="title">{{ item.cleanedDrugName }}</text>
-            <text class="date">{{ item.applyDate }}</text>
+            <text class="title">{{ item.productName }}</text>
+            <text class="date">{{ item.undertakeDate }}</text>
           </view>
           <view class="tag-row">
-            <view class="tag status">{{ item.applyStatus || '未知' }}</view>
+            <view class="tag status">{{ item.applyStatusStr || '未知' }}</view>
             <view class="tag stage">{{ item.cleanedDrugType || '未知' }}</view>
           </view>
         </view>
@@ -47,11 +76,11 @@
         <view class="card-body">
           <view class="info-row">
             <text class="label">注册分类</text>
-            <text class="value">{{ registerCategoryText(item) }}</text>
+            <text class="value">{{ item.cleanedClassification || '--' }}</text>
           </view>
           <view class="info-row">
             <text class="label">申请日期</text>
-            <text class="value">{{ item.applyDate || '--' }}</text>
+            <text class="value">{{ item.undertakeDate || '--' }}</text>
           </view>
           <view class="info-row">
             <text class="label">批准日期</text>
@@ -81,21 +110,25 @@
 
 <script setup lang="ts">
   import { ref, computed, onMounted, watch } from 'vue'
-  import { queryNdaProductList } from '@/api'
-  import type { NdaDataStatisticsParam, NdaProductDataVo } from '@/types/api'
+  import { queryNdaProductList, queryStandardDrug } from '@/api'
+  import type { NdaDataStatisticsParam, NdaProductDataVo, DrugShortItem } from '@/types/api'
 
   const props = defineProps<{
     /** 母公司ID */
     companyParentId?: number
+    /** 药品名称（榜单点击带入，支持 v-model:product-name） */
+    productName?: string
+  }>()
+
+  const emit = defineEmits<{
+    (e: 'update:productName', value: string): void
   }>()
 
   // #region 筛选状态
-  // 试验分期取值与 NDA 统计接口保持一致
-  const NDA_TRIAL_STAGES = ['Ⅰ期', 'Ⅱ期', 'Ⅲ期', 'Ⅳ期', 'BE', '其他']
+  // 药品类型取值与 IND 接口保持一致
+  const DRUG_TYPE_VALUES = ['中药', '化药', '治疗生物药', '疫苗']
 
-  const stageFilter = ref('')
-  const currentTimeFilter = ref('')
-  const timeOptions = computed(() => [
+  const yearOptions = computed(() => [
     { value: '', text: '年份' },
     ...Array.from({ length: 5 }, (_, i) => {
       const year = new Date().getFullYear() - i
@@ -103,10 +136,47 @@
     })
   ])
 
-  const stageOptions = computed(() => [
-    { value: '', text: '试验分期' },
-    ...NDA_TRIAL_STAGES.map((text) => ({ value: text, text }))
-  ])
+  const drugTypeOptions = [
+    { value: '', text: '药品类型' },
+    ...DRUG_TYPE_VALUES.map((text) => ({ value: text, text }))
+  ]
+
+  // 注册分类
+  const DRUG_TYPE_OPTIONS = [
+    { value: 1, text: '化药' },
+    { value: 2, text: '预防用生物制品' },
+    { value: 3, text: '治疗用生物制品' },
+    { value: 4, text: '中药/天然药物' }
+  ]
+  const classificationOptions = [{ value: '', text: '注册分类' }, ...DRUG_TYPE_OPTIONS]
+
+  // #region 产品下拉（数据来源于 queryStandardDrug 接口）
+  const productList = ref<DrugShortItem[]>([])
+  const productOptions = computed(() => {
+    const options = [
+      { value: '', text: '产品' },
+      ...productList.value.map((item) => ({
+        value: item.drugStandardName,
+        text: item.drugStandardName
+      }))
+    ]
+    // 父组件带入的药品名可能不在下拉数据中，补一条选项，保证下拉框能找到并回显选中项
+    const current = props.productName
+    if (current && !options.some((option) => option.value === current)) {
+      options.push({ value: current, text: current })
+    }
+    return options
+  })
+
+  /** 产品筛选与 productName 属性双向绑定，保证榜单带入与下拉选择共用同一数据源 */
+  const productFilter = computed({
+    get: () => props.productName || '',
+    set: (value: string) => emit('update:productName', value)
+  })
+
+  const currentYearFilter = ref('')
+  const drugTypeFilter = ref('')
+  const cleanedClassification = ref('')
   // #endregion
 
   // #region 列表数据
@@ -126,9 +196,11 @@
     loading.value = true
 
     const params: NdaDataStatisticsParam = {
-      companyParentId: props.companyParentId || undefined,
-      year: currentTimeFilter.value || undefined,
-      trialStage: stageFilter.value || undefined,
+      parentCompanyId: props.companyParentId || undefined,
+      productName: props.productName || undefined,
+      cleanedDrugType: drugTypeFilter.value || undefined,
+      cleanedClassification: cleanedClassification.value || undefined,
+      year: currentYearFilter.value || undefined,
       pageNum: pageNum.value,
       pageSize: pageSize
     }
@@ -136,7 +208,7 @@
     try {
       const res = await queryNdaProductList(params)
       if (res.data) {
-        const items = res.data.list || []
+        const items = res.data?.list || []
         if (refresh) {
           list.value = items
         } else {
@@ -166,10 +238,18 @@
   // #endregion
 
   // 筛选变化时自动重新请求列表数据
-  watch(currentTimeFilter, () => {
+  watch(currentYearFilter, () => {
     fetchList(true)
   })
-  watch(stageFilter, () => {
+  watch(drugTypeFilter, () => {
+    fetchList(true)
+  })
+
+  watch(cleanedClassification, () => {
+    fetchList(true)
+  })
+
+  watch(productFilter, () => {
     fetchList(true)
   })
 
@@ -179,17 +259,20 @@
     return classes[index % classes.length]
   }
 
-  /**
-   * 注册分类为字符串数组，展示时以顿号连接
-   */
-  function registerCategoryText(item: NdaProductDataVo) {
-    const categories = item.registerCategoryList || []
-    return categories.length ? categories.join('、') : '--'
+  /** 查询产品下拉选项 */
+  async function fetchProductOptions() {
+    try {
+      const res = await queryStandardDrug({ pageNum: 1, pageSize: 100 })
+      productList.value = res.data?.list || []
+    } catch (e) {
+      console.error('获取产品下拉选项失败', e)
+    }
   }
   // #endregion
 
   onMounted(() => {
     fetchList(true)
+    fetchProductOptions()
   })
 
   // 监听 props 变化重新加载

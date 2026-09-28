@@ -107,8 +107,8 @@
 
       <!-- 加载更多 -->
       <view class="loading-status" v-if="list.length > 0">
-        <view class="spinner" v-if="hasMore"></view>
-        <text>{{ hasMore ? '正在加载...' : '没有更多了' }}</text>
+        <view class="spinner" v-if="loading"></view>
+        <text>{{ hasMore ? (loading ? '正在加载...' : '上拉加载更多') : '没有更多了' }}</text>
       </view>
       <!-- 初始/筛选加载中 -->
       <view class="loading-status empty" v-if="list.length === 0 && loading">
@@ -212,34 +212,39 @@
   const pageSize = 10
   const total = ref(0)
   const loading = ref(false)
+  // 是否已加载完所有数据，避免 total 与实际返回不一致时反复触发加载
+  const finished = ref(false)
 
-  const hasMore = computed(() => list.value.length < total.value)
+  const hasMore = computed(() => !finished.value && list.value.length < total.value)
 
   async function fetchList(refresh = false) {
     if (loading.value) return
-    if (refresh) {
-      pageNum.value = 1
-    }
+    // 仅在请求成功后推进页码，避免失败时跳页导致数据缺失、无法加载到底
+    const targetPage = refresh ? 1 : pageNum.value + 1
     loading.value = true
+    if (refresh) {
+      finished.value = false
+    }
 
     const params: IndApplicationListReq = {
       parentCompanyId: props.companyParentId || undefined,
       drugStandardName: props.productName || undefined,
       cleanedDrugType: drugTypeFilter.value || undefined,
+      cleanedClassification: cleanedClassification.value || undefined,
       queryYear: currentYearFilter.value ? Number(currentYearFilter.value) : undefined,
-      pageNum: pageNum.value,
+      pageNum: targetPage,
       pageSize
     }
 
     try {
       const res = await getIndApplicationList(params)
-      if (res.data) {
-        if (refresh) {
-          list.value = res.data.list || []
-        } else {
-          list.value = [...list.value, ...(res.data.list || [])]
-        }
-        total.value = res.data.total || 0
+      const newList = res.data?.list || []
+      list.value = refresh ? newList : [...list.value, ...newList]
+      total.value = res.data?.total || 0
+      pageNum.value = targetPage
+      // 返回空页说明已无更多数据，直接结束加载状态
+      if (!newList.length) {
+        finished.value = true
       }
     } catch (e) {
       console.error('获取IND列表失败', e)
@@ -250,7 +255,6 @@
 
   function loadMore() {
     if (hasMore.value && !loading.value) {
-      pageNum.value++
       fetchList()
     }
   }

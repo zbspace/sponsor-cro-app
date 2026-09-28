@@ -98,12 +98,12 @@
               </picker>
             </view>
           </view>
-          <view class="chart-container radar-chart">
+          <view class="chart-container bar-chart">
             <!-- #ifdef MP-WEIXIN -->
-            <canvas id="radarCanvas" type="2d" class="canvas"></canvas>
+            <canvas id="barCanvas" type="2d" class="canvas"></canvas>
             <!-- #endif -->
             <!-- #ifndef MP-WEIXIN -->
-            <canvas canvas-id="radarCanvas" class="canvas"></canvas>
+            <canvas canvas-id="barCanvas" class="canvas"></canvas>
             <!-- #endif -->
           </view>
           <view class="phase-table">
@@ -187,6 +187,7 @@
                   v-for="(item, index) in productList"
                   :key="index"
                   :class="{ zebra: index % 2 === 1 }"
+                  @click="onProductClick(item)"
                 >
                   <text class="col-rank">{{ index + 1 }}</text>
                   <text class="col-name">{{ item.productName }}</text>
@@ -208,7 +209,11 @@
 
       <!-- 详情内容 (复用现有的项目列表样式) -->
       <view v-else class="detail-content">
-        <NdaList class="trial-list-comp" :company-parent-id="companyParentId" />
+        <NdaList
+          class="trial-list-comp"
+          :company-parent-id="companyParentId"
+          v-model:product-name="listProductName"
+        />
       </view>
     </view>
   </scroll-view>
@@ -291,6 +296,7 @@
   const productPageNum = ref(1)
   const productPageSize = 10
   const productLoading = ref(false)
+  const listProductName = ref('')
   // 接口未返回 total，以「本页数量是否达到 pageSize」判断是否还有下一页
   const productHasMore = ref(false)
   // #endregion
@@ -345,7 +351,7 @@
         drugTypeCode: drugTypeCode.value
       })
       registerCategoryList.value = buildRegisterCategoryList(res.data)
-      drawRadarChart()
+      drawBarChart()
     } catch {
       // 静默处理
     }
@@ -423,6 +429,15 @@
     const idx = Number(e.detail.value)
     productYearFilter.value = yearOptions.value[idx]?.value || ''
     fetchProductRank(true)
+  }
+
+  /**
+   * 点击榜单产品：切到IND列表并按该产品名称过滤
+   * @param item 榜单条目
+   */
+  function onProductClick(item: NdaProductRankVo) {
+    listProductName.value = item.productName || ''
+    activeTab.value = 'list'
   }
   // #endregion
 
@@ -557,6 +572,12 @@
       ctx.strokeStyle = '#499AE6'
       ctx.stroke()
 
+      // 拐点上方显示数值
+      const valText = String(data[i])
+      ctx.fillStyle = '#499AE6'
+      ctx.font = '10px sans-serif'
+      ctx.fillText(valText, p.x - valText.length * 3, p.y - 8)
+
       ctx.fillStyle = '#999999'
       ctx.font = '10px sans-serif'
       ctx.fillText(years[i] || '', p.x - 12, height - 5)
@@ -564,24 +585,24 @@
   }
 
   /**
-   * 绘制试验分期雷达图（canvas 2d 版本）
+   * 绘制近五年药品注册分类柱状图（canvas 2d 版本）
    */
-  async function drawRadarChart2d() {
-    const canvas = await getCanvas2d('radarCanvas')
+  async function drawBarChart2d() {
+    const canvas = await getCanvas2d('barCanvas')
     if (!canvas) return
     const ctx = canvas.ctx
     const width = canvas.width
     const height = canvas.height
-    const center = { x: width / 2, y: height / 2 }
-    const radius = Math.min(width, height) * 0.36
-    const labels = registerCategoryList.value.map((item) => item.label)
-    const values = registerCategoryList.value.map((item) => Number(item.count) || 0)
-    const sides = Math.max(labels.length, 3)
-    const maxVal = Math.max(...values, 1)
+    const padding = { top: 20, right: 16, bottom: 30, left: 36 }
 
     // 清空画布
     ctx.clearRect(0, 0, width, height)
 
+    // x轴：注册分类；y轴：数量
+    const labels = registerCategoryList.value.map((item) => item.label)
+    const values = registerCategoryList.value.map((item) => Number(item.count) || 0)
+
+    // 无数据时展示占位提示
     if (!labels.length) {
       ctx.fillStyle = '#999999'
       ctx.font = '12px sans-serif'
@@ -589,48 +610,46 @@
       return
     }
 
-    // 绘制背景网格
+    const maxVal = Math.max(...values, 1)
+    const chartW = width - padding.left - padding.right
+    const chartH = height - padding.top - padding.bottom
+    const baseY = height - padding.bottom
+
+    // 绘制背景网格与 y 轴刻度
     ctx.strokeStyle = '#eeeeee'
-    ctx.lineWidth = 1
-    for (let r = 1; r <= 5; r++) {
+    ctx.lineWidth = 0.5
+    for (let i = 0; i <= 4; i++) {
+      const y = baseY - (i / 4) * chartH
       ctx.beginPath()
-      const currentRadius = (radius / 5) * r
-      for (let i = 0; i < sides; i++) {
-        const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
-        const x = center.x + Math.cos(angle) * currentRadius
-        const y = center.y + Math.sin(angle) * currentRadius
-        if (i === 0) ctx.moveTo(x, y)
-        else ctx.lineTo(x, y)
-      }
-      ctx.closePath()
+      ctx.moveTo(padding.left, y)
+      ctx.lineTo(width - padding.right, y)
       ctx.stroke()
+      ctx.fillStyle = '#999999'
+      ctx.font = '9px sans-serif'
+      ctx.fillText(String(Math.round((maxVal * i) / 4)), 4, y + 3)
     }
 
-    // 绘制数据区域
-    ctx.fillStyle = 'rgba(245, 166, 35, 0.3)'
-    ctx.strokeStyle = '#F5A623'
-    ctx.beginPath()
+    // 绘制柱体、数值与 x 轴标签
+    const slot = chartW / labels.length
+    const barW = Math.min(slot * 0.5, 28)
     values.forEach((val, i) => {
-      const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
-      const x = center.x + Math.cos(angle) * radius * (val / maxVal)
-      const y = center.y + Math.sin(angle) * radius * (val / maxVal)
-      if (i === 0) ctx.moveTo(x, y)
-      else ctx.lineTo(x, y)
-    })
-    ctx.closePath()
-    ctx.fill()
-    ctx.stroke()
+      const barH = (val / maxVal) * chartH
+      const x = padding.left + slot * i + (slot - barW) / 2
+      const y = baseY - barH
+      const gradient = ctx.createLinearGradient(0, y, 0, baseY)
+      gradient.addColorStop(0, '#499AE6')
+      gradient.addColorStop(1, 'rgba(73, 154, 230, 0.4)')
+      ctx.fillStyle = gradient
+      ctx.fillRect(x, y, barW, barH)
 
-    // 绘制轴线及分类标签
-    ctx.fillStyle = '#999999'
-    ctx.font = '10px sans-serif'
-    labels.forEach((label, i) => {
-      const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
-      const x = center.x + Math.cos(angle) * (radius + 12)
-      const y = center.y + Math.sin(angle) * (radius + 12)
-      const textX = Math.min(Math.max(x - 12, 2), width - 4)
-      const textY = Math.min(Math.max(y + 4, 10), height - 2)
-      ctx.fillText(label, textX, textY)
+      ctx.fillStyle = '#333333'
+      ctx.font = '9px sans-serif'
+      ctx.fillText(String(val), x + barW / 2 - 4, y - 4)
+
+      const display = labels[i]?.length > 4 ? `${labels[i].slice(0, 4)}…` : labels[i] || ''
+      ctx.fillStyle = '#999999'
+      ctx.font = '9px sans-serif'
+      ctx.fillText(display, x + barW / 2 - display.length * 4, height - 8)
     })
   }
   // #endif
@@ -720,6 +739,12 @@
       ctx.setStrokeStyle('#499AE6')
       ctx.stroke()
 
+      // 拐点上方显示数值
+      const valText = String(data[i])
+      ctx.setFillStyle('#499AE6')
+      ctx.setFontSize(10)
+      ctx.fillText(valText, p.x - valText.length * 3, p.y - 8)
+
       ctx.setFillStyle('#999999')
       ctx.setFontSize(10)
       ctx.fillText(years[i] || '', p.x - 12, height - 5)
@@ -729,70 +754,70 @@
   }
 
   /**
-   * 绘制试验分期雷达图（旧版 canvas 接口）
+   * 绘制近五年药品注册分类柱状图（旧版 canvas 接口）
    */
-  function drawRadarChartLegacy() {
-    const ctx = uni.createCanvasContext('radarCanvas')
-    const center = { x: 150, y: 80 }
-    const radius = 55
-    const labels = registerCategoryList.value.map((item) => item.label)
-    const values = registerCategoryList.value.map((item) => Number(item.count) || 0)
-    const sides = Math.max(labels.length, 3)
-    const maxVal = Math.max(...values, 1)
+  function drawBarChartLegacy() {
+    const ctx = uni.createCanvasContext('barCanvas')
+    const width = 300
+    const height = 150
+    const padding = { top: 20, right: 16, bottom: 30, left: 36 }
 
     // 清空画布
-    ctx.clearRect(0, 0, 300, 150)
+    ctx.clearRect(0, 0, width, height)
 
+    // x轴：注册分类；y轴：数量
+    const labels = registerCategoryList.value.map((item) => item.label)
+    const values = registerCategoryList.value.map((item) => Number(item.count) || 0)
+
+    // 无数据时展示占位提示
     if (!labels.length) {
       ctx.setFillStyle('#999999')
       ctx.setFontSize(12)
-      ctx.fillText('暂无数据', 126, 80)
+      ctx.fillText('暂无数据', width / 2 - 24, height / 2)
       ctx.draw()
       return
     }
 
-    // 绘制背景网格
+    const maxVal = Math.max(...values, 1)
+    const chartW = width - padding.left - padding.right
+    const chartH = height - padding.top - padding.bottom
+    const baseY = height - padding.bottom
+
+    // 绘制背景网格与 y 轴刻度
     ctx.setStrokeStyle('#eeeeee')
-    ctx.setLineWidth(1)
-    for (let r = 1; r <= 5; r++) {
+    ctx.setLineWidth(0.5)
+    for (let i = 0; i <= 4; i++) {
+      const y = baseY - (i / 4) * chartH
       ctx.beginPath()
-      const currentRadius = (radius / 5) * r
-      for (let i = 0; i < sides; i++) {
-        const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
-        const x = center.x + Math.cos(angle) * currentRadius
-        const y = center.y + Math.sin(angle) * currentRadius
-        if (i === 0) ctx.moveTo(x, y)
-        else ctx.lineTo(x, y)
-      }
-      ctx.closePath()
+      ctx.moveTo(padding.left, y)
+      ctx.lineTo(width - padding.right, y)
       ctx.stroke()
+      ctx.setFillStyle('#999999')
+      ctx.setFontSize(9)
+      ctx.fillText(String(Math.round((maxVal * i) / 4)), 4, y + 3)
     }
 
-    // 绘制数据区域
-    ctx.setFillStyle('rgba(245, 166, 35, 0.3)')
-    ctx.setStrokeStyle('#F5A623')
-    ctx.beginPath()
+    // 绘制柱体、数值与 x 轴标签
+    const slot = chartW / labels.length
+    const barW = Math.min(slot * 0.5, 28)
     values.forEach((val, i) => {
-      const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
-      const x = center.x + Math.cos(angle) * radius * (val / maxVal)
-      const y = center.y + Math.sin(angle) * radius * (val / maxVal)
-      if (i === 0) ctx.moveTo(x, y)
-      else ctx.lineTo(x, y)
-    })
-    ctx.closePath()
-    ctx.fill()
-    ctx.stroke()
+      const barH = (val / maxVal) * chartH
+      const x = padding.left + slot * i + (slot - barW) / 2
+      const y = baseY - barH
+      const gradient = ctx.createLinearGradient(0, y, 0, baseY)
+      gradient.addColorStop(0, '#499AE6')
+      gradient.addColorStop(1, 'rgba(73, 154, 230, 0.4)')
+      ctx.setFillStyle(gradient)
+      ctx.fillRect(x, y, barW, barH)
 
-    // 绘制轴线及分类标签
-    ctx.setFillStyle('#999999')
-    ctx.setFontSize(10)
-    labels.forEach((label, i) => {
-      const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
-      const x = center.x + Math.cos(angle) * (radius + 12)
-      const y = center.y + Math.sin(angle) * (radius + 12)
-      const textX = Math.min(Math.max(x - 12, 2), 296)
-      const textY = Math.min(Math.max(y + 4, 10), 148)
-      ctx.fillText(label, textX, textY)
+      ctx.setFillStyle('#333333')
+      ctx.setFontSize(9)
+      ctx.fillText(String(val), x + barW / 2 - 4, y - 4)
+
+      const display = labels[i]?.length > 4 ? `${labels[i].slice(0, 4)}…` : labels[i] || ''
+      ctx.setFillStyle('#999999')
+      ctx.setFontSize(9)
+      ctx.fillText(display, x + barW / 2 - display.length * 4, height - 8)
     })
 
     ctx.draw()
@@ -810,24 +835,24 @@
     return p
   }
 
-  function drawRadarChart() {
+  function drawBarChart() {
     let p: void | Promise<void>
     // #ifdef MP-WEIXIN
-    p = drawRadarChart2d()
+    p = drawBarChart2d()
     // #endif
     // #ifndef MP-WEIXIN
-    p = drawRadarChartLegacy()
+    p = drawBarChartLegacy()
     // #endif
     return p
   }
 
   function drawCharts() {
     drawLineChart()
-    drawRadarChart()
+    drawBarChart()
   }
 
   /**
-   * 注册分类：接口返回 registerCategory1~5 + other 的对象，转换为雷达图/表格数据
+   * 注册分类：接口返回 registerCategory1~5 + other 的对象，转换为柱状图/表格数据
    */
   function buildRegisterCategoryList(data?: NdaLastYearRegisterCategoryVo) {
     if (!data) return []

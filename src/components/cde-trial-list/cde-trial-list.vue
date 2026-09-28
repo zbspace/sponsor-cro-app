@@ -1,6 +1,7 @@
 <template>
   <view class="trial-list-wrapper">
     <!-- 筛选区域 -->
+
     <view class="filter-wrapper">
       <view class="time-filter-wrapper">
         <uni-data-select
@@ -10,6 +11,18 @@
           placeholder="请选择"
         ></uni-data-select>
       </view>
+
+      <view class="time-filter-wrapper">
+        <uni-data-select
+          v-model="stageFilter"
+          :localdata="stageOptions"
+          :clear="false"
+          placeholder="请选择"
+        ></uni-data-select>
+      </view>
+    </view>
+
+    <view class="filter-wrapper">
       <view class="time-filter-wrapper">
         <uni-data-select
           v-model="statusFilter"
@@ -18,10 +31,11 @@
           placeholder="请选择"
         ></uni-data-select>
       </view>
+
       <view class="time-filter-wrapper">
         <uni-data-select
-          v-model="stageFilter"
-          :localdata="stageOptions"
+          v-model="productFilter"
+          :localdata="productOptions"
           :clear="false"
           placeholder="请选择"
         ></uni-data-select>
@@ -110,8 +124,8 @@
 
 <script setup lang="ts">
   import { ref, computed, onMounted, watch } from 'vue'
-  import { getCdeTrailList } from '@/api'
-  import type { CdeTrialItem, CdeTrailListReq } from '@/types/api'
+  import { getCdeTrailList, queryStandardDrug } from '@/api'
+  import type { CdeTrialItem, CdeTrailListReq, DrugShortItem } from '@/types/api'
   import CdeCenterResearcherPopup from '../cde-center-researcher-popup/cde-center-researcher-popup.vue'
 
   const props = defineProps<{
@@ -121,6 +135,10 @@
     drugName?: string
     /** 年份（榜单年份带入） */
     year?: string
+  }>()
+
+  const emit = defineEmits<{
+    (e: 'update:drugName', value: string): void
   }>()
 
   // #region 弹窗状态
@@ -159,6 +177,41 @@
     ...CDE_TRIAL_STATUS.map((text) => ({ value: text, text }))
   ])
 
+  // #region 产品下拉（数据来源于 queryStandardDrug 接口）
+  const productList = ref<DrugShortItem[]>([])
+  const productOptions = computed(() => {
+    const options = [
+      { value: '', text: '产品' },
+      ...productList.value.map((item) => ({
+        value: item.drugStandardName,
+        text: item.drugStandardName
+      }))
+    ]
+    // 父组件带入的药品名可能不在下拉数据中，补一条选项，保证下拉框能找到并回显选中项
+    const current = props.drugName
+    if (current && !options.some((option) => option.value === current)) {
+      options.push({ value: current, text: current })
+    }
+    return options
+  })
+
+  /** 产品筛选与 productName 属性双向绑定，保证榜单带入与下拉选择共用同一数据源 */
+  const productFilter = computed({
+    get: () => props.drugName || '',
+    set: (value: string) => emit('update:drugName', value)
+  })
+
+  // #endregion
+
+  /** 查询产品下拉选项 */
+  async function fetchProductOptions() {
+    try {
+      const res = await queryStandardDrug({ pageNum: 1, pageSize: 100 })
+      productList.value = res.data?.list || []
+    } catch (e) {
+      console.error('获取产品下拉选项失败', e)
+    }
+  }
   // #endregion
 
   // #region 列表数据
@@ -229,6 +282,9 @@
   watch(statusFilter, () => {
     fetchList(true)
   })
+  watch(productFilter, () => {
+    fetchList(true)
+  })
   // #endregion
 
   // #region 辅助函数
@@ -245,15 +301,22 @@
     } else {
       fetchList(true)
     }
+    fetchProductOptions()
   })
 
-  // 监听 props 变化重新加载
+  // 母公司变化时重新加载
   watch(
-    () => [props.companyParentId, props.drugName, props.year],
+    () => props.companyParentId,
     () => {
-      // 外部年份变化时同步到年份下拉框
-      currentTimeFilter.value = props.year || ''
       fetchList(true)
+    }
+  )
+
+  // 外部年份变化时同步到年份下拉框（同步后由 currentTimeFilter 的 watch 触发重新加载）
+  watch(
+    () => props.year,
+    (val) => {
+      currentTimeFilter.value = val || ''
     }
   )
 </script>

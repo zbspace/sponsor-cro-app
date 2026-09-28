@@ -98,12 +98,12 @@
               </picker>
             </view>
           </view>
-          <view class="chart-container radar-chart">
+          <view class="chart-container bar-chart">
             <!-- #ifdef MP-WEIXIN -->
-            <canvas id="radarCanvas" type="2d" class="canvas"></canvas>
+            <canvas id="barCanvas" type="2d" class="canvas"></canvas>
             <!-- #endif -->
             <!-- #ifndef MP-WEIXIN -->
-            <canvas canvas-id="radarCanvas" class="canvas"></canvas>
+            <canvas canvas-id="barCanvas" class="canvas"></canvas>
             <!-- #endif -->
           </view>
           <view class="phase-table">
@@ -356,7 +356,7 @@
         drugType: categoryDrugTypeFilter.value || undefined
       })
       categoryList.value = res.data || []
-      drawRadarChart()
+      drawBarChart()
     } catch {
       // 静默处理
     }
@@ -579,24 +579,22 @@
   }
 
   /**
-   * 绘制试验分期雷达图（canvas 2d 版本）
+   * 绘制近五年IND注册分类柱状图（canvas 2d 版本）
    */
-  async function drawRadarChart2d() {
-    const canvas = await getCanvas2d('radarCanvas')
+  async function drawBarChart2d() {
+    const canvas = await getCanvas2d('barCanvas')
     if (!canvas) return
     const ctx = canvas.ctx
     const width = canvas.width
     const height = canvas.height
-    const center = { x: width / 2, y: height / 2 }
-    const radius = Math.min(width, height) * 0.36
-    const labels = categoryList.value.map((item) => item.category)
-    const values = categoryList.value.map((item) => Number(item.number) || 0)
-    // 雷达图至少 3 条轴才能构成多边形
-    const sides = Math.max(labels.length, 3)
-    const maxVal = Math.max(...values, 1)
+    const padding = { top: 20, right: 16, bottom: 30, left: 36 }
 
     // 清空画布
     ctx.clearRect(0, 0, width, height)
+
+    // x轴：注册分类；y轴：数量
+    const labels = categoryList.value.map((item) => item.category)
+    const values = categoryList.value.map((item) => Number(item.number) || 0)
 
     // 无数据时展示占位提示
     if (!labels.length) {
@@ -606,49 +604,46 @@
       return
     }
 
-    // 绘制背景网格
+    const maxVal = Math.max(...values, 1)
+    const chartW = width - padding.left - padding.right
+    const chartH = height - padding.top - padding.bottom
+    const baseY = height - padding.bottom
+
+    // 绘制背景网格与 y 轴刻度
     ctx.strokeStyle = '#eeeeee'
-    ctx.lineWidth = 1
-    for (let r = 1; r <= 5; r++) {
+    ctx.lineWidth = 0.5
+    for (let i = 0; i <= 4; i++) {
+      const y = baseY - (i / 4) * chartH
       ctx.beginPath()
-      const currentRadius = (radius / 5) * r
-      for (let i = 0; i < sides; i++) {
-        const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
-        const x = center.x + Math.cos(angle) * currentRadius
-        const y = center.y + Math.sin(angle) * currentRadius
-        if (i === 0) ctx.moveTo(x, y)
-        else ctx.lineTo(x, y)
-      }
-      ctx.closePath()
+      ctx.moveTo(padding.left, y)
+      ctx.lineTo(width - padding.right, y)
       ctx.stroke()
+      ctx.fillStyle = '#999999'
+      ctx.font = '9px sans-serif'
+      ctx.fillText(String(Math.round((maxVal * i) / 4)), 4, y + 3)
     }
 
-    // 绘制数据区域
-    ctx.fillStyle = 'rgba(245, 166, 35, 0.3)'
-    ctx.strokeStyle = '#F5A623'
-    ctx.beginPath()
-    for (let i = 0; i < sides; i++) {
-      const val = values[i] ?? 0
-      const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
-      const x = center.x + Math.cos(angle) * radius * (val / maxVal)
-      const y = center.y + Math.sin(angle) * radius * (val / maxVal)
-      if (i === 0) ctx.moveTo(x, y)
-      else ctx.lineTo(x, y)
-    }
-    ctx.closePath()
-    ctx.fill()
-    ctx.stroke()
+    // 绘制柱体、数值与 x 轴标签
+    const slot = chartW / labels.length
+    const barW = Math.min(slot * 0.5, 28)
+    values.forEach((val, i) => {
+      const barH = (val / maxVal) * chartH
+      const x = padding.left + slot * i + (slot - barW) / 2
+      const y = baseY - barH
+      const gradient = ctx.createLinearGradient(0, y, 0, baseY)
+      gradient.addColorStop(0, '#499AE6')
+      gradient.addColorStop(1, 'rgba(73, 154, 230, 0.4)')
+      ctx.fillStyle = gradient
+      ctx.fillRect(x, y, barW, barH)
 
-    // 绘制轴线及分类标签
-    ctx.fillStyle = '#999999'
-    ctx.font = '10px sans-serif'
-    labels.forEach((label, i) => {
-      const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
-      const x = center.x + Math.cos(angle) * (radius + 12)
-      const y = center.y + Math.sin(angle) * (radius + 12)
-      const textX = Math.min(Math.max(x - 12, 2), width - 4)
-      const textY = Math.min(Math.max(y + 4, 10), height - 2)
-      ctx.fillText(label, textX, textY)
+      ctx.fillStyle = '#333333'
+      ctx.font = '9px sans-serif'
+      ctx.fillText(String(val), x + barW / 2 - 4, y - 4)
+
+      const display = labels[i]?.length > 4 ? `${labels[i].slice(0, 4)}…` : labels[i] || ''
+      ctx.fillStyle = '#999999'
+      ctx.font = '9px sans-serif'
+      ctx.fillText(display, x + barW / 2 - display.length * 4, height - 8)
     })
   }
   // #endif
@@ -747,73 +742,70 @@
   }
 
   /**
-   * 绘制试验分期雷达图（旧版 canvas 接口）
+   * 绘制近五年IND注册分类柱状图（旧版 canvas 接口）
    */
-  function drawRadarChartLegacy() {
-    const ctx = uni.createCanvasContext('radarCanvas')
-    const center = { x: 150, y: 80 }
-    const radius = 55
-    const labels = categoryList.value.map((item) => item.category)
-    const values = categoryList.value.map((item) => Number(item.number) || 0)
-    // 雷达图至少 3 条轴才能构成多边形
-    const sides = Math.max(labels.length, 3)
-    const maxVal = Math.max(...values, 1)
+  function drawBarChartLegacy() {
+    const ctx = uni.createCanvasContext('barCanvas')
+    const width = 300
+    const height = 150
+    const padding = { top: 20, right: 16, bottom: 30, left: 36 }
 
     // 清空画布
-    ctx.clearRect(0, 0, 300, 150)
+    ctx.clearRect(0, 0, width, height)
+
+    // x轴：注册分类；y轴：数量
+    const labels = categoryList.value.map((item) => item.category)
+    const values = categoryList.value.map((item) => Number(item.number) || 0)
 
     // 无数据时展示占位提示
     if (!labels.length) {
       ctx.setFillStyle('#999999')
       ctx.setFontSize(12)
-      ctx.fillText('暂无数据', 150 - 24, 80)
+      ctx.fillText('暂无数据', width / 2 - 24, height / 2)
       ctx.draw()
       return
     }
 
-    // 绘制背景网格
+    const maxVal = Math.max(...values, 1)
+    const chartW = width - padding.left - padding.right
+    const chartH = height - padding.top - padding.bottom
+    const baseY = height - padding.bottom
+
+    // 绘制背景网格与 y 轴刻度
     ctx.setStrokeStyle('#eeeeee')
-    ctx.setLineWidth(1)
-    for (let r = 1; r <= 5; r++) {
+    ctx.setLineWidth(0.5)
+    for (let i = 0; i <= 4; i++) {
+      const y = baseY - (i / 4) * chartH
       ctx.beginPath()
-      const currentRadius = (radius / 5) * r
-      for (let i = 0; i < sides; i++) {
-        const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
-        const x = center.x + Math.cos(angle) * currentRadius
-        const y = center.y + Math.sin(angle) * currentRadius
-        if (i === 0) ctx.moveTo(x, y)
-        else ctx.lineTo(x, y)
-      }
-      ctx.closePath()
+      ctx.moveTo(padding.left, y)
+      ctx.lineTo(width - padding.right, y)
       ctx.stroke()
+      ctx.setFillStyle('#999999')
+      ctx.setFontSize(9)
+      ctx.fillText(String(Math.round((maxVal * i) / 4)), 4, y + 3)
     }
 
-    // 绘制数据区域
-    ctx.setFillStyle('rgba(245, 166, 35, 0.3)')
-    ctx.setStrokeStyle('#F5A623')
-    ctx.beginPath()
-    for (let i = 0; i < sides; i++) {
-      const val = values[i] ?? 0
-      const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
-      const x = center.x + Math.cos(angle) * radius * (val / maxVal)
-      const y = center.y + Math.sin(angle) * radius * (val / maxVal)
-      if (i === 0) ctx.moveTo(x, y)
-      else ctx.lineTo(x, y)
-    }
-    ctx.closePath()
-    ctx.fill()
-    ctx.stroke()
+    // 绘制柱体、数值与 x 轴标签
+    const slot = chartW / labels.length
+    const barW = Math.min(slot * 0.5, 28)
+    values.forEach((val, i) => {
+      const barH = (val / maxVal) * chartH
+      const x = padding.left + slot * i + (slot - barW) / 2
+      const y = baseY - barH
+      const gradient = ctx.createLinearGradient(0, y, 0, baseY)
+      gradient.addColorStop(0, '#499AE6')
+      gradient.addColorStop(1, 'rgba(73, 154, 230, 0.4)')
+      ctx.setFillStyle(gradient)
+      ctx.fillRect(x, y, barW, barH)
 
-    // 绘制轴线及分类标签
-    ctx.setFillStyle('#999999')
-    ctx.setFontSize(10)
-    labels.forEach((label, i) => {
-      const angle = (Math.PI * 2 * i) / sides - Math.PI / 2
-      const x = center.x + Math.cos(angle) * (radius + 12)
-      const y = center.y + Math.sin(angle) * (radius + 12)
-      const textX = Math.min(Math.max(x - 12, 2), 296)
-      const textY = Math.min(Math.max(y + 4, 10), 148)
-      ctx.fillText(label, textX, textY)
+      ctx.setFillStyle('#333333')
+      ctx.setFontSize(9)
+      ctx.fillText(String(val), x + barW / 2 - 4, y - 4)
+
+      const display = labels[i]?.length > 4 ? `${labels[i].slice(0, 4)}…` : labels[i] || ''
+      ctx.setFillStyle('#999999')
+      ctx.setFontSize(9)
+      ctx.fillText(display, x + barW / 2 - display.length * 4, height - 8)
     })
 
     ctx.draw()
@@ -831,20 +823,20 @@
     return p
   }
 
-  function drawRadarChart() {
+  function drawBarChart() {
     let p: void | Promise<void>
     // #ifdef MP-WEIXIN
-    p = drawRadarChart2d()
+    p = drawBarChart2d()
     // #endif
     // #ifndef MP-WEIXIN
-    p = drawRadarChartLegacy()
+    p = drawBarChartLegacy()
     // #endif
     return p
   }
 
   function drawCharts() {
     drawLineChart()
-    drawRadarChart()
+    drawBarChart()
   }
 
   /**

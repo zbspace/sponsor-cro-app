@@ -1064,6 +1064,8 @@ export interface CdeCenterAndResearcherReq {
 export interface NdaDataStatisticsParam {
   /** 药企母公司ID */
   parentCompanyId?: number
+  /** �洗后的药品名称 */
+  productName?: string
   /** 当前页数 */
   pageNum?: number
   /** 每页条数 */
@@ -1072,6 +1074,10 @@ export interface NdaDataStatisticsParam {
   trialStage?: string
   /** 年份 */
   year?: string
+  /** 清洗后药品类型 */
+  cleanedDrugType?: string
+  /** 清洗后分类 */
+  cleanedClassification?: string
 }
 
 /**
@@ -1162,28 +1168,39 @@ export interface NdaLastYearRegisterCategoryVo {
 export interface NdaProductDataVo {
   /** 受理号 */
   acceptanceNo?: string
-  /** 申请日期 */
-  applyDate?: string
-  /** 申请状态 */
-  applyStatus?: string
+  /** 申请状态 0-审核中，1-备案通过，2-备案未通过 */
+  applyStatusCode?: number
+  /** 申请状态 0-审核中，1-备案通过，2-备案未通过 */
+  applyStatusStr?: string
   /** 批准日期 */
   approveDate?: string
-  /** 药品名（清洗后） */
-  cleanedDrugName?: string
+  /** 注册分类 */
+  cleanedClassification?: string
   /** 药品类型(清洗后) */
   cleanedDrugType?: string
   /** 签发日期 */
   issueDate?: string
-  /** 注册分类 */
-  registerCategoryList?: string[]
+  /** 产品名称（清洗后药品名） */
+  productName?: string
   /** 企业名称(标准名) */
   standardCompanyName?: string
+  /** 申请日期 */
+  undertakeDate?: string
 }
 
 /**
  * NDA-列表分页响应
  */
 export interface NdaProductDataListResponse {
+  list?: NdaProductDataVo[]
+  pages?: number
+  total?: number
+}
+
+/**
+ * NDA-产品NDA榜单分页响应
+ */
+export interface NdaProductRankListResponse {
   list?: NdaProductRankVo[]
   pages?: number
   total?: number

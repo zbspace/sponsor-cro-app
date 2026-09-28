@@ -69,7 +69,7 @@ import type {
   NdaLastYearRegisterCategoryParam,
   NdaLastYearRegisterCategoryVo,
   NdaProductDataListResponse,
-  NdaProductRankVo,
+  NdaProductRankListResponse,
   DrugShortListResponse
 } from '@/types/api'
 
@@ -977,10 +977,10 @@ export async function queryNdaProductList(params: NdaDataStatisticsParam) {
 /**
  * NDA-产品NDA榜单
  * @param params { companyParentId, pageNum, pageSize, trialStage, year }
- * @returns Promise<NdaProductDataListResponse>
+ * @returns Promise<NdaProductRankListResponse>
  */
 export async function queryProjectRank(params: NdaDataStatisticsParam) {
-  return post<NdaProductDataListResponse>('/api/v1/ndaData/queryProjectRank', params, true)
+  return post<NdaProductRankListResponse>('/api/v1/ndaData/queryProjectRank', params, true)
 }
 
 // #endregion

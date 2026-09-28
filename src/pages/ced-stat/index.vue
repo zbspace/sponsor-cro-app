@@ -215,7 +215,7 @@
         <CdeTrialList
           class="trial-list-comp"
           :company-parent-id="companyParentId"
-          :drug-name="selectedDrugName"
+          v-model:drug-name="selectedDrugName"
           :year="selectedListYear"
         />
       </view>
@@ -565,6 +565,12 @@
       ctx.strokeStyle = '#499AE6'
       ctx.stroke()
 
+      // 拐点上方显示数值
+      const valText = String(data[i])
+      ctx.fillStyle = '#499AE6'
+      ctx.font = '10px sans-serif'
+      ctx.fillText(valText, p.x - valText.length * 3, p.y - 8)
+
       ctx.fillStyle = '#999999'
       ctx.font = '10px sans-serif'
       ctx.fillText(years[i] || '', p.x - 12, height - 5)
@@ -730,6 +736,12 @@
       ctx.fill()
       ctx.setStrokeStyle('#499AE6')
       ctx.stroke()
+
+      // 拐点上方显示数值
+      const valText = String(data[i])
+      ctx.setFillStyle('#499AE6')
+      ctx.setFontSize(10)
+      ctx.fillText(valText, p.x - valText.length * 3, p.y - 8)
 
       ctx.setFillStyle('#999999')
       ctx.setFontSize(10)
