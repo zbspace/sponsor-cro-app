@@ -45,10 +45,11 @@
     <!-- 列表区域 -->
     <scroll-view
       class="container-scroll-view"
+      scroll-y
       :show-scrollbar="false"
       lower-threshold="100"
       :style="{
-        height: `calc(100vh - ${menu.top}px - ${menu.height}px - 100px)`
+        height: `calc(100vh - ${menu.top}px - ${menu.height}px - 140px)`
       }"
       @scrolltolower="loadMore"
     >

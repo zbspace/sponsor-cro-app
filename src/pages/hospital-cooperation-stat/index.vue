@@ -45,10 +45,11 @@
     <!-- 列表区域 -->
     <scroll-view
       class="container-scroll-view"
+      scroll-y
       :show-scrollbar="false"
       lower-threshold="100"
       :style="{
-        height: `calc(100vh - ${menu.top}px - ${menu.height}px - 100px)`
+        height: `calc(100vh - ${menu.top}px - ${menu.height}px - 140px)`
       }"
       @scrolltolower="loadMore"
     >
@@ -125,7 +126,7 @@
   // #region 列表数据
   const list = ref<HospitalTrialStatisticItem[]>([])
   const pageNum = ref(1)
-  const pageSize = 10
+  const pageSize = 20
   const total = ref(0)
   const loading = ref(false)
   const isRefreshing = ref(false)
