@@ -977,10 +977,10 @@ export async function queryNdaProductList(params: NdaDataStatisticsParam) {
 /**
  * NDA-产品NDA榜单
  * @param params { companyParentId, pageNum, pageSize, trialStage, year }
- * @returns Promise<NdaProductRankVo[]>
+ * @returns Promise<NdaProductDataListResponse>
  */
 export async function queryProjectRank(params: NdaDataStatisticsParam) {
-  return post<NdaProductRankVo[]>('/api/v1/ndaData/queryProjectRank', params, true)
+  return post<NdaProductDataListResponse>('/api/v1/ndaData/queryProjectRank', params, true)
 }
 
 // #endregion

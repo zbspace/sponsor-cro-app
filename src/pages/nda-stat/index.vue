@@ -366,30 +366,29 @@
   }
 
   async function fetchProductRank(refresh = false) {
+    console.log(4444)
     if (productLoading.value) return
     if (refresh) {
       productPageNum.value = 1
     }
     productLoading.value = true
 
-    try {
-      const params = buildBaseParams()
-      if (productYearFilter.value) {
-        params.year = productYearFilter.value
-      }
-      const res = await queryProjectRank({
-        ...params,
-        pageNum: productPageNum.value,
-        pageSize: productPageSize
-      })
-      const list = res.data || []
-      productList.value = refresh ? list : [...productList.value, ...list]
-      productHasMore.value = list.length >= productPageSize
-    } catch {
-      // 静默处理
-    } finally {
-      productLoading.value = false
+    const params = buildBaseParams()
+    if (productYearFilter.value) {
+      params.year = productYearFilter.value
     }
+    const res = await queryProjectRank({
+      ...params,
+      pageNum: productPageNum.value,
+      pageSize: productPageSize
+    })
+    const list = res.data?.list || []
+    console.log('list', list)
+
+    productList.value = refresh ? list : [...productList.value, ...list]
+    console.log('productList', productList.value)
+    productHasMore.value = list.length >= productPageSize
+    productLoading.value = false
   }
 
   /** 产品榜单滚动到底部加载更多 */
@@ -1173,7 +1172,7 @@
       text-align: center;
     }
     .col-count {
-      width: 160rpx;
+      width: 120rpx;
       text-align: center;
     }
 

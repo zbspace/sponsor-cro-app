@@ -1184,7 +1184,7 @@ export interface NdaProductDataVo {
  * NDA-列表分页响应
  */
 export interface NdaProductDataListResponse {
-  list?: NdaProductDataVo[]
+  list?: NdaProductRankVo[]
   pages?: number
   total?: number
 }
