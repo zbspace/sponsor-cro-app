@@ -19,7 +19,7 @@
     lower-threshold="100"
     @scrolltolower="loadMore"
     :style="{
-      height: `calc(100vh - ${menu.top}px - ${menu.height}px)`
+      height: `calc(100vh - ${menu.top}px - ${menu.height}px - 40px)`
     }"
   >
     <view class="container">
@@ -144,6 +144,10 @@
 </script>
 
 <style lang="scss" scoped>
+  .header {
+    margin-bottom: 20px;
+  }
+
   .container {
     padding: 30rpx;
     padding-top: 0;

@@ -2,7 +2,7 @@
 <template>
   <view class="page-container">
     <!-- #region 头部导航 -->
-    <view class="header-nav" :style="{ paddingTop: `${statusBarHeight}px` }">
+    <!-- <view class="header-nav" :style="{ paddingTop: `${statusBarHeight}px` }">
       <view class="nav-content">
         <view class="back-btn" @click="goBack">
           <uni-icons type="left" size="24" color="#333"></uni-icons>
@@ -10,8 +10,21 @@
         <text class="title">{{ companyName || '中心实验室合作记录' }}</text>
         <view class="nav-placeholder"></view>
       </view>
+    </view> -->
+
+    <view class="header" :style="{ paddingTop: `${menu.top}px` }">
+      <view class="nav-left" @click="goBack">
+        <view class="back-icon">
+          <view class="arrow"></view>
+        </view>
+      </view>
+      <text class="title">{{ companyName || '中心实验室合作记录' }}</text>
+
+      <view class="nav-right"></view>
     </view>
     <!-- #endregion -->
+
+    <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
 
     <!-- #region 选项卡 -->
     <view class="tabs-wrapper border-b border-f0f0f0">
@@ -28,7 +41,8 @@
     </view>
     <!-- #endregion -->
 
-    <scroll-viewscroll-y
+    <scroll-view
+      scroll-y
       class="container-scroll-view"
       :show-scrollbar="false"
       enhanced
@@ -130,30 +144,41 @@
             <text class="col-name">CRO公司</text>
             <text class="col-count">合作项目数</text>
           </view>
-          <view class="table-body">
-            <view
-              class="table-row"
-              v-for="(item, index) in croList"
-              :key="index"
-              hover-class="row-hover"
-              @click="onCroClick(item)"
-            >
-              <text class="col-rank">{{ index + 1 }}</text>
-              <text class="col-name">{{ item.name }}</text>
-              <text class="col-count highlight">{{ item.count }}</text>
-            </view>
-          </view>
 
-          <!-- 加载状态提示 -->
-          <view class="load-status" v-if="croLoading">
-            <text>加载中...</text>
-          </view>
-          <view class="load-status" v-else-if="croNoMore && croList.length > 0">
-            <text>没有更多了</text>
-          </view>
-          <view class="load-status" v-if="!croLoading && !croList.length">
-            <text>暂无数据</text>
-          </view>
+          <!-- #region 独立滚动区域：滑动到底部自动加载更多 -->
+          <scroll-view
+            scroll-y
+            class="table-body-scroll"
+            :show-scrollbar="false"
+            :lower-threshold="50"
+            @scrolltolower="onCroScrollToLower"
+          >
+            <view class="table-body">
+              <view
+                class="table-row"
+                v-for="(item, index) in croList"
+                :key="index"
+                hover-class="row-hover"
+                @click="onCroClick(item)"
+              >
+                <text class="col-rank">{{ index + 1 }}</text>
+                <text class="col-name">{{ item.name }}</text>
+                <text class="col-count highlight">{{ item.count }}</text>
+              </view>
+            </view>
+
+            <!-- 加载状态提示 -->
+            <view class="load-status" v-if="croLoading">
+              <text>加载中...</text>
+            </view>
+            <view class="load-status" v-else-if="croNoMore && croList.length > 0">
+              <text>没有更多了</text>
+            </view>
+            <view class="load-status" v-if="!croLoading && !croList.length">
+              <text>暂无数据</text>
+            </view>
+          </scroll-view>
+          <!-- #endregion -->
         </view>
       </view>
       <!-- #endregion -->
@@ -203,13 +228,13 @@
         </view>
       </view>
       <!-- #endregion -->
-    </scroll-viewscroll-y>
+    </scroll-view>
   </view>
 </template>
 
 <script setup lang="ts">
   // #region 导入
-  import { ref, computed, reactive } from 'vue'
+  import { ref, computed, reactive, watch } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import { getOutsourcingRatio, selectClinicalThirdLabRankList, getCroProjectList } from '@/api'
   // #endregion
@@ -245,6 +270,8 @@
     const sysInfo = uni.getSystemInfoSync()
     statusBarHeight.value = sysInfo.statusBarHeight || 0
     fetchOutsourcingRatio()
+
+    fetchCroRankList()
   })
 
   const goBack = () => {
@@ -276,6 +303,9 @@
 
   function onCroYearChange(e: any) {
     croYearFilter.value = yearOptions.value[Number(e.detail.value)]?.value || ''
+    // 年份变化后回到第一页重新加载，避免分页数据错乱
+    croPage.value = 1
+    croNoMore.value = false
     fetchCroRankList()
   }
 
@@ -353,6 +383,18 @@
       croLoading.value = false
     }
   }
+
+  // #region 榜单独立滚动加载
+  /**
+   * 中心实验室合作榜单滚动到底部加载下一页
+   */
+  function onCroScrollToLower() {
+    // 加载中或无更多数据时不再请求
+    if (croLoading.value || croNoMore.value) return
+    croPage.value += 1
+    fetchCroRankList()
+  }
+  // #endregion
   // #endregion
 
   // #region 点击 CRO 合作名单行进入 CRO 主页
@@ -418,20 +460,26 @@
   }
 
   /**
-   * 滚动到底部加载下一页
+   * 页面滚动到底部加载下一页
+   * 统计 tab 的榜单已改为卡片内独立 scroll-view，此处仅处理项目列表
    */
   function onScrollToLower() {
+    if (activeTab.value !== 'list') return
     // 加载中或无更多数据时不再请求
-    if (activeTab.value === 'stat') {
-      if (croLoading.value || croNoMore.value) return
-      croPage.value += 1
-      fetchCroRankList()
-    } else if (activeTab.value === 'list') {
-      if (loading.value || noMore.value) return
-      projectPage.value += 1
-      fetchProjectList()
-    }
+    if (loading.value || noMore.value) return
+    projectPage.value += 1
+    fetchProjectList()
   }
+
+  // #region 选项卡切换
+  // 首次切换到项目列表 tab 时按需加载数据
+  watch(activeTab, (val) => {
+    if (val !== 'list') return
+    if (projectList.value.length || noMore.value || loading.value) return
+    projectPage.value = 1
+    fetchProjectList()
+  })
+  // #endregion
   // #endregion
 </script>
 
@@ -440,35 +488,13 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
-    background-color: #f8f9fb;
 
-    .header-nav {
-      background-color: #fff;
+    .header {
       flex-shrink: 0;
-      .nav-content {
-        height: 44px;
-        display: flex;
-        align-items: center;
-        padding: 0 16px;
-        .back-btn {
-          width: 40px;
-        }
-        .title {
-          flex: 1;
-          text-align: center;
-          font-size: 18px;
-          font-weight: bold;
-          color: #333;
-        }
-        .nav-placeholder {
-          width: 40px;
-        }
-      }
     }
 
     .tabs-wrapper {
       display: flex;
-      background-color: #fff;
       padding: 10px 0;
       flex-shrink: 0;
       .tab-item {
@@ -507,7 +533,6 @@
       background: #ffffff;
       border-radius: 24rpx;
       padding: 30rpx;
-      margin-bottom: 30rpx;
       box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
 
       .card-title {
@@ -553,6 +578,7 @@
 
     /* 外包比例 */
     .ratio-card {
+      margin-bottom: 30rpx;
       .ratio-content {
         display: flex;
         align-items: center;
@@ -655,6 +681,13 @@
         color: #333333;
         line-height: 52rpx;
       }
+
+      // #region 榜单独立滚动区域
+      .table-body-scroll {
+        height: 520rpx;
+        min-height: 0;
+      }
+      // #endregion
 
       .table-row {
         display: flex;

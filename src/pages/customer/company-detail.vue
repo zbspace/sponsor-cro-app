@@ -161,7 +161,7 @@
               <text class="value">{{ businessClueStat.beforeListingNum }}</text>
             </view>
           </view>
-          <view class="grid-item">
+          <!-- <view class="grid-item">
             <view class="item-icon product">
               <image src="/static/search-customer/6.png" mode="aspectFit" />
             </view>
@@ -169,7 +169,7 @@
               <text class="label">最值得跟进产品</text>
               <text class="value">{{ businessClueStat.worthyProductsNum }}</text>
             </view>
-          </view>
+          </view> -->
           <view class="grid-item" @click="goTo('business-contact')">
             <view class="item-icon contact">
               <image src="/static/search-customer/7.png" mode="aspectFit" />

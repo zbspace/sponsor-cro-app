@@ -49,7 +49,7 @@
       :show-scrollbar="false"
       lower-threshold="100"
       :style="{
-        height: `calc(100vh - ${menu.top}px - ${menu.height}px - 140px)`
+        height: `calc(100vh - ${menu.top}px - ${menu.height}px - 110px)`
       }"
       @scrolltolower="loadMore"
     >
@@ -242,7 +242,7 @@
     padding: 30rpx;
   }
   .header {
-    margin-bottom: 50rpx;
+    margin-bottom: 10px;
   }
   .filter-wrapper {
     display: flex;

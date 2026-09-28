@@ -7,7 +7,7 @@
         <view class="arrow"></view>
       </view>
     </view>
-    <text class="title">{{ companyName }}</text>
+    <text class="title">{{ '商机线索' }}</text>
     <view class="nav-right"></view>
   </view>
 
