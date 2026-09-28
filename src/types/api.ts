@@ -1197,12 +1197,10 @@ export interface NdaProductRankVo {
   applyCount?: number
   /** 母公司ID */
   companyParentId?: number
-  /** 项目名称 */
-  projectName?: string
+  /** 产品名称 */
+  productName?: string
   /** 注册分类 */
-  registerCategory?: string
-  /** 注册分类名称 */
-  registerCategoryName?: string
+  cleanedClassification?: string
 }
 
 // #endregion

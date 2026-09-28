@@ -172,7 +172,6 @@
               <text class="col-name">产品</text>
               <text class="col-category">注册分类</text>
               <text class="col-count">NDA申请记录</text>
-              <text class="col-count">NDA获批记录</text>
             </view>
             <!-- #region 产品榜单滚动加载 -->
             <scroll-view
@@ -190,8 +189,8 @@
                   :class="{ zebra: index % 2 === 1 }"
                 >
                   <text class="col-rank">{{ index + 1 }}</text>
-                  <text class="col-name">{{ item.projectName }}</text>
-                  <text class="col-category">{{ item.registerCategoryName || '--' }}</text>
+                  <text class="col-name">{{ item.productName }}</text>
+                  <text class="col-category">{{ item.cleanedClassification || '--' }}</text>
                   <text class="col-count">{{ item.applyCount }}</text>
                 </view>
                 <view class="empty-tip" v-if="!productList.length && !productLoading">
@@ -366,7 +365,6 @@
   }
 
   async function fetchProductRank(refresh = false) {
-    console.log(4444)
     if (productLoading.value) return
     if (refresh) {
       productPageNum.value = 1
@@ -383,10 +381,8 @@
       pageSize: productPageSize
     })
     const list = res.data?.list || []
-    console.log('list', list)
 
     productList.value = refresh ? list : [...productList.value, ...list]
-    console.log('productList', productList.value)
     productHasMore.value = list.length >= productPageSize
     productLoading.value = false
   }
@@ -1172,7 +1168,7 @@
       text-align: center;
     }
     .col-count {
-      width: 120rpx;
+      width: 160rpx;
       text-align: center;
     }
 
