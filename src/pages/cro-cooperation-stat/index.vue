@@ -1,212 +1,215 @@
 <!-- cro合作统计 -->
 <template>
-  <!-- #region 头部导航 -->
-  <view class="header-nav" :style="{ paddingTop: `${statusBarHeight}px` }">
-    <view class="nav-content">
-      <view class="back-btn" @click="goBack">
-        <uni-icons type="left" size="24" color="#333"></uni-icons>
-      </view>
-      <text class="title">{{ companyName || '百济神州' }}</text>
-      <view class="nav-placeholder"></view>
-    </view>
-  </view>
-  <!-- #endregion -->
-
-  <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
-
-  <!-- #region 选项卡 -->
-  <view class="tabs-wrapper">
-    <view
-      class="tab-item"
-      v-for="tab in tabs"
-      :key="tab.key"
-      :class="{ active: activeTab === tab.key }"
-      @click="activeTab = tab.key"
-    >
-      <text class="tab-text">{{ tab.label }}</text>
-      <view class="active-line" v-if="activeTab === tab.key"></view>
-    </view>
-  </view>
-  <!-- #endregion -->
-
-  <scroll-view
-    scroll-y
-    class="container-scroll-view"
-    :show-scrollbar="false"
-    @scrolltolower="onScrollToLower"
-  >
-    <view class="container">
-      <!-- #region 统计内容 -->
-      <view v-if="activeTab === 'stat'" class="stat-content p-16px">
-        <!-- 外包比例卡片 -->
-        <view class="card ratio-card">
-          <!-- <view class="card-title">外包比例</view> -->
-          <view class="card-header">
-            <view class="flex items-center">
-              <view class="title-indicator"></view>
-              <view class="card-title">外包比例</view>
-            </view>
-            <view class="filter-dropdown">
-              <picker
-                class="filter-picker"
-                mode="selector"
-                :range="yearOptions"
-                range-key="text"
-                @change="onProductYearChange"
-              >
-                <view class="filter-trigger">
-                  <text>{{ productYearText }}</text>
-                  <view class="arrow-down"></view>
-                </view>
-              </picker>
-            </view>
-          </view>
-          <view class="ratio-content">
-            <view class="pie-chart-wrapper">
-              <view
-                class="pie-chart"
-                :style="{
-                  background: `conic-gradient(#499AE6 0% ${outsourceRate.cro}%, #7ED321 ${outsourceRate.cro}% 100%)`
-                }"
-              ></view>
-            </view>
-            <view class="ratio-legend">
-              <view class="legend-item">
-                <view class="dot blue"></view>
-                <view class="legend-info">
-                  <text class="label">外包CRO</text>
-                  <text class="value">{{ outsourceRate.cro }}%</text>
-                </view>
-              </view>
-              <view class="legend-item">
-                <view class="dot green"></view>
-                <view class="legend-info">
-                  <text class="label">自己申报</text>
-                  <text class="value">{{ outsourceRate.self }}%</text>
-                </view>
-              </view>
-            </view>
-          </view>
-          <view class="ratio-stats">
-            <view class="stat-item">
-              <text class="label">外包项目数</text>
-              <text class="value">{{ outsourceRate.haveProjectNum }}</text>
-            </view>
-            <view class="stat-item">
-              <text class="label">自研项目数</text>
-              <text class="value">{{ outsourceRate.noProjectNum }}</text>
-            </view>
-            <view class="stat-item">
-              <text class="label">总项目数</text>
-              <text class="value">{{ outsourceRate.totalProjectNum }}</text>
-            </view>
-          </view>
+  <view class="page-container">
+    <!-- #region 头部导航 -->
+    <view class="header-nav" :style="{ paddingTop: `${statusBarHeight}px` }">
+      <view class="nav-content">
+        <view class="back-btn" @click="goBack">
+          <uni-icons type="left" size="24" color="#333"></uni-icons>
         </view>
-
-        <!-- CRO合作名单卡片 -->
-        <view class="card list-card">
-          <!-- <view class="card-title">CRO合作榜单</view> -->
-          <view class="card-header">
-            <view class="flex items-center">
-              <view class="title-indicator"></view>
-              <view class="card-title">CRO合作榜单</view>
-            </view>
-            <view class="filter-dropdown">
-              <picker
-                class="filter-picker"
-                mode="selector"
-                :range="yearOptions"
-                range-key="text"
-                @change="onCroYearChange"
-              >
-                <view class="filter-trigger">
-                  <text>{{ croYearText }}</text>
-                  <view class="arrow-down"></view>
-                </view>
-              </picker>
-            </view>
-          </view>
-          <view class="table-header">
-            <text class="col-rank">排名</text>
-            <text class="col-name">CRO公司</text>
-            <text class="col-count">合作项目数</text>
-          </view>
-          <view class="table-body">
-            <view
-              class="table-row"
-              v-for="(item, index) in croList"
-              :key="index"
-              hover-class="row-hover"
-              @click="onCroClick(item)"
-            >
-              <text class="col-rank">{{ index + 1 }}</text>
-              <text class="col-name">{{ item.name }}</text>
-              <text class="col-count highlight">{{ item.count }}</text>
-            </view>
-          </view>
-
-          <!-- 加载状态提示 -->
-          <view class="load-status" v-if="croLoading">
-            <text>加载中...</text>
-          </view>
-          <view class="load-status" v-else-if="croNoMore && croList.length > 0">
-            <text>没有更多了</text>
-          </view>
-          <view class="load-status" v-if="!croLoading && !croList.length">
-            <text>暂无数据</text>
-          </view>
-        </view>
-      </view>
-      <!-- #endregion -->
-
-      <!-- #region 项目列表 -->
-    </view>
-
-    <view v-if="activeTab === 'list'" class="project-list p-16px">
-      <view class="project-card" v-for="(item, index) in projectList" :key="index">
-        <view class="project-title">{{ item.title }}</view>
-        <view class="info-list">
-          <view class="info-item">
-            <view class="info-icon time">
-              <image src="../../static/icons/time.png" mode="aspectFit" />
-            </view>
-            <text class="info-text">批入时间：{{ item.approveTime }}</text>
-          </view>
-          <view class="info-item">
-            <view class="info-icon sponsor">
-              <image src="../../static/icons/sponsor.png" mode="aspectFit" />
-            </view>
-            <text class="info-text">申办方：{{ item.sponsor }}</text>
-          </view>
-          <view class="info-item">
-            <view class="info-icon no">
-              <image src="../../static/icons/no.png" mode="aspectFit" />
-            </view>
-            <text class="info-text">审批号/备案号：{{ item.approveNo }}</text>
-          </view>
-          <view class="info-item">
-            <view class="info-icon cro">
-              <image src="../../static/icons/cro.png" mode="aspectFit" />
-            </view>
-            <text class="info-text">合作CRO：{{ item.cro }}</text>
-          </view>
-        </view>
-        <view class="action-btn">{{ item.tag }}</view>
-      </view>
-
-      <!-- 加载状态提示 -->
-      <view class="load-status" v-if="loading">
-        <text>加载中...</text>
-      </view>
-      <view class="load-status" v-else-if="noMore && projectList.length > 0">
-        <text>没有更多了</text>
-      </view>
-      <view class="load-status" v-if="!loading && !projectList.length">
-        <text>暂无数据</text>
+        <text class="title">{{ companyName || '百济神州' }}</text>
+        <view class="nav-placeholder"></view>
       </view>
     </view>
     <!-- #endregion -->
-  </scroll-view>
+
+    <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
+
+    <!-- #region 选项卡 -->
+    <view class="tabs-wrapper">
+      <view
+        class="tab-item"
+        v-for="tab in tabs"
+        :key="tab.key"
+        :class="{ active: activeTab === tab.key }"
+        @click="activeTab = tab.key"
+      >
+        <text class="tab-text">{{ tab.label }}</text>
+        <view class="active-line" v-if="activeTab === tab.key"></view>
+      </view>
+    </view>
+    <!-- #endregion -->
+
+    <scroll-view
+      scroll-y
+      class="container-scroll-view"
+      :show-scrollbar="false"
+      lower-threshold="100"
+      @scrolltolower="onScrollToLower"
+    >
+      <view class="container">
+        <!-- #region 统计内容 -->
+        <view v-if="activeTab === 'stat'" class="stat-content p-16px">
+          <!-- 外包比例卡片 -->
+          <view class="card ratio-card">
+            <!-- <view class="card-title">外包比例</view> -->
+            <view class="card-header">
+              <view class="flex items-center">
+                <view class="title-indicator"></view>
+                <view class="card-title">外包比例</view>
+              </view>
+              <view class="filter-dropdown">
+                <picker
+                  class="filter-picker"
+                  mode="selector"
+                  :range="yearOptions"
+                  range-key="text"
+                  @change="onProductYearChange"
+                >
+                  <view class="filter-trigger">
+                    <text>{{ productYearText }}</text>
+                    <view class="arrow-down"></view>
+                  </view>
+                </picker>
+              </view>
+            </view>
+            <view class="ratio-content">
+              <view class="pie-chart-wrapper">
+                <view
+                  class="pie-chart"
+                  :style="{
+                    background: `conic-gradient(#499AE6 0% ${outsourceRate.cro}%, #7ED321 ${outsourceRate.cro}% 100%)`
+                  }"
+                ></view>
+              </view>
+              <view class="ratio-legend">
+                <view class="legend-item">
+                  <view class="dot blue"></view>
+                  <view class="legend-info">
+                    <text class="label">外包CRO</text>
+                    <text class="value">{{ outsourceRate.cro }}%</text>
+                  </view>
+                </view>
+                <view class="legend-item">
+                  <view class="dot green"></view>
+                  <view class="legend-info">
+                    <text class="label">自己申报</text>
+                    <text class="value">{{ outsourceRate.self }}%</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+            <view class="ratio-stats">
+              <view class="stat-item">
+                <text class="label">外包项目数</text>
+                <text class="value">{{ outsourceRate.haveProjectNum }}</text>
+              </view>
+              <view class="stat-item">
+                <text class="label">自研项目数</text>
+                <text class="value">{{ outsourceRate.noProjectNum }}</text>
+              </view>
+              <view class="stat-item">
+                <text class="label">总项目数</text>
+                <text class="value">{{ outsourceRate.totalProjectNum }}</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- CRO合作名单卡片 -->
+          <view class="card list-card">
+            <!-- <view class="card-title">CRO合作榜单</view> -->
+            <view class="card-header">
+              <view class="flex items-center">
+                <view class="title-indicator"></view>
+                <view class="card-title">CRO合作榜单</view>
+              </view>
+              <view class="filter-dropdown">
+                <picker
+                  class="filter-picker"
+                  mode="selector"
+                  :range="yearOptions"
+                  range-key="text"
+                  @change="onCroYearChange"
+                >
+                  <view class="filter-trigger">
+                    <text>{{ croYearText }}</text>
+                    <view class="arrow-down"></view>
+                  </view>
+                </picker>
+              </view>
+            </view>
+            <view class="table-header">
+              <text class="col-rank">排名</text>
+              <text class="col-name">CRO公司</text>
+              <text class="col-count">合作项目数</text>
+            </view>
+            <view class="table-body">
+              <view
+                class="table-row"
+                v-for="(item, index) in croList"
+                :key="index"
+                hover-class="row-hover"
+                @click="onCroClick(item)"
+              >
+                <text class="col-rank">{{ index + 1 }}</text>
+                <text class="col-name">{{ item.name }}</text>
+                <text class="col-count highlight">{{ item.count }}</text>
+              </view>
+            </view>
+
+            <!-- 加载状态提示 -->
+            <view class="load-status" v-if="croLoading">
+              <text>加载中...</text>
+            </view>
+            <view class="load-status" v-else-if="croNoMore && croList.length > 0">
+              <text>没有更多了</text>
+            </view>
+            <view class="load-status" v-if="!croLoading && !croList.length">
+              <text>暂无数据</text>
+            </view>
+          </view>
+        </view>
+        <!-- #endregion -->
+
+        <!-- #region 项目列表 -->
+      </view>
+
+      <view v-if="activeTab === 'list'" class="project-list p-16px">
+        <view class="project-card" v-for="(item, index) in projectList" :key="index">
+          <view class="project-title">{{ item.title }}</view>
+          <view class="info-list">
+            <view class="info-item">
+              <view class="info-icon time">
+                <image src="../../static/icons/time.png" mode="aspectFit" />
+              </view>
+              <text class="info-text">批入时间：{{ item.approveTime }}</text>
+            </view>
+            <view class="info-item">
+              <view class="info-icon sponsor">
+                <image src="../../static/icons/sponsor.png" mode="aspectFit" />
+              </view>
+              <text class="info-text">申办方：{{ item.sponsor }}</text>
+            </view>
+            <view class="info-item">
+              <view class="info-icon no">
+                <image src="../../static/icons/no.png" mode="aspectFit" />
+              </view>
+              <text class="info-text">审批号/备案号：{{ item.approveNo }}</text>
+            </view>
+            <view class="info-item">
+              <view class="info-icon cro">
+                <image src="../../static/icons/cro.png" mode="aspectFit" />
+              </view>
+              <text class="info-text">合作CRO：{{ item.cro }}</text>
+            </view>
+          </view>
+          <view class="action-btn">{{ item.tag }}</view>
+        </view>
+
+        <!-- 加载状态提示 -->
+        <view class="load-status" v-if="loading">
+          <text>加载中...</text>
+        </view>
+        <view class="load-status" v-else-if="noMore && projectList.length > 0">
+          <text>没有更多了</text>
+        </view>
+        <view class="load-status" v-if="!loading && !projectList.length">
+          <text>暂无数据</text>
+        </view>
+      </view>
+      <!-- #endregion -->
+    </scroll-view>
+  </view>
 </template>
 
 <script setup lang="ts">
@@ -441,6 +444,21 @@
 </script>
 
 <style lang="scss" scoped>
+  /* #region 页面容器：纵向弹性布局，让列表滚动区自适应剩余高度 */
+  .page-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  /* #endregion */
+
+  /* #region 列表滚动区：占满剩余高度，向上滑动到底部自动加载下一页 */
+  .container-scroll-view {
+    flex: 1;
+    height: 0;
+  }
+  /* #endregion */
+
   .container {
     padding: 30rpx;
   }
