@@ -263,7 +263,7 @@
       // 注意：后端接口命名与线索类型相反
       // 上市前 -> getAfterListingBusinessClueList，上市后 -> getBeforeListingBusinessClueList
       const fetchApi =
-        type.value === 'before' ? getAfterListingBusinessClueList : getBeforeListingBusinessClueList
+        type.value === 'before' ? getBeforeListingBusinessClueList : getAfterListingBusinessClueList 
       const res = await fetchApi(params)
       const resData = res.data
 
