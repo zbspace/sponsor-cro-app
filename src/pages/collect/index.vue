@@ -54,7 +54,9 @@
           <text class="col-rank">{{ index + 1 }}</text>
           <text class="col-name">{{ item.name }}</text>
           <text class="col-exp">{{ item.type }}</text>
-          <text class="col-pharma status-text">{{ item.status }}</text>
+          <text class="col-pharma status-text" @click.stop="onCancelCollect(item)">{{
+            item.status
+          }}</text>
         </view>
 
         <view class="loading-status" v-if="loading || noMore">
@@ -73,7 +75,7 @@
   import { ref } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
-  import { getUserCollectList } from '@/api'
+  import { getUserCollectList, cancelUserCollect } from '@/api'
 
   // 收藏的公司类型：1-sponsor, 2-cro, 3-thirdLab
   const companyTypeMap: Record<number, string> = {
@@ -137,6 +139,7 @@
           name: item.parentCompanyShortName,
           type: companyTypeMap[item.companyType] || '',
           status: '已收藏',
+          id: item.id,
           companyType: item.companyType,
           parentCompanyId: item.parentCompanyId
         }))
@@ -163,6 +166,29 @@
         url: `/pages/cro-stat/index?partnerParentCompanyId=${item.parentCompanyId}&parentCompanyShortName=${encodeURIComponent(item.name)}`
       })
     }
+  }
+  // #endregion
+
+  // #region 取消收藏
+  const onCancelCollect = (item: any) => {
+    uni.showModal({
+      title: '提示',
+      content: '确定取消收藏吗？',
+      success: async (res) => {
+        if (!res.confirm) return
+        try {
+          await cancelUserCollect(item.id)
+          uni.showToast({ title: '已取消收藏', icon: 'none' })
+          // 重置分页并重新获取数据
+          rankList.value = []
+          noMore.value = false
+          page.value = 1
+          fetchRankData()
+        } catch {
+          // 静默处理
+        }
+      }
+    })
   }
   // #endregion
 
