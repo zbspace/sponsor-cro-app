@@ -16,7 +16,7 @@ switch (envVersion) {
     baseUrl = 'https://test.shucangyiyao.com/lyqApi' //开发版接口
     break
   case 'trial':
-    baseUrl = 'https://test.shucangyiyao.com/lyqApi' //体验版接口
+    baseUrl = 'https://shucangyiyao.com/lyqApi' //体验版接口
     break
   case 'release':
     baseUrl = 'https://shucangyiyao.com/lyqApi' //生产正式版接口
