@@ -1,225 +1,225 @@
 <template>
-  <!-- 头部导航 -->
-  <view class="header" :style="{ paddingTop: `${menu.top}px`, zIndex: 999 }">
-    <view class="nav-left" @click="goBack">
-      <view class="back-icon">
-        <view class="arrow"></view>
+  <view class="page-container">
+    <!-- 头部导航 -->
+    <view class="header" :style="{ paddingTop: `${menu.top}px`, zIndex: 999 }">
+      <view class="nav-left" @click="goBack">
+        <view class="back-icon">
+          <view class="arrow"></view>
+        </view>
+      </view>
+      <text class="title">{{ companyName }}</text>
+      <view class="nav-right"></view>
+    </view>
+    <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
+
+    <!-- 选项卡 -->
+    <view class="tabs">
+      <view
+        class="tab-item"
+        :class="{ active: activeTab === 'stat' }"
+        @click="activeTab = 'stat'"
+      >
+        <text>IND统计</text>
+        <view class="active-line" v-if="activeTab === 'stat'"></view>
+      </view>
+      <view
+        class="tab-item"
+        :class="{ active: activeTab === 'list' }"
+        @click="activeTab = 'list'"
+      >
+        <text>IND列表</text>
+        <view class="active-line" v-if="activeTab === 'list'"></view>
       </view>
     </view>
-    <text class="title">{{ companyName }}</text>
-    <view class="nav-right"></view>
-  </view>
 
-  <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
-
-  <scroll-view
-    :scroll-y="activeTab === 'stat'"
-    class="container-scroll-view"
-    :show-scrollbar="false"
-    :style="{
-      height: `calc(100vh - ${menu.top}px - ${menu.height}px)`
-    }"
-  >
-    <view
-      class="container"
+    <scroll-view
+      :scroll-y="activeTab === 'stat'"
+      class="container-scroll-view"
+      :show-scrollbar="false"
       :style="{
-        height: activeTab === 'list' ? '100%' : 'auto',
-        display: activeTab === 'list' ? 'flex' : 'block',
-        flexDirection: 'column'
+        height: `calc(100vh - ${menu.top}px - ${menu.height}px)`
       }"
     >
-      <!-- 选项卡 -->
-      <view class="tabs">
-        <view
-          class="tab-item"
-          :class="{ active: activeTab === 'stat' }"
-          @click="activeTab = 'stat'"
-        >
-          <text>IND统计</text>
-          <view class="active-line" v-if="activeTab === 'stat'"></view>
-        </view>
-        <view
-          class="tab-item"
-          :class="{ active: activeTab === 'list' }"
-          @click="activeTab = 'list'"
-        >
-          <text>IND列表</text>
-          <view class="active-line" v-if="activeTab === 'list'"></view>
-        </view>
-      </view>
-
-      <!-- 统计内容 -->
-      <view v-if="activeTab === 'stat'" class="stat-content">
-        <!-- 近五年IND申请与获批 -->
-        <view class="section-card">
-          <view class="section-header">
-            <view class="section-title">近五年IND申请与获批</view>
-            <view class="filter-dropdown">
-              <picker
-                class="filter-picker"
-                mode="selector"
-                :range="queryTypeOptions"
-                range-key="text"
-                @change="onQueryTypeChange"
-              >
-                <view class="filter-trigger">
-                  <text>{{ queryTypeText }}</text>
-                  <view class="arrow-down"></view>
-                </view>
-              </picker>
-            </view>
-          </view>
-          <view class="chart-container line-chart">
-            <!-- #ifdef MP-WEIXIN -->
-            <canvas id="lineCanvas" type="2d" class="canvas"></canvas>
-            <!-- #endif -->
-            <!-- #ifndef MP-WEIXIN -->
-            <canvas canvas-id="lineCanvas" class="canvas"></canvas>
-            <!-- #endif -->
-          </view>
-        </view>
-
-        <!-- 近五年来IND注册分类 -->
-        <view class="section-card">
-          <view class="section-header">
-            <view class="section-title">近五年来IND注册分类</view>
-            <view class="filter-dropdown">
-              <picker
-                class="filter-picker"
-                mode="selector"
-                :range="categoryDrugTypeOptions"
-                range-key="text"
-                @change="onCategoryDrugTypeChange"
-              >
-                <view class="filter-trigger">
-                  <text>{{ categoryDrugTypeText }}</text>
-                  <view class="arrow-down"></view>
-                </view>
-              </picker>
-            </view>
-          </view>
-          <view class="chart-container bar-chart">
-            <!-- #ifdef MP-WEIXIN -->
-            <canvas id="barCanvas" type="2d" class="canvas"></canvas>
-            <!-- #endif -->
-            <!-- #ifndef MP-WEIXIN -->
-            <canvas canvas-id="barCanvas" class="canvas"></canvas>
-            <!-- #endif -->
-          </view>
-          <view class="phase-table">
-            <view class="table-header">
-              <text v-for="(item, index) in categoryList" :key="index">{{ item.category }}</text>
-              <text v-if="!categoryList.length">暂无数据</text>
-            </view>
-            <view class="table-body">
-              <text v-for="(item, index) in categoryList" :key="index">{{ item.number }}</text>
-              <text v-if="!categoryList.length">-</text>
-            </view>
-          </view>
-        </view>
-
-        <!-- 药物类型 -->
-        <view class="section-card">
-          <view class="section-header">
-            <view class="section-title">药物类型</view>
-            <view class="filter-dropdown">
-              <picker
-                class="filter-picker"
-                mode="selector"
-                :range="yearOptions"
-                range-key="text"
-                @change="onDrugTypeYearChange"
-              >
-                <view class="filter-trigger">
-                  <text>{{ drugTypeYearText }}</text>
-                  <view class="arrow-down"></view>
-                </view>
-              </picker>
-            </view>
-          </view>
-          <view class="donut-chart-wrapper">
-            <view class="donut-chart" :style="{ background: donutGradient }"></view>
-            <view class="legend-grid">
-              <view class="legend-item" v-for="(item, index) in drugTypeLegend" :key="index">
-                <view class="dot" :style="{ backgroundColor: item.color }"></view>
-                <text class="name">{{ item.name }}</text>
-                <text class="count">{{ item.count }}</text>
-              </view>
-            </view>
-          </view>
-        </view>
-
-        <!-- 产品IND榜单 -->
-        <view class="section-card">
-          <view class="section-header">
-            <view class="section-title">产品IND榜单</view>
-            <view class="filter-dropdown">
-              <picker
-                class="filter-picker"
-                mode="selector"
-                :range="yearOptions"
-                range-key="text"
-                @change="onProductYearChange"
-              >
-                <view class="filter-trigger">
-                  <text>{{ productYearText }}</text>
-                  <view class="arrow-down"></view>
-                </view>
-              </picker>
-            </view>
-          </view>
-          <view class="data-table">
-            <view class="table-header">
-              <text class="col-rank">排名</text>
-              <text class="col-name">产品</text>
-              <text class="col-type">注册分类</text>
-              <text class="col-count">IND申请记录</text>
-            </view>
-            <!-- #region 产品榜单滚动加载 -->
-            <scroll-view
-              scroll-y
-              class="table-scroll"
-              :show-scrollbar="false"
-              enhanced
-              @scrolltolower="loadMoreProduct"
-            >
-              <view class="table-body">
-                <view
-                  class="table-row"
-                  v-for="(item, index) in productList"
-                  :key="index"
-                  :class="{ zebra: index % 2 === 1 }"
-                  @click="onProductClick(item)"
+      <view
+        class="container"
+        :style="{
+          height: activeTab === 'list' ? '100%' : 'auto',
+          display: activeTab === 'list' ? 'flex' : 'block',
+          flexDirection: 'column'
+        }"
+      >
+        <!-- 统计内容 -->
+        <view v-if="activeTab === 'stat'" class="stat-content">
+          <!-- 近五年IND申请与获批 -->
+          <view class="section-card">
+            <view class="section-header">
+              <view class="section-title">近五年IND申请与获批</view>
+              <view class="filter-dropdown">
+                <picker
+                  class="filter-picker"
+                  mode="selector"
+                  :range="queryTypeOptions"
+                  range-key="text"
+                  @change="onQueryTypeChange"
                 >
-                  <text class="col-rank">{{ item.rankNo || index + 1 }}</text>
-                  <text class="col-name">{{ item.drugStandardName }}</text>
-                  <text class="col-type">{{ item.cleanedClassification }}</text>
-                  <text class="col-count">{{ item.indApplicationNum }}</text>
-                </view>
-                <view class="empty-tip" v-if="!productList.length && !productLoading">
-                  暂无数据
-                </view>
-                <view class="loading-tip" v-if="productList.length">
-                  <text>{{ productHasMore ? '正在加载...' : '没有更多了' }}</text>
+                  <view class="filter-trigger">
+                    <text>{{ queryTypeText }}</text>
+                    <view class="arrow-down"></view>
+                  </view>
+                </picker>
+              </view>
+            </view>
+            <view class="chart-container line-chart">
+              <!-- #ifdef MP-WEIXIN -->
+              <canvas id="lineCanvas" type="2d" class="canvas"></canvas>
+              <!-- #endif -->
+              <!-- #ifndef MP-WEIXIN -->
+              <canvas canvas-id="lineCanvas" class="canvas"></canvas>
+              <!-- #endif -->
+            </view>
+          </view>
+
+          <!-- 近五年来IND注册分类 -->
+          <view class="section-card">
+            <view class="section-header">
+              <view class="section-title">近五年来IND注册分类</view>
+              <view class="filter-dropdown">
+                <picker
+                  class="filter-picker"
+                  mode="selector"
+                  :range="categoryDrugTypeOptions"
+                  range-key="text"
+                  @change="onCategoryDrugTypeChange"
+                >
+                  <view class="filter-trigger">
+                    <text>{{ categoryDrugTypeText }}</text>
+                    <view class="arrow-down"></view>
+                  </view>
+                </picker>
+              </view>
+            </view>
+            <view class="chart-container bar-chart">
+              <!-- #ifdef MP-WEIXIN -->
+              <canvas id="barCanvas" type="2d" class="canvas"></canvas>
+              <!-- #endif -->
+              <!-- #ifndef MP-WEIXIN -->
+              <canvas canvas-id="barCanvas" class="canvas"></canvas>
+              <!-- #endif -->
+            </view>
+            <view class="phase-table">
+              <view class="table-header">
+                <text v-for="(item, index) in categoryList" :key="index">{{ item.category }}</text>
+                <text v-if="!categoryList.length">暂无数据</text>
+              </view>
+              <view class="table-body">
+                <text v-for="(item, index) in categoryList" :key="index">{{ item.number }}</text>
+                <text v-if="!categoryList.length">-</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 药物类型 -->
+          <view class="section-card">
+            <view class="section-header">
+              <view class="section-title">药物类型</view>
+              <view class="filter-dropdown">
+                <picker
+                  class="filter-picker"
+                  mode="selector"
+                  :range="yearOptions"
+                  range-key="text"
+                  @change="onDrugTypeYearChange"
+                >
+                  <view class="filter-trigger">
+                    <text>{{ drugTypeYearText }}</text>
+                    <view class="arrow-down"></view>
+                  </view>
+                </picker>
+              </view>
+            </view>
+            <view class="donut-chart-wrapper">
+              <view class="donut-chart" :style="{ background: donutGradient }"></view>
+              <view class="legend-grid">
+                <view class="legend-item" v-for="(item, index) in drugTypeLegend" :key="index">
+                  <view class="dot" :style="{ backgroundColor: item.color }"></view>
+                  <text class="name">{{ item.name }}</text>
+                  <text class="count">{{ item.count }}</text>
                 </view>
               </view>
-            </scroll-view>
-            <!-- #endregion -->
+            </view>
+          </view>
+
+          <!-- 产品IND榜单 -->
+          <view class="section-card">
+            <view class="section-header">
+              <view class="section-title">产品IND榜单</view>
+              <view class="filter-dropdown">
+                <picker
+                  class="filter-picker"
+                  mode="selector"
+                  :range="yearOptions"
+                  range-key="text"
+                  @change="onProductYearChange"
+                >
+                  <view class="filter-trigger">
+                    <text>{{ productYearText }}</text>
+                    <view class="arrow-down"></view>
+                  </view>
+                </picker>
+              </view>
+            </view>
+            <view class="data-table">
+              <view class="table-header">
+                <text class="col-rank">排名</text>
+                <text class="col-name">产品</text>
+                <text class="col-type">注册分类</text>
+                <text class="col-count">IND申请记录</text>
+              </view>
+              <!-- #region 产品榜单滚动加载 -->
+              <scroll-view
+                scroll-y
+                class="table-scroll"
+                :show-scrollbar="false"
+                enhanced
+                @scrolltolower="loadMoreProduct"
+              >
+                <view class="table-body">
+                  <view
+                    class="table-row"
+                    v-for="(item, index) in productList"
+                    :key="index"
+                    :class="{ zebra: index % 2 === 1 }"
+                    @click="onProductClick(item)"
+                  >
+                    <text class="col-rank">{{ item.rankNo || index + 1 }}</text>
+                    <text class="col-name">{{ item.drugStandardName }}</text>
+                    <text class="col-type">{{ item.cleanedClassification }}</text>
+                    <text class="col-count">{{ item.indApplicationNum }}</text>
+                  </view>
+                  <view class="empty-tip" v-if="!productList.length && !productLoading">
+                    暂无数据
+                  </view>
+                  <view class="loading-tip" v-if="productList.length">
+                    <text>{{ productHasMore ? '正在加载...' : '没有更多了' }}</text>
+                  </view>
+                </view>
+              </scroll-view>
+              <!-- #endregion -->
+            </view>
           </view>
         </view>
-      </view>
 
-      <!-- 详情内容 (IND列表) -->
-      <view v-else class="detail-content">
-        <IndApplicationList
-          class="ind-list-comp"
-          :company-parent-id="companyParentId"
-          v-model:product-name="listProductName"
-        />
+        <!-- 详情内容 (IND列表) -->
+        <view v-else class="detail-content">
+          <IndApplicationList
+            class="ind-list-comp"
+            :company-parent-id="companyParentId"
+            v-model:product-name="listProductName"
+          />
+        </view>
       </view>
-    </view>
-  </scroll-view>
-
+    </scroll-view>
+  </view>
   <phone-bind-popup />
 </template>
 
@@ -908,13 +908,25 @@
 </script>
 
 <style lang="scss" scoped>
+  .page-container {
+    height: calc(100vh);
+    display: flex;
+    flex-direction: column;
+    .header,.tabs {
+      flex: 0;
+    }
+    .container-scroll-view {
+      flex: 1;
+    }
+  }
+
   .container-scroll-view {
     display: flex;
     flex-direction: column;
   }
 
   .container {
-    padding: 30rpx;
+    padding: 0 30rpx 30rpx 30rpx;
     min-height: 100%;
     box-sizing: border-box;
   }

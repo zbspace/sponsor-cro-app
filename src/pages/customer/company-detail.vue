@@ -1,188 +1,190 @@
 <template>
-  <!-- 头部导航 -->
-  <view class="header" :style="{ paddingTop: `${menu.top}px` }">
-    <view class="nav-left" @click="goBack">
-      <view class="back-icon">
-        <view class="arrow"></view>
+  <view class="page-container">
+    <!-- 头部导航 -->
+    <view class="header" :style="{ paddingTop: `${menu.top}px` }">
+      <view class="nav-left" @click="goBack">
+        <view class="back-icon">
+          <view class="arrow"></view>
+        </view>
+      </view>
+      <text class="title">{{ companyName }}</text>
+      <view class="nav-right"></view>
+    </view>
+
+    <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
+
+    <!-- 顶部筛选栏 -->
+    <view class="top-filter-bar">
+      <view class="filter-input-card">
+        <text class="label">相关公司</text>
+        <view class="divider"></view>
+        <view class="value-wrapper">
+          <uni-data-select
+            v-model="currentCompany"
+            :localdata="companyOptions"
+            multiple
+            :clear="true"
+            placeholder="全部"
+          >
+            <template #selected="{ selectedItems }">
+              <view class="selected-companies">
+                <text v-if="selectedItems.length === 0" class="placeholder-text">全部</text>
+                <template v-else>
+                  <text class="selected-text">{{ selectedItems[0].text }}</text>
+                  <text v-if="selectedItems.length > 1" class="selected-more">
+                    +{{ selectedItems.length - 1 }}
+                  </text>
+                </template>
+              </view>
+            </template>
+          </uni-data-select>
+        </view>
+      </view>
+      <view class="star-btn" :class="{ active: isStarred }" @click="toggleStar">
+        <image src="../../static/icons/收藏1.png" mode="aspectFit" v-if="!isStarred" />
+        <image src="../../static/icons/收藏.png" mode="aspectFit" v-else />
       </view>
     </view>
-    <text class="title">{{ companyName }}</text>
-    <view class="nav-right"></view>
+
+    <scroll-view
+      scroll-y
+      class="container-scroll-view"
+      :show-scrollbar="false"
+      enhanced
+      :style="{
+        height: `calc(100vh - ${menu.top}px - ${menu.height}px - 130px)`
+      }"
+    >
+      <view class="container">
+        <!-- 研发管线 -->
+        <view class="section-card">
+          <view class="section-title">研发管线</view>
+          <view class="grid-container">
+            <view class="grid-item" @click="goTo('ind-stat')">
+              <view class="item-icon">
+                <image src="/static/search-customer/ind.png" mode="aspectFit" />
+              </view>
+              <view class="item-info">
+                <text class="label">新药临床试验申请</text>
+                <text class="value">{{ pipelineStat.indStatisticsNum }}</text>
+              </view>
+            </view>
+            <view class="grid-item" @click="goTo('ced-stat')">
+              <view class="item-icon">
+                <image src="/static/search-customer/cde.png" mode="aspectFit" />
+              </view>
+              <view class="item-info">
+                <text class="label">临床试验登记</text>
+                <text class="value">{{ pipelineStat.cdeStatisticsNum }}</text>
+              </view>
+            </view>
+            <view class="grid-item" @click="goTo('nda-stat')">
+              <view class="item-icon">
+                <image src="/static/search-customer/nda.png" mode="aspectFit" />
+              </view>
+              <view class="item-info">
+                <text class="label">新药上市申请</text>
+                <text class="value">{{ pipelineStat.ndaStatisticsNum }}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 供应商合作记录 -->
+        <view class="section-card">
+          <view class="section-title">供应商合作记录</view>
+          <view class="grid-container">
+            <view class="grid-item" @click="goTo('cro-cooperation-stat')">
+              <view class="item-icon cro">
+                <image src="/static/search-customer/cro.png" mode="aspectFit" />
+              </view>
+              <view class="item-info">
+                <text class="label">CRO公司</text>
+                <text class="value">{{ supplierStat.croStatisticsNum }}</text>
+              </view>
+            </view>
+            <view class="grid-item" @click="goTo('lab-cooperation-stat')">
+              <view class="item-icon lab">
+                <image src="/static/search-customer/1.png" mode="aspectFit" />
+              </view>
+              <view class="item-info">
+                <text class="label">中心实验室</text>
+                <text class="value">{{ supplierStat.thirdLabStatisticsNum }}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 医院&研究者合作记录 -->
+        <view class="section-card">
+          <view class="section-title">医院&研究者合作记录</view>
+          <view class="grid-container">
+            <view class="grid-item" @click="goTo('hospital-cooperation-stat')">
+              <view class="item-icon hospital">
+                <image src="/static/search-customer/2.png" mode="aspectFit" />
+              </view>
+              <view class="item-info">
+                <text class="label">医院</text>
+                <text class="value">{{ hospitalStat.hosCount }}</text>
+              </view>
+            </view>
+            <view class="grid-item" @click="goTo('pi-cooperation-stat')">
+              <view class="item-icon researcher">
+                <image src="/static/search-customer/3.png" mode="aspectFit" />
+              </view>
+              <view class="item-info">
+                <text class="label">主要研究者</text>
+                <text class="value">{{ hospitalStat.mainResearcherCount }}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 商机线索 -->
+        <view class="section-card">
+          <view class="section-title">商机线索</view>
+          <view class="grid-container">
+            <view class="grid-item" @click="goTo('after-listing')">
+              <view class="item-icon leads-post">
+                <image src="/static/search-customer/4.png" mode="aspectFit" />
+              </view>
+              <view class="item-info">
+                <text class="label">上市后</text>
+                <text class="value">{{ businessClueStat.afterListingNum }}</text>
+              </view>
+            </view>
+            <view class="grid-item" @click="goTo('before-listing')">
+              <view class="item-icon leads-pre">
+                <image src="/static/search-customer/5.png" mode="aspectFit" />
+              </view>
+              <view class="item-info">
+                <text class="label">上市前</text>
+                <text class="value">{{ businessClueStat.beforeListingNum }}</text>
+              </view>
+            </view>
+            <!-- <view class="grid-item">
+              <view class="item-icon product">
+                <image src="/static/search-customer/6.png" mode="aspectFit" />
+              </view>
+              <view class="item-info">
+                <text class="label">最值得跟进产品</text>
+                <text class="value">{{ businessClueStat.worthyProductsNum }}</text>
+              </view>
+            </view> -->
+            <view class="grid-item" @click="goTo('business-contact')">
+              <view class="item-icon contact">
+                <image src="/static/search-customer/7.png" mode="aspectFit" />
+              </view>
+              <view class="item-info">
+                <text class="label">企业联系人</text>
+                <text class="value">{{ businessClueStat.businessContactNum }}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
   </view>
-
-  <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
-
-  <scroll-view
-    scroll-y
-    class="container-scroll-view"
-    :show-scrollbar="false"
-    enhanced
-    :style="{
-      height: `calc(100vh - ${menu.top}px - ${menu.height}px)`
-    }"
-  >
-    <view class="container">
-      <!-- 顶部筛选栏 -->
-      <view class="top-filter-bar">
-        <view class="filter-input-card">
-          <text class="label">相关公司</text>
-          <view class="divider"></view>
-          <view class="value-wrapper">
-            <uni-data-select
-              v-model="currentCompany"
-              :localdata="companyOptions"
-              multiple
-              :clear="true"
-              placeholder="全部"
-            >
-              <template #selected="{ selectedItems }">
-                <view class="selected-companies">
-                  <text v-if="selectedItems.length === 0" class="placeholder-text">全部</text>
-                  <template v-else>
-                    <text class="selected-text">{{ selectedItems[0].text }}</text>
-                    <text v-if="selectedItems.length > 1" class="selected-more">
-                      +{{ selectedItems.length - 1 }}
-                    </text>
-                  </template>
-                </view>
-              </template>
-            </uni-data-select>
-          </view>
-        </view>
-        <view class="star-btn" :class="{ active: isStarred }" @click="toggleStar">
-          <image src="../../static/icons/收藏1.png" mode="aspectFit" v-if="!isStarred" />
-          <image src="../../static/icons/收藏.png" mode="aspectFit" v-else />
-        </view>
-      </view>
-
-      <!-- 研发管线 -->
-      <view class="section-card">
-        <view class="section-title">研发管线</view>
-        <view class="grid-container">
-          <view class="grid-item" @click="goTo('ind-stat')">
-            <view class="item-icon">
-              <image src="/static/search-customer/ind.png" mode="aspectFit" />
-            </view>
-            <view class="item-info">
-              <text class="label">新药临床试验申请</text>
-              <text class="value">{{ pipelineStat.indStatisticsNum }}</text>
-            </view>
-          </view>
-          <view class="grid-item" @click="goTo('ced-stat')">
-            <view class="item-icon">
-              <image src="/static/search-customer/cde.png" mode="aspectFit" />
-            </view>
-            <view class="item-info">
-              <text class="label">临床试验登记</text>
-              <text class="value">{{ pipelineStat.cdeStatisticsNum }}</text>
-            </view>
-          </view>
-          <view class="grid-item" @click="goTo('nda-stat')">
-            <view class="item-icon">
-              <image src="/static/search-customer/nda.png" mode="aspectFit" />
-            </view>
-            <view class="item-info">
-              <text class="label">新药上市申请</text>
-              <text class="value">{{ pipelineStat.ndaStatisticsNum }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 供应商合作记录 -->
-      <view class="section-card">
-        <view class="section-title">供应商合作记录</view>
-        <view class="grid-container">
-          <view class="grid-item" @click="goTo('cro-cooperation-stat')">
-            <view class="item-icon cro">
-              <image src="/static/search-customer/cro.png" mode="aspectFit" />
-            </view>
-            <view class="item-info">
-              <text class="label">CRO公司</text>
-              <text class="value">{{ supplierStat.croStatisticsNum }}</text>
-            </view>
-          </view>
-          <view class="grid-item" @click="goTo('lab-cooperation-stat')">
-            <view class="item-icon lab">
-              <image src="/static/search-customer/1.png" mode="aspectFit" />
-            </view>
-            <view class="item-info">
-              <text class="label">中心实验室</text>
-              <text class="value">{{ supplierStat.thirdLabStatisticsNum }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 医院&研究者合作记录 -->
-      <view class="section-card">
-        <view class="section-title">医院&研究者合作记录</view>
-        <view class="grid-container">
-          <view class="grid-item" @click="goTo('hospital-cooperation-stat')">
-            <view class="item-icon hospital">
-              <image src="/static/search-customer/2.png" mode="aspectFit" />
-            </view>
-            <view class="item-info">
-              <text class="label">医院</text>
-              <text class="value">{{ hospitalStat.hosCount }}</text>
-            </view>
-          </view>
-          <view class="grid-item" @click="goTo('pi-cooperation-stat')">
-            <view class="item-icon researcher">
-              <image src="/static/search-customer/3.png" mode="aspectFit" />
-            </view>
-            <view class="item-info">
-              <text class="label">主要研究者</text>
-              <text class="value">{{ hospitalStat.mainResearcherCount }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 商机线索 -->
-      <view class="section-card">
-        <view class="section-title">商机线索</view>
-        <view class="grid-container">
-          <view class="grid-item" @click="goTo('after-listing')">
-            <view class="item-icon leads-post">
-              <image src="/static/search-customer/4.png" mode="aspectFit" />
-            </view>
-            <view class="item-info">
-              <text class="label">上市后</text>
-              <text class="value">{{ businessClueStat.afterListingNum }}</text>
-            </view>
-          </view>
-          <view class="grid-item" @click="goTo('before-listing')">
-            <view class="item-icon leads-pre">
-              <image src="/static/search-customer/5.png" mode="aspectFit" />
-            </view>
-            <view class="item-info">
-              <text class="label">上市前</text>
-              <text class="value">{{ businessClueStat.beforeListingNum }}</text>
-            </view>
-          </view>
-          <!-- <view class="grid-item">
-            <view class="item-icon product">
-              <image src="/static/search-customer/6.png" mode="aspectFit" />
-            </view>
-            <view class="item-info">
-              <text class="label">最值得跟进产品</text>
-              <text class="value">{{ businessClueStat.worthyProductsNum }}</text>
-            </view>
-          </view> -->
-          <view class="grid-item" @click="goTo('business-contact')">
-            <view class="item-icon contact">
-              <image src="/static/search-customer/7.png" mode="aspectFit" />
-            </view>
-            <view class="item-info">
-              <text class="label">企业联系人</text>
-              <text class="value">{{ businessClueStat.businessContactNum }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-    </view>
-  </scroll-view>
 
   <phone-bind-popup />
 </template>
@@ -513,6 +515,17 @@
 </script>
 
 <style lang="scss" scoped>
+  .page-container {
+    height: calc(100vh);
+    display: flex;
+    flex-direction: column;
+    .header,.top-filter-bar {
+      flex: 0;
+    }
+    .container-scroll-view {
+      flex: 1;
+    }
+  }
   .top-section {
     position: fixed;
     left: 30rpx;
@@ -560,14 +573,7 @@
   }
 
   .container {
-    padding: 30rpx;
-  }
-
-  .top-filter-bar {
-    :deep(.uni-select__selector) {
-      width: 700rpx;
-      left: -180rpx;
-    }
+    padding: 0 30rpx 30rpx 30rpx;
   }
 
   /* 顶部筛选栏 */
@@ -575,7 +581,11 @@
     display: flex;
     align-items: center;
     gap: 20rpx;
-    margin-bottom: 30rpx;
+    padding: 30rpx;
+    :deep(.uni-select__selector) {
+      width: 700rpx;
+      left: -180rpx;
+    }
 
     .filter-input-card {
       flex: 1;
@@ -699,22 +709,22 @@
       .grid-item {
         background: #f7f8fa;
         border-radius: 20rpx;
-        padding: 24rpx;
+        padding: 20rpx;
         display: flex;
         align-items: center;
         gap: 20rpx;
 
         .item-icon {
-          width: 80rpx;
-          height: 80rpx;
+          width: 68rpx;
+          height: 68rpx;
           display: flex;
           justify-content: center;
           align-items: center;
           font-weight: bold;
           flex-shrink: 0;
           image {
-            width: 80rpx;
-            height: 80rpx;
+            width: 68rpx;
+            height: 68rpx;
           }
 
           &.leads-post,
@@ -742,9 +752,10 @@
             margin-bottom: 8rpx;
           }
           .value {
-            font-size: 32rpx;
-            color: #333;
             font-weight: bold;
+            font-size: 28rpx;
+            color: #293959;
+            line-height: 52rpx;
           }
         }
       }
