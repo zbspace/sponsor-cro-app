@@ -174,6 +174,7 @@
     padding-bottom: env(safe-area-inset-bottom);
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
     z-index: 999;
+    height: 70px;
 
     .tab-item {
       display: flex;
@@ -192,7 +193,7 @@
       }
 
       .tab-text {
-        font-size: 20rpx;
+        font-size: 30rpx;
         color: #9199ae;
         line-height: 28rpx;
 

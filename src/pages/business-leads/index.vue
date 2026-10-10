@@ -91,7 +91,7 @@
     lower-threshold="100"
     @scrolltolower="loadMore"
     :style="{
-      height: `calc(100vh - ${menu.top}px - ${menu.height}px)`
+      height: `calc(100vh - ${menu.top}px - ${menu.height}px - 220px)`
     }"
   >
     <view class="container">
@@ -166,6 +166,9 @@
   </scroll-view>
 
   <phone-bind-popup />
+
+  <!-- 底部导航 -->
+  <tab-bar active="opportunity" />
 </template>
 
 <script setup lang="ts">
@@ -183,6 +186,7 @@
   import type { OpportunityVo, OpportunityParam, StandardCompanyItem } from '@/types/api'
   import { VIP_CODE, VIP_APPLICATION_STATUS } from '@/utils/enums'
   import FreeVipBanner from '@/components/free-vip-banner/free-vip-banner.vue'
+  import TabBar from '@/components/tab-bar/index.vue'
   // #endregion
 
   // #region 状态
