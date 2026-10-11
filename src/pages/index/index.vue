@@ -75,8 +75,7 @@
             @click="goTo(item.path)"
           >
             <view class="rank-icon-wrapper">
-              <view v-if="item.icon === 'CRO'" class="cro-icon">CRO</view>
-              <image v-else class="rank-icon" :src="item.iconUrl" mode="aspectFit" />
+              <image class="rank-icon" :src="item.iconUrl" mode="aspectFit" />
             </view>
             <text class="rank-title">{{ item.title }}</text>
             <view class="arrow-right-icon"></view>
@@ -210,7 +209,7 @@
       title: '查产品',
       desc: '立即前往',
       icon: '/static/home/3.png',
-      path: 'trial-list/index'
+      path: 'drug-stat/index'
     },
     {
       title: '查药企&CRO\n合作关系',
@@ -238,24 +237,25 @@
     {
       title: '中国临床CRO公司榜单',
       icon: 'CRO',
+      iconUrl: '/static/home/11.png',
       path: 'cro-rank/index'
     },
     {
-      title: '近5年附条件批准药品',
+      title: '中国附条件获批上市药品清单',
       icon: 'med',
-      iconUrl: '/static/home/11.png',
+      iconUrl: '/static/home/12.png',
       path: 'medicine-rank/conditional'
     },
     {
-      title: '近5年1类新药获批名单',
+      title: '中国1类新药获批上市清单',
       icon: 'doc',
-      iconUrl: '/static/home/12.png',
+      iconUrl: '/static/home/13.png',
       path: 'medicine-rank/new-drug'
     },
     {
       title: '中国药企临床试验榜单',
       icon: 'building',
-      iconUrl: '/static/home/13.png',
+      iconUrl: '/static/home/14.png',
       path: 'sponsor-stat/index'
     }
   ]

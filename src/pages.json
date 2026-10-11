@@ -166,6 +166,13 @@
         "navigationBarTitleText": "商机线索",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/drug-stat/index",
+      "style": {
+        "navigationBarTitleText": "查药品",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "easycom": {

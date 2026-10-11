@@ -11,6 +11,51 @@
   <image class="bg-img" src="../../static/header-bg-rank.png" mode="aspectFit" />
 
   <view class="content-body">
+    <!-- 公司选择 -->
+    <view class="filter-card">
+      <view class="search-input-section">
+        <view class="input-wrapper">
+          <icon type="search" size="18" color="#B2B2B2" class="search-icon" />
+          <input
+            type="text"
+            v-model="searchKeyword"
+            placeholder="请输入及选择企业名称"
+            placeholder-style="color: #B2B2B2"
+            @input="onSearchInput"
+          />
+        </view>
+
+        <!-- 搜索下拉联想 -->
+        <view class="search-dropdown" v-if="showDropdown">
+          <view class="dropdown-loading" v-if="searchLoading">
+            <text>加载中...</text>
+          </view>
+          <template v-else>
+            <!-- 结果较多时可上下滚动 -->
+            <scroll-view
+              scroll-y
+              class="dropdown-list"
+              :show-scrollbar="false"
+              :style="dropdownListStyle"
+              v-if="searchResults.length > 0"
+            >
+              <view
+                class="dropdown-item"
+                v-for="item in searchResults"
+                :key="item.standardId"
+                @click="selectCompany(item)"
+              >
+                <text class="dropdown-name">{{ item.companyStandardName }}</text>
+              </view>
+            </scroll-view>
+            <view class="dropdown-empty" v-if="searchResults.length === 0">
+              <text>未找到相关公司</text>
+            </view>
+          </template>
+        </view>
+      </view>
+    </view>
+
     <!-- 年份选择 -->
     <view class="filter-card">
       <uni-data-select
@@ -68,9 +113,10 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, watch } from 'vue'
+  import { ref, watch, computed } from 'vue'
   import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
-  import { selectClinicalCroRankList } from '@/api'
+  import { selectClinicalCroRankList, getUserInfo,queryStandardCompany } from '@/api'
+  import type { OpportunityVo, OpportunityParam, StandardCompanyItem } from '@/types/api'
 
   // #region 分享
   onShareAppMessage(() => {
@@ -117,7 +163,8 @@
       const res = await selectClinicalCroRankList({
         pageNum: page.value,
         pageSize,
-        lastYear: selectedYear.value
+        lastYear: selectedYear.value,
+        sponsorParentCompanyId: selectedCompany.value?.standardId
       })
       if (res.data?.list) {
         const mapped = res.data.list.map((item) => ({
@@ -162,6 +209,112 @@
     uni.navigateTo({
       url: `/pages/cro-stat/index?partnerParentCompanyId=${item.parentCompanyId}&parentCompanyShortName=${encodeURIComponent(item.name)}`
     })
+  }
+  // #endregion
+
+  // #region 公司选择
+  const searchKeyword = ref('')
+  const showDropdown = ref(false)
+  const searchLoading = ref(false)
+  const searchResults = ref<StandardCompanyItem[]>([])
+  const dropdownResults = ref<{ standardId: string; companyStandardName: string }[]>([])
+  let searchTimer: ReturnType<typeof setTimeout> | null = null
+  const selectedCompany = ref<StandardCompanyItem | null>(null)
+  const showVipExpiredPopup = ref(false)
+  // 申请审批状态：0-无记录/可申请，1-待审批，2-审批通过，3-审批不通过
+  const applicationStatus = ref(0)
+  // VIP 申请详情信息
+  const applicationInfo = ref<{
+    haveFirstApplication: boolean
+    havePendingApplication: boolean
+  }>({
+    haveFirstApplication: true,
+    havePendingApplication: false
+  })
+  // 下拉列表高度：单行约 88rpx，最多展示约 400rpx，超出可上下滚动
+  const DROPDOWN_ITEM_HEIGHT = 88
+  const DROPDOWN_MAX_HEIGHT = 400
+  const selectCompany = (item: any) => {
+    searchKeyword.value = item.companyStandardName
+    selectedCompany.value = item
+    showDropdown.value = false
+    fetchRankData(true)
+  }
+
+  function onSearchInput() {
+    if (!checkPermission()) {
+      return
+    }
+    if (searchTimer) clearTimeout(searchTimer)
+    selectedCompany.value = null // 输入时重置已选公司
+
+    const keyword = searchKeyword.value.trim()
+    if (!keyword) {
+      searchResults.value = []
+      showDropdown.value = false
+      return
+    }
+
+    searchTimer = setTimeout(() => {
+      fetchSearchResults()
+    }, 300)
+  }
+
+  async function fetchSearchResults() {
+    const keyword = searchKeyword.value.trim()
+    if (!keyword) return
+
+    searchLoading.value = true
+    showDropdown.value = true
+
+    try {
+      const res = await queryStandardCompany({
+        companyStandardName: keyword,
+        pageNum: 1,
+        pageSize: 99
+      })
+      searchResults.value = res.data?.list || []
+    } catch {
+      searchResults.value = []
+    } finally {
+      searchLoading.value = false
+    }
+  }
+
+  const dropdownListStyle = computed(() => {
+    const count = searchResults.value.length
+    const height = Math.min(count * DROPDOWN_ITEM_HEIGHT, DROPDOWN_MAX_HEIGHT)
+    return { height: `${height}rpx` }
+  })
+
+  // 检查权限逻辑
+  function checkPermission() {
+    const userInfo = getUserInfo()
+    const vipCode = userInfo?.vipCode ?? 0
+
+    // 可申请试用
+    if (
+      applicationInfo.value.haveFirstApplication &&
+      !applicationInfo.value.havePendingApplication &&
+      vipCode === 0
+    ) {
+      showVipExpiredPopup.value = true
+      return false
+    }
+    // 审核中
+    if (
+      applicationInfo.value.haveFirstApplication &&
+      applicationInfo.value.havePendingApplication &&
+      vipCode === 0
+    ) {
+      uni.showToast({
+        title: '您的申请正在审核中，请稍后再试，或者直接联系我们',
+        icon: 'none',
+        duration: 3000
+      })
+      return false
+    }
+    return true
   }
   // #endregion
 
@@ -244,7 +397,7 @@
       border-radius: 16rpx;
       display: flex;
       align-items: center;
-      padding: 0;
+      padding: 0 25rpx;
       box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
       margin-bottom: 30rpx;
 
@@ -366,6 +519,76 @@
 
       &::after {
         border: none;
+      }
+    }
+  }
+
+  .search-input-section {
+    position: relative;
+    margin: 40rpx 0;
+    width: 100%;
+    padding: 0 25rpx;
+
+    .input-wrapper {
+      background: #ffffff;
+      border-radius: 44rpx;
+      height: 88rpx;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
+
+      .search-icon {
+        margin-right: 16rpx;
+      }
+
+      input {
+        flex: 1;
+        font-size: 28rpx;
+        color: #333333;
+      }
+    }
+
+    .search-dropdown {
+      position: absolute;
+      top: 96rpx;
+      left: 30rpx;
+      right: 30rpx;
+      background: #ffffff;
+      border-radius: 12rpx;
+      box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
+      z-index: 10;
+      max-height: 400rpx;
+      overflow-y: auto;
+
+      // 滚动列表
+      .dropdown-list {
+        width: 100%;
+      }
+
+      .dropdown-item {
+        padding: 24rpx 30rpx;
+        border-bottom: 1rpx solid #f5f5f5;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        &:active {
+          background: #f7f8fa;
+        }
+
+        .dropdown-name {
+          font-size: 28rpx;
+          color: #333333;
+        }
+      }
+
+      .dropdown-loading,
+      .dropdown-empty {
+        padding: 30rpx 0;
+        text-align: center;
+        font-size: 26rpx;
+        color: #999999;
       }
     }
   }
