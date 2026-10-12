@@ -171,7 +171,7 @@
   import { onLoad } from '@dcloudio/uni-app'
   import { getIndApplicationList, getCdeTrailList, queryNdaProductList } from '@/api'
 
-  // #region 基础状态
+  // #region 基础状态与生命周期
   const menu = ref({
     top: 0,
     left: 0,
@@ -186,21 +186,6 @@
     parentCompanyId: ''
   })
 
-  const activeTab = ref('ind')
-  const tabOptions = ref([
-    { label: 'IND记录', value: 'ind', count: 0 },
-    { label: '试验记录', value: 'trial', count: 0 },
-    { label: 'NDA记录', value: 'nda', count: 0 }
-  ])
-
-  const list = ref<any[]>([])
-  const pageNum = ref(1)
-  const pageSize = 10
-  const loading = ref(false)
-  const noMore = ref(false)
-  // #endregion
-
-  // #region 生命周期与初始化
   onLoad((options: any) => {
     // 获取胶囊位置信息
     const info = uni.getMenuButtonBoundingClientRect()
@@ -227,7 +212,28 @@
   }
   // #endregion
 
-  // #region 数据获取
+  // #region 选项卡逻辑
+  const activeTab = ref('ind')
+  const tabOptions = ref([
+    { label: 'IND记录', value: 'ind', count: 0 },
+    { label: '试验记录', value: 'trial', count: 0 },
+    { label: 'NDA记录', value: 'nda', count: 0 }
+  ])
+
+  const onTabChange = (value: string) => {
+    if (activeTab.value === value) return
+    activeTab.value = value
+    fetchData(true)
+  }
+  // #endregion
+
+  // #region 数据列表加载
+  const list = ref<any[]>([])
+  const pageNum = ref(1)
+  const pageSize = 10
+  const loading = ref(false)
+  const noMore = ref(false)
+
   const fetchData = async (isRefresh = false) => {
     if (loading.value) return
     if (isRefresh) {
@@ -278,12 +284,6 @@
     } finally {
       loading.value = false
     }
-  }
-
-  const onTabChange = (value: string) => {
-    if (activeTab.value === value) return
-    activeTab.value = value
-    fetchData(true)
   }
 
   const onScrollToLower = () => {

@@ -222,7 +222,7 @@
 </template>
 
 <script setup lang="ts">
-  // #region 导入
+  // #region 导入与类型定义
   import { ref, computed, onMounted, watch, getCurrentInstance, nextTick } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
@@ -241,10 +241,9 @@
     NdaProductRankVo,
     NdaProjectSumVo
   } from '@/types/api'
-
   // #endregion
 
-  // #region 页面状态
+  // #region 基础状态与生命周期
   const instance = getCurrentInstance()
   const activeTab = ref('stat')
   const menu = ref({ top: 0, left: 0, height: 0 })
@@ -252,72 +251,40 @@
   // 路由筛选参数（来自搜索页选中的药企）
   const companyName = ref('')
   const companyParentId = ref(0)
-  // #endregion
 
-  // #region 药品类型下拉选项（注册分类接口按药品类型分别统计）
-  const DRUG_TYPE_OPTIONS = [
-    { value: 1, text: '化药' },
-    { value: 2, text: '预防用生物制品' },
-    { value: 3, text: '治疗用生物制品' },
-    { value: 4, text: '中药/天然药物' }
-  ]
-  const drugTypeOptions = computed(() => DRUG_TYPE_OPTIONS)
-  const drugTypeCode = ref(DRUG_TYPE_OPTIONS[0].value)
-  const drugTypeText = computed(
-    () => DRUG_TYPE_OPTIONS.find((o) => o.value === drugTypeCode.value)?.text || '药品类型'
-  )
-  // #endregion
+  onLoad((options: any) => {
+    const info = uni.getMenuButtonBoundingClientRect()
+    menu.value = info
+    // 读取路由筛选参数（company-detail 传入 companyId 作为药企母公司ID）
+    if (options?.companyName) {
+      companyName.value = decodeURIComponent(options.companyName)
+    }
+    if (options?.companyId) {
+      companyParentId.value = Number(options.companyId)
+    }
+    fetchApplyAndApprove()
+    fetchRegisterCategory()
+    fetchDrugType()
+    fetchProductRank()
+  })
 
-  // #region 近五年NDA申请与获批
-  const projectSumList = ref<NdaProjectSumVo[]>([])
-  const queryTypeOptions = [
-    { value: 0, text: '申请' },
-    { value: 1, text: '获批' }
-  ]
-  const queryType = ref(queryTypeOptions[0].value)
-  const queryTypeText = computed(
-    () => queryTypeOptions.find((o) => o.value === queryType.value)?.text || '申请'
-  )
-  // #endregion
+  onMounted(() => {
+    // 延迟绘制，确保布局稳定
+    setTimeout(() => drawCharts(), 100)
+  })
 
-  // #region 注册分类（药品类型下的注册分类数量）
-  const registerCategoryList = ref<{ label: string; count: number }[]>([])
-  // #endregion
+  // 切换到统计 tab 时 canvas 会被重新创建，需要重新绘制
+  watch(activeTab, (val) => {
+    if (val === 'stat') {
+      // 延迟绘制，给 v-if 重建留出时间
+      setTimeout(() => drawCharts(), 100)
+    }
+  })
 
-  // #region 药物类型
-  const drugTypeLegend = ref<{ name: string; count: number; color: string }[]>([])
-  const donutGradient = ref('')
-  const drugTypeYearFilter = ref('')
-  // #endregion
+  function goBack() {
+    uni.navigateBack({ delta: 1, fail: () => uni.reLaunch({ url: '/pages/index/index' }) })
+  }
 
-  // #region 产品NDA榜单
-  const productList = ref<NdaProductRankVo[]>([])
-  const productYearFilter = ref('')
-  const productPageNum = ref(1)
-  const productPageSize = 10
-  const productLoading = ref(false)
-  const listProductName = ref('')
-  // 接口未返回 total，以「本页数量是否达到 pageSize」判断是否还有下一页
-  const productHasMore = ref(false)
-  // #endregion
-
-  // #region 年份选项
-  const yearOptions = computed(() => [
-    { value: '', text: '年份' },
-    ...Array.from({ length: 5 }, (_, i) => {
-      const year = new Date().getFullYear() - i
-      return { value: String(year), text: `${year}年` }
-    })
-  ])
-  const drugTypeYearText = computed(
-    () => yearOptions.value.find((o) => o.value === drugTypeYearFilter.value)?.text || '全部'
-  )
-  const productYearText = computed(
-    () => yearOptions.value.find((o) => o.value === productYearFilter.value)?.text || '全部'
-  )
-  // #endregion
-
-  // #region 请求参数构造
   /**
    * 构造 NDA 统计接口通用请求参数
    */
@@ -330,7 +297,27 @@
   }
   // #endregion
 
-  // #region 数据请求
+  // #region 公共下拉选项
+  const yearOptions = computed(() => [
+    { value: '', text: '年份' },
+    ...Array.from({ length: 5 }, (_, i) => {
+      const year = new Date().getFullYear() - i
+      return { value: String(year), text: `${year}年` }
+    })
+  ])
+  // #endregion
+
+  // #region 近五年NDA申请与获批
+  const projectSumList = ref<NdaProjectSumVo[]>([])
+  const queryTypeOptions = [
+    { value: 0, text: '申请' },
+    { value: 1, text: '获批' }
+  ]
+  const queryType = ref(queryTypeOptions[0].value)
+  const queryTypeText = computed(
+    () => queryTypeOptions.find((o) => o.value === queryType.value)?.text || '申请'
+  )
+
   async function fetchApplyAndApprove() {
     try {
       const res = await queryNdaLastYearApplyAndApprove({
@@ -343,6 +330,29 @@
       // 静默处理
     }
   }
+
+  function onQueryTypeChange(e: any) {
+    const idx = Number(e.detail.value)
+    const option = queryTypeOptions[idx]
+    if (!option) return
+    queryType.value = option.value
+    fetchApplyAndApprove()
+  }
+  // #endregion
+
+  // #region 注册分类统计
+  const DRUG_TYPE_OPTIONS = [
+    { value: 1, text: '化药' },
+    { value: 2, text: '预防用生物制品' },
+    { value: 3, text: '治疗用生物制品' },
+    { value: 4, text: '中药/天然药物' }
+  ]
+  const drugTypeOptions = computed(() => DRUG_TYPE_OPTIONS)
+  const drugTypeCode = ref(DRUG_TYPE_OPTIONS[0].value)
+  const drugTypeText = computed(
+    () => DRUG_TYPE_OPTIONS.find((o) => o.value === drugTypeCode.value)?.text || '药品类型'
+  )
+  const registerCategoryList = ref<{ label: string; count: number }[]>([])
 
   async function fetchRegisterCategory() {
     try {
@@ -357,6 +367,35 @@
     }
   }
 
+  function onDrugTypeChange(e: any) {
+    const idx = Number(e.detail.value)
+    const option = DRUG_TYPE_OPTIONS[idx]
+    if (!option) return
+    drugTypeCode.value = option.value
+    fetchRegisterCategory()
+  }
+
+  function buildRegisterCategoryList(data?: NdaLastYearRegisterCategoryVo) {
+    if (!data) return []
+    return [
+      { label: '1类', count: Number(data.registerCategory1) || 0 },
+      { label: '2类', count: Number(data.registerCategory2) || 0 },
+      { label: '3类', count: Number(data.registerCategory3) || 0 },
+      { label: '4类', count: Number(data.registerCategory4) || 0 },
+      { label: '5类', count: Number(data.registerCategory5) || 0 },
+      { label: '其他', count: Number(data.registerCategoryOther) || 0 }
+    ]
+  }
+  // #endregion
+
+  // #region 药物类型分布 (Donut)
+  const drugTypeLegend = ref<{ name: string; count: number; color: string }[]>([])
+  const donutGradient = ref('')
+  const drugTypeYearFilter = ref('')
+  const drugTypeYearText = computed(
+    () => yearOptions.value.find((o) => o.value === drugTypeYearFilter.value)?.text || '全部'
+  )
+
   async function fetchDrugType() {
     try {
       const params = buildBaseParams()
@@ -370,505 +409,12 @@
     }
   }
 
-  async function fetchProductRank(refresh = false) {
-    if (productLoading.value) return
-    if (refresh) {
-      productPageNum.value = 1
-    }
-    productLoading.value = true
-
-    const params = buildBaseParams()
-    if (productYearFilter.value) {
-      params.year = productYearFilter.value
-    }
-    const res = await queryProjectRank({
-      ...params,
-      pageNum: productPageNum.value,
-      pageSize: productPageSize
-    })
-    const list = res.data?.list || []
-
-    productList.value = refresh ? list : [...productList.value, ...list]
-    productHasMore.value = list.length >= productPageSize
-    productLoading.value = false
-  }
-
-  /** 产品榜单滚动到底部加载更多 */
-  function loadMoreProduct() {
-    if (productHasMore.value && !productLoading.value) {
-      productPageNum.value++
-      fetchProductRank()
-    }
-  }
-  // #endregion
-
-  // #region 筛选联动
-  function onQueryTypeChange(e: any) {
-    const idx = Number(e.detail.value)
-    const option = queryTypeOptions[idx]
-    if (!option) return
-    queryType.value = option.value
-    fetchApplyAndApprove()
-  }
-
-  function onDrugTypeChange(e: any) {
-    const idx = Number(e.detail.value)
-    const option = DRUG_TYPE_OPTIONS[idx]
-    if (!option) return
-    drugTypeCode.value = option.value
-    fetchRegisterCategory()
-  }
-
   function onDrugTypeYearChange(e: any) {
     const idx = Number(e.detail.value)
     drugTypeYearFilter.value = yearOptions.value[idx]?.value || ''
     fetchDrugType()
   }
 
-  function onProductYearChange(e: any) {
-    const idx = Number(e.detail.value)
-    productYearFilter.value = yearOptions.value[idx]?.value || ''
-    fetchProductRank(true)
-  }
-
-  /**
-   * 点击榜单产品：切到IND列表并按该产品名称过滤
-   * @param item 榜单条目
-   */
-  function onProductClick(item: NdaProductRankVo) {
-    listProductName.value = item.productName || ''
-    activeTab.value = 'list'
-  }
-  // #endregion
-
-  // #region 图表绘制
-  // #ifdef MP-WEIXIN
-  /**
-   * 获取 canvas 2d 节点与上下文（同层渲染，解决原生组件层级盖住其他元素的问题）
-   * @param canvasId 画布节点 id
-   * @param retry 内部重试计数
-   */
-  function getCanvas2d(
-    canvasId: string,
-    retry = 0
-  ): Promise<{ ctx: any; width: number; height: number } | null> {
-    return new Promise((resolve) => {
-      nextTick(() => {
-        uni
-          .createSelectorQuery()
-          .in(instance?.proxy)
-          .select(`#${canvasId}`)
-          .fields({ node: true, size: true }, () => {})
-          .exec((res) => {
-            const node = res?.[0]?.node
-            const width = res?.[0]?.width
-            const height = res?.[0]?.height
-            // v-if 重建后节点/尺寸可能未就绪，延迟重试避免绘制偏移
-            if (!node || !width || !height) {
-              if (retry < 12) {
-                setTimeout(() => resolve(getCanvas2d(canvasId, retry + 1)), 80)
-              } else {
-                resolve(null)
-              }
-              return
-            }
-            const ctx = node.getContext('2d')
-            const dpr = uni.getSystemInfoSync().pixelRatio || 1
-            // 按设备像素比设置画布物理尺寸，避免模糊
-            if (node.width !== width * dpr || node.height !== height * dpr) {
-              node.width = width * dpr
-              node.height = height * dpr
-            }
-            // 重置变换矩阵，避免重复调用导致累加缩放引起偏移和错位
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-            resolve({ ctx, width, height })
-          })
-      })
-    })
-  }
-
-  /**
-   * 绘制近五年试验合作变化折线图（canvas 2d 版本）
-   */
-  async function drawLineChart2d() {
-    const canvas = await getCanvas2d('lineCanvas')
-    if (!canvas) return
-    const ctx = canvas.ctx
-    const width = canvas.width
-    const height = canvas.height
-    const padding = 20
-
-    // 清空画布
-    ctx.clearRect(0, 0, width, height)
-
-    const data = projectSumList.value.map((item) => Number(item.projectCount) || 0)
-    const years = projectSumList.value.map((item) => {
-      const y = String(item.year)
-      return y.length >= 4 ? `${y.slice(2)}年` : y
-    })
-
-    if (!data.length) {
-      ctx.fillStyle = '#999999'
-      ctx.font = '12px sans-serif'
-      ctx.fillText('暂无数据', width / 2 - 24, height / 2)
-      return
-    }
-
-    const maxVal = Math.max(...data, 1)
-    const stepX = data.length > 1 ? (width - 2 * padding) / (data.length - 1) : 0
-    const pointAt = (i: number) => ({
-      x: padding + i * stepX,
-      y: height - padding - (data[i] / maxVal) * (height - 2 * padding)
-    })
-
-    // 网格线
-    ctx.strokeStyle = '#eeeeee'
-    ctx.lineWidth = 0.5
-    for (let i = 0; i <= 4; i++) {
-      const y = height - padding - (i / 4) * (height - 2 * padding)
-      ctx.beginPath()
-      ctx.moveTo(padding, y)
-      ctx.lineTo(width - padding, y)
-      ctx.stroke()
-      ctx.fillStyle = '#999999'
-      ctx.font = '9px sans-serif'
-      ctx.fillText(String(Math.round((maxVal * i) / 4)), 4, y + 3)
-    }
-
-    // 绘制渐变区域
-    ctx.beginPath()
-    data.forEach((_, i) => {
-      const p = pointAt(i)
-      if (i === 0) ctx.moveTo(p.x, p.y)
-      else ctx.lineTo(p.x, p.y)
-    })
-    ctx.lineTo(padding + (data.length - 1) * stepX, height - padding)
-    ctx.lineTo(padding, height - padding)
-    ctx.closePath()
-    const gradient = ctx.createLinearGradient(0, padding, 0, height - padding)
-    gradient.addColorStop(0, 'rgba(73, 154, 230, 0.2)')
-    gradient.addColorStop(1, 'rgba(73, 154, 230, 0)')
-    ctx.fillStyle = gradient
-    ctx.fill()
-
-    // 绘制折线
-    ctx.strokeStyle = '#499AE6'
-    ctx.lineWidth = 2
-    ctx.beginPath()
-    data.forEach((_, i) => {
-      const p = pointAt(i)
-      if (i === 0) ctx.moveTo(p.x, p.y)
-      else ctx.lineTo(p.x, p.y)
-    })
-    ctx.stroke()
-
-    // 绘制数据点和年份
-    data.forEach((_, i) => {
-      const p = pointAt(i)
-      ctx.fillStyle = '#ffffff'
-      ctx.beginPath()
-      ctx.arc(p.x, p.y, 4, 0, 2 * Math.PI)
-      ctx.fill()
-      ctx.strokeStyle = '#499AE6'
-      ctx.stroke()
-
-      // 拐点上方显示数值
-      const valText = String(data[i])
-      ctx.fillStyle = '#499AE6'
-      ctx.font = '10px sans-serif'
-      ctx.fillText(valText, p.x - valText.length * 3, p.y - 8)
-
-      ctx.fillStyle = '#999999'
-      ctx.font = '10px sans-serif'
-      ctx.fillText(years[i] || '', p.x - 12, height - 5)
-    })
-  }
-
-  /**
-   * 绘制近五年药品注册分类柱状图（canvas 2d 版本）
-   */
-  async function drawBarChart2d() {
-    const canvas = await getCanvas2d('barCanvas')
-    if (!canvas) return
-    const ctx = canvas.ctx
-    const width = canvas.width
-    const height = canvas.height
-    const padding = { top: 20, right: 16, bottom: 30, left: 36 }
-
-    // 清空画布
-    ctx.clearRect(0, 0, width, height)
-
-    // x轴：注册分类；y轴：数量
-    const labels = registerCategoryList.value.map((item) => item.label)
-    const values = registerCategoryList.value.map((item) => Number(item.count) || 0)
-
-    // 无数据时展示占位提示
-    if (!labels.length) {
-      ctx.fillStyle = '#999999'
-      ctx.font = '12px sans-serif'
-      ctx.fillText('暂无数据', width / 2 - 24, height / 2)
-      return
-    }
-
-    const maxVal = Math.max(...values, 1)
-    const chartW = width - padding.left - padding.right
-    const chartH = height - padding.top - padding.bottom
-    const baseY = height - padding.bottom
-
-    // 绘制背景网格与 y 轴刻度
-    ctx.strokeStyle = '#eeeeee'
-    ctx.lineWidth = 0.5
-    for (let i = 0; i <= 4; i++) {
-      const y = baseY - (i / 4) * chartH
-      ctx.beginPath()
-      ctx.moveTo(padding.left, y)
-      ctx.lineTo(width - padding.right, y)
-      ctx.stroke()
-      ctx.fillStyle = '#999999'
-      ctx.font = '9px sans-serif'
-      ctx.fillText(String(Math.round((maxVal * i) / 4)), 4, y + 3)
-    }
-
-    // 绘制柱体、数值与 x 轴标签
-    const slot = chartW / labels.length
-    const barW = Math.min(slot * 0.5, 28)
-    values.forEach((val, i) => {
-      const barH = (val / maxVal) * chartH
-      const x = padding.left + slot * i + (slot - barW) / 2
-      const y = baseY - barH
-      const gradient = ctx.createLinearGradient(0, y, 0, baseY)
-      gradient.addColorStop(0, '#499AE6')
-      gradient.addColorStop(1, 'rgba(73, 154, 230, 0.4)')
-      ctx.fillStyle = gradient
-      ctx.fillRect(x, y, barW, barH)
-
-      ctx.fillStyle = '#333333'
-      ctx.font = '9px sans-serif'
-      ctx.fillText(String(val), x + barW / 2 - 4, y - 4)
-
-      const display = labels[i]?.length > 4 ? `${labels[i].slice(0, 4)}…` : labels[i] || ''
-      ctx.fillStyle = '#999999'
-      ctx.font = '9px sans-serif'
-      ctx.fillText(display, x + barW / 2 - display.length * 4, height - 8)
-    })
-  }
-  // #endif
-
-  // #ifndef MP-WEIXIN
-  /**
-   * 绘制近五年试验合作变化折线图（旧版 canvas 接口）
-   */
-  function drawLineChartLegacy() {
-    const ctx = uni.createCanvasContext('lineCanvas')
-    const width = 300
-    const height = 150
-    const padding = 20
-
-    // 清空画布
-    ctx.clearRect(0, 0, width, height)
-
-    const data = projectSumList.value.map((item) => Number(item.projectCount) || 0)
-    const years = projectSumList.value.map((item) => {
-      const y = String(item.year)
-      return y.length >= 4 ? `${y.slice(2)}年` : y
-    })
-
-    if (!data.length) {
-      ctx.setFillStyle('#999999')
-      ctx.setFontSize(12)
-      ctx.fillText('暂无数据', width / 2 - 24, height / 2)
-      ctx.draw()
-      return
-    }
-
-    const maxVal = Math.max(...data, 1)
-    const stepX = data.length > 1 ? (width - 2 * padding) / (data.length - 1) : 0
-    const pointAt = (i: number) => ({
-      x: padding + i * stepX,
-      y: height - padding - (data[i] / maxVal) * (height - 2 * padding)
-    })
-
-    // 网格线
-    ctx.setStrokeStyle('#eeeeee')
-    ctx.setLineWidth(0.5)
-    for (let i = 0; i <= 4; i++) {
-      const y = height - padding - (i / 4) * (height - 2 * padding)
-      ctx.beginPath()
-      ctx.moveTo(padding, y)
-      ctx.lineTo(width - padding, y)
-      ctx.stroke()
-      ctx.setFillStyle('#999999')
-      ctx.setFontSize(9)
-      ctx.fillText(String(Math.round((maxVal * i) / 4)), 4, y + 3)
-    }
-
-    // 绘制渐变区域
-    ctx.beginPath()
-    data.forEach((_, i) => {
-      const p = pointAt(i)
-      if (i === 0) ctx.moveTo(p.x, p.y)
-      else ctx.lineTo(p.x, p.y)
-    })
-    ctx.lineTo(padding + (data.length - 1) * stepX, height - padding)
-    ctx.lineTo(padding, height - padding)
-    ctx.closePath()
-    const gradient = ctx.createLinearGradient(0, padding, 0, height - padding)
-    gradient.addColorStop(0, 'rgba(73, 154, 230, 0.2)')
-    gradient.addColorStop(1, 'rgba(73, 154, 230, 0)')
-    ctx.setFillStyle(gradient)
-    ctx.fill()
-
-    // 绘制折线
-    ctx.setStrokeStyle('#499AE6')
-    ctx.setLineWidth(2)
-    ctx.beginPath()
-    data.forEach((_, i) => {
-      const p = pointAt(i)
-      if (i === 0) ctx.moveTo(p.x, p.y)
-      else ctx.lineTo(p.x, p.y)
-    })
-    ctx.stroke()
-
-    // 绘制数据点和年份
-    data.forEach((_, i) => {
-      const p = pointAt(i)
-      ctx.setFillStyle('#ffffff')
-      ctx.beginPath()
-      ctx.arc(p.x, p.y, 4, 0, 2 * Math.PI)
-      ctx.fill()
-      ctx.setStrokeStyle('#499AE6')
-      ctx.stroke()
-
-      // 拐点上方显示数值
-      const valText = String(data[i])
-      ctx.setFillStyle('#499AE6')
-      ctx.setFontSize(10)
-      ctx.fillText(valText, p.x - valText.length * 3, p.y - 8)
-
-      ctx.setFillStyle('#999999')
-      ctx.setFontSize(10)
-      ctx.fillText(years[i] || '', p.x - 12, height - 5)
-    })
-
-    ctx.draw()
-  }
-
-  /**
-   * 绘制近五年药品注册分类柱状图（旧版 canvas 接口）
-   */
-  function drawBarChartLegacy() {
-    const ctx = uni.createCanvasContext('barCanvas')
-    const width = 300
-    const height = 150
-    const padding = { top: 20, right: 16, bottom: 30, left: 36 }
-
-    // 清空画布
-    ctx.clearRect(0, 0, width, height)
-
-    // x轴：注册分类；y轴：数量
-    const labels = registerCategoryList.value.map((item) => item.label)
-    const values = registerCategoryList.value.map((item) => Number(item.count) || 0)
-
-    // 无数据时展示占位提示
-    if (!labels.length) {
-      ctx.setFillStyle('#999999')
-      ctx.setFontSize(12)
-      ctx.fillText('暂无数据', width / 2 - 24, height / 2)
-      ctx.draw()
-      return
-    }
-
-    const maxVal = Math.max(...values, 1)
-    const chartW = width - padding.left - padding.right
-    const chartH = height - padding.top - padding.bottom
-    const baseY = height - padding.bottom
-
-    // 绘制背景网格与 y 轴刻度
-    ctx.setStrokeStyle('#eeeeee')
-    ctx.setLineWidth(0.5)
-    for (let i = 0; i <= 4; i++) {
-      const y = baseY - (i / 4) * chartH
-      ctx.beginPath()
-      ctx.moveTo(padding.left, y)
-      ctx.lineTo(width - padding.right, y)
-      ctx.stroke()
-      ctx.setFillStyle('#999999')
-      ctx.setFontSize(9)
-      ctx.fillText(String(Math.round((maxVal * i) / 4)), 4, y + 3)
-    }
-
-    // 绘制柱体、数值与 x 轴标签
-    const slot = chartW / labels.length
-    const barW = Math.min(slot * 0.5, 28)
-    values.forEach((val, i) => {
-      const barH = (val / maxVal) * chartH
-      const x = padding.left + slot * i + (slot - barW) / 2
-      const y = baseY - barH
-      const gradient = ctx.createLinearGradient(0, y, 0, baseY)
-      gradient.addColorStop(0, '#499AE6')
-      gradient.addColorStop(1, 'rgba(73, 154, 230, 0.4)')
-      ctx.setFillStyle(gradient)
-      ctx.fillRect(x, y, barW, barH)
-
-      ctx.setFillStyle('#333333')
-      ctx.setFontSize(9)
-      ctx.fillText(String(val), x + barW / 2 - 4, y - 4)
-
-      const display = labels[i]?.length > 4 ? `${labels[i].slice(0, 4)}…` : labels[i] || ''
-      ctx.setFillStyle('#999999')
-      ctx.setFontSize(9)
-      ctx.fillText(display, x + barW / 2 - display.length * 4, height - 8)
-    })
-
-    ctx.draw()
-  }
-  // #endif
-
-  function drawLineChart() {
-    let p: void | Promise<void>
-    // #ifdef MP-WEIXIN
-    p = drawLineChart2d()
-    // #endif
-    // #ifndef MP-WEIXIN
-    p = drawLineChartLegacy()
-    // #endif
-    return p
-  }
-
-  function drawBarChart() {
-    let p: void | Promise<void>
-    // #ifdef MP-WEIXIN
-    p = drawBarChart2d()
-    // #endif
-    // #ifndef MP-WEIXIN
-    p = drawBarChartLegacy()
-    // #endif
-    return p
-  }
-
-  function drawCharts() {
-    drawLineChart()
-    drawBarChart()
-  }
-
-  /**
-   * 注册分类：接口返回 registerCategory1~5 + other 的对象，转换为柱状图/表格数据
-   */
-  function buildRegisterCategoryList(data?: NdaLastYearRegisterCategoryVo) {
-    if (!data) return []
-    return [
-      { label: '1类', count: Number(data.registerCategory1) || 0 },
-      { label: '2类', count: Number(data.registerCategory2) || 0 },
-      { label: '3类', count: Number(data.registerCategory3) || 0 },
-      { label: '4类', count: Number(data.registerCategory4) || 0 },
-      { label: '5类', count: Number(data.registerCategory5) || 0 },
-      { label: '其他', count: Number(data.registerCategoryOther) || 0 }
-    ]
-  }
-
-  /**
-   * 药物类型：根据接口数据生成环形渐变与图例
-   */
   function buildDrugTypeLegend(data: NdaDrugTypeVo) {
     const items: { key: keyof NdaDrugTypeVo; name: string; color: string }[] = [
       { key: 'drugTypeCountHuaYao', name: '化药', color: '#F5A623' },
@@ -898,40 +444,410 @@
   }
   // #endregion
 
-  // #region 生命周期
-  onLoad((options: any) => {
-    const info = uni.getMenuButtonBoundingClientRect()
-    menu.value = info
-    // 读取路由筛选参数（company-detail 传入 companyId 作为药企母公司ID）
-    if (options?.companyName) {
-      companyName.value = decodeURIComponent(options.companyName)
-    }
-    if (options?.companyId) {
-      companyParentId.value = Number(options.companyId)
-    }
-    fetchApplyAndApprove()
-    fetchRegisterCategory()
-    fetchDrugType()
-    fetchProductRank()
-  })
+  // #region 产品NDA榜单
+  const productList = ref<NdaProductRankVo[]>([])
+  const productYearFilter = ref('')
+  const productPageNum = ref(1)
+  const productPageSize = 10
+  const productLoading = ref(false)
+  const listProductName = ref('')
+  const productHasMore = ref(false)
+  const productYearText = computed(
+    () => yearOptions.value.find((o) => o.value === productYearFilter.value)?.text || '全部'
+  )
 
-  onMounted(() => {
-    // 延迟绘制，确保布局稳定
-    setTimeout(() => drawCharts(), 100)
-  })
-
-  // 切换到统计 tab 时 canvas 会被重新创建，需要重新绘制
-  watch(activeTab, (val) => {
-    if (val === 'stat') {
-      // 延迟绘制，给 v-if 重建留出时间
-      setTimeout(() => drawCharts(), 100)
+  async function fetchProductRank(refresh = false) {
+    if (productLoading.value) return
+    if (refresh) {
+      productPageNum.value = 1
     }
-  })
+    productLoading.value = true
+
+    const params = buildBaseParams()
+    if (productYearFilter.value) {
+      params.year = productYearFilter.value
+    }
+    const res = await queryProjectRank({
+      ...params,
+      pageNum: productPageNum.value,
+      pageSize: productPageSize
+    })
+    const list = res.data?.list || []
+
+    productList.value = refresh ? list : [...productList.value, ...list]
+    productHasMore.value = list.length >= productPageSize
+    productLoading.value = false
+  }
+
+  function loadMoreProduct() {
+    if (productHasMore.value && !productLoading.value) {
+      productPageNum.value++
+      fetchProductRank()
+    }
+  }
+
+  function onProductYearChange(e: any) {
+    const idx = Number(e.detail.value)
+    productYearFilter.value = yearOptions.value[idx]?.value || ''
+    fetchProductRank(true)
+  }
+
+  function onProductClick(item: NdaProductRankVo) {
+    listProductName.value = item.productName || ''
+    activeTab.value = 'list'
+  }
   // #endregion
 
-  // #region 方法
-  function goBack() {
-    uni.navigateBack({ delta: 1, fail: () => uni.reLaunch({ url: '/pages/index/index' }) })
+  // #region 图表绘制逻辑
+  // #ifdef MP-WEIXIN
+  function getCanvas2d(
+    canvasId: string,
+    retry = 0
+  ): Promise<{ ctx: any; width: number; height: number } | null> {
+    return new Promise((resolve) => {
+      nextTick(() => {
+        uni
+          .createSelectorQuery()
+          .in(instance?.proxy)
+          .select(`#${canvasId}`)
+          .fields({ node: true, size: true }, () => {})
+          .exec((res) => {
+            const node = res?.[0]?.node
+            const width = res?.[0]?.width
+            const height = res?.[0]?.height
+            if (!node || !width || !height) {
+              if (retry < 12) {
+                setTimeout(() => resolve(getCanvas2d(canvasId, retry + 1)), 80)
+              } else {
+                resolve(null)
+              }
+              return
+            }
+            const ctx = node.getContext('2d')
+            const dpr = uni.getSystemInfoSync().pixelRatio || 1
+            if (node.width !== width * dpr || node.height !== height * dpr) {
+              node.width = width * dpr
+              node.height = height * dpr
+            }
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+            resolve({ ctx, width, height })
+          })
+      })
+    })
+  }
+
+  async function drawLineChart2d() {
+    const canvas = await getCanvas2d('lineCanvas')
+    if (!canvas) return
+    const ctx = canvas.ctx
+    const width = canvas.width
+    const height = canvas.height
+    const padding = 20
+
+    ctx.clearRect(0, 0, width, height)
+    const data = projectSumList.value.map((item) => Number(item.projectCount) || 0)
+    const years = projectSumList.value.map((item) => {
+      const y = String(item.year)
+      return y.length >= 4 ? `${y.slice(2)}年` : y
+    })
+
+    if (!data.length) {
+      ctx.fillStyle = '#999999'
+      ctx.font = '12px sans-serif'
+      ctx.fillText('暂无数据', width / 2 - 24, height / 2)
+      return
+    }
+
+    const maxVal = Math.max(...data, 1)
+    const stepX = data.length > 1 ? (width - 2 * padding) / (data.length - 1) : 0
+    const pointAt = (i: number) => ({
+      x: padding + i * stepX,
+      y: height - padding - (data[i] / maxVal) * (height - 2 * padding)
+    })
+
+    ctx.strokeStyle = '#eeeeee'
+    ctx.lineWidth = 0.5
+    for (let i = 0; i <= 4; i++) {
+      const y = height - padding - (i / 4) * (height - 2 * padding)
+      ctx.beginPath()
+      ctx.moveTo(padding, y)
+      ctx.lineTo(width - padding, y)
+      ctx.stroke()
+      ctx.fillStyle = '#999999'
+      ctx.font = '9px sans-serif'
+      ctx.fillText(String(Math.round((maxVal * i) / 4)), 4, y + 3)
+    }
+
+    ctx.beginPath()
+    data.forEach((_, i) => {
+      const p = pointAt(i)
+      if (i === 0) ctx.moveTo(p.x, p.y)
+      else ctx.lineTo(p.x, p.y)
+    })
+    ctx.lineTo(padding + (data.length - 1) * stepX, height - padding)
+    ctx.lineTo(padding, height - padding)
+    ctx.closePath()
+    const gradient = ctx.createLinearGradient(0, padding, 0, height - padding)
+    gradient.addColorStop(0, 'rgba(73, 154, 230, 0.2)')
+    gradient.addColorStop(1, 'rgba(73, 154, 230, 0)')
+    ctx.fillStyle = gradient
+    ctx.fill()
+
+    ctx.strokeStyle = '#499AE6'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    data.forEach((_, i) => {
+      const p = pointAt(i)
+      if (i === 0) ctx.moveTo(p.x, p.y)
+      else ctx.lineTo(p.x, p.y)
+    })
+    ctx.stroke()
+
+    data.forEach((_, i) => {
+      const p = pointAt(i)
+      ctx.fillStyle = '#ffffff'
+      ctx.beginPath()
+      ctx.arc(p.x, p.y, 4, 0, 2 * Math.PI)
+      ctx.fill()
+      ctx.strokeStyle = '#499AE6'
+      ctx.stroke()
+      const valText = String(data[i])
+      ctx.fillStyle = '#499AE6'
+      ctx.font = '10px sans-serif'
+      ctx.fillText(valText, p.x - valText.length * 3, p.y - 8)
+      ctx.fillStyle = '#999999'
+      ctx.font = '10px sans-serif'
+      ctx.fillText(years[i] || '', p.x - 12, height - 5)
+    })
+  }
+
+  async function drawBarChart2d() {
+    const canvas = await getCanvas2d('barCanvas')
+    if (!canvas) return
+    const ctx = canvas.ctx
+    const width = canvas.width
+    const height = canvas.height
+    const padding = { top: 20, right: 16, bottom: 30, left: 36 }
+
+    ctx.clearRect(0, 0, width, height)
+    const labels = registerCategoryList.value.map((item) => item.label)
+    const values = registerCategoryList.value.map((item) => Number(item.count) || 0)
+
+    if (!labels.length) {
+      ctx.fillStyle = '#999999'
+      ctx.font = '12px sans-serif'
+      ctx.fillText('暂无数据', width / 2 - 24, height / 2)
+      return
+    }
+
+    const maxVal = Math.max(...values, 1)
+    const chartW = width - padding.left - padding.right
+    const chartH = height - padding.top - padding.bottom
+    const baseY = height - padding.bottom
+
+    ctx.strokeStyle = '#eeeeee'
+    ctx.lineWidth = 0.5
+    for (let i = 0; i <= 4; i++) {
+      const y = baseY - (i / 4) * chartH
+      ctx.beginPath()
+      ctx.moveTo(padding.left, y)
+      ctx.lineTo(width - padding.right, y)
+      ctx.stroke()
+      ctx.fillStyle = '#999999'
+      ctx.font = '9px sans-serif'
+      ctx.fillText(String(Math.round((maxVal * i) / 4)), 4, y + 3)
+    }
+
+    const slot = chartW / labels.length
+    const barW = Math.min(slot * 0.5, 28)
+    values.forEach((val, i) => {
+      const barH = (val / maxVal) * chartH
+      const x = padding.left + slot * i + (slot - barW) / 2
+      const y = baseY - barH
+      const gradient = ctx.createLinearGradient(0, y, 0, baseY)
+      gradient.addColorStop(0, '#499AE6')
+      gradient.addColorStop(1, 'rgba(73, 154, 230, 0.4)')
+      ctx.fillStyle = gradient
+      ctx.fillRect(x, y, barW, barH)
+      ctx.fillStyle = '#333333'
+      ctx.font = '9px sans-serif'
+      ctx.fillText(String(val), x + barW / 2 - 4, y - 4)
+      const display = labels[i]?.length > 4 ? `${labels[i].slice(0, 4)}…` : labels[i] || ''
+      ctx.fillStyle = '#999999'
+      ctx.font = '9px sans-serif'
+      ctx.fillText(display, x + barW / 2 - display.length * 4, height - 8)
+    })
+  }
+  // #endif
+
+  // #ifndef MP-WEIXIN
+  function drawLineChartLegacy() {
+    const ctx = uni.createCanvasContext('lineCanvas')
+    const width = 300
+    const height = 150
+    const padding = 20
+    ctx.clearRect(0, 0, width, height)
+    const data = projectSumList.value.map((item) => Number(item.projectCount) || 0)
+    const years = projectSumList.value.map((item) => {
+      const y = String(item.year)
+      return y.length >= 4 ? `${y.slice(2)}年` : y
+    })
+
+    if (!data.length) {
+      ctx.setFillStyle('#999999')
+      ctx.setFontSize(12)
+      ctx.fillText('暂无数据', width / 2 - 24, height / 2)
+      ctx.draw()
+      return
+    }
+
+    const maxVal = Math.max(...data, 1)
+    const stepX = data.length > 1 ? (width - 2 * padding) / (data.length - 1) : 0
+    const pointAt = (i: number) => ({
+      x: padding + i * stepX,
+      y: height - padding - (data[i] / maxVal) * (height - 2 * padding)
+    })
+
+    ctx.setStrokeStyle('#eeeeee')
+    ctx.setLineWidth(0.5)
+    for (let i = 0; i <= 4; i++) {
+      const y = height - padding - (i / 4) * (height - 2 * padding)
+      ctx.beginPath()
+      ctx.moveTo(padding, y)
+      ctx.lineTo(width - padding, y)
+      ctx.stroke()
+      ctx.setFillStyle('#999999')
+      ctx.setFontSize(9)
+      ctx.fillText(String(Math.round((maxVal * i) / 4)), 4, y + 3)
+    }
+
+    ctx.beginPath()
+    data.forEach((_, i) => {
+      const p = pointAt(i)
+      if (i === 0) ctx.moveTo(p.x, p.y)
+      else ctx.lineTo(p.x, p.y)
+    })
+    ctx.lineTo(padding + (data.length - 1) * stepX, height - padding)
+    ctx.lineTo(padding, height - padding)
+    ctx.closePath()
+    const gradient = ctx.createLinearGradient(0, padding, 0, height - padding)
+    gradient.addColorStop(0, 'rgba(73, 154, 230, 0.2)')
+    gradient.addColorStop(1, 'rgba(73, 154, 230, 0)')
+    ctx.setFillStyle(gradient)
+    ctx.fill()
+
+    ctx.setStrokeStyle('#499AE6')
+    ctx.setLineWidth(2)
+    ctx.beginPath()
+    data.forEach((_, i) => {
+      const p = pointAt(i)
+      if (i === 0) ctx.moveTo(p.x, p.y)
+      else ctx.lineTo(p.x, p.y)
+    })
+    ctx.stroke()
+
+    data.forEach((_, i) => {
+      const p = pointAt(i)
+      ctx.setFillStyle('#ffffff')
+      ctx.beginPath()
+      ctx.arc(p.x, p.y, 4, 0, 2 * Math.PI)
+      ctx.fill()
+      ctx.setStrokeStyle('#499AE6')
+      ctx.stroke()
+      const valText = String(data[i])
+      ctx.setFillStyle('#499AE6')
+      ctx.setFontSize(10)
+      ctx.fillText(valText, p.x - valText.length * 3, p.y - 8)
+      ctx.setFillStyle('#999999')
+      ctx.setFontSize(10)
+      ctx.fillText(years[i] || '', p.x - 12, height - 5)
+    })
+    ctx.draw()
+  }
+
+  function drawBarChartLegacy() {
+    const ctx = uni.createCanvasContext('barCanvas')
+    const width = 300
+    const height = 150
+    const padding = { top: 20, right: 16, bottom: 30, left: 36 }
+    ctx.clearRect(0, 0, width, height)
+    const labels = registerCategoryList.value.map((item) => item.label)
+    const values = registerCategoryList.value.map((item) => Number(item.count) || 0)
+
+    if (!labels.length) {
+      ctx.setFillStyle('#999999')
+      ctx.setFontSize(12)
+      ctx.fillText('暂无数据', width / 2 - 24, height / 2)
+      ctx.draw()
+      return
+    }
+
+    const maxVal = Math.max(...values, 1)
+    const chartW = width - padding.left - padding.right
+    const chartH = height - padding.top - padding.bottom
+    const baseY = height - padding.bottom
+
+    ctx.setStrokeStyle('#eeeeee')
+    ctx.setLineWidth(0.5)
+    for (let i = 0; i <= 4; i++) {
+      const y = baseY - (i / 4) * chartH
+      ctx.beginPath()
+      ctx.moveTo(padding.left, y)
+      ctx.lineTo(width - padding.right, y)
+      ctx.stroke()
+      ctx.setFillStyle('#999999')
+      ctx.setFontSize(9)
+      ctx.fillText(String(Math.round((maxVal * i) / 4)), 4, y + 3)
+    }
+
+    const slot = chartW / labels.length
+    const barW = Math.min(slot * 0.5, 28)
+    values.forEach((val, i) => {
+      const barH = (val / maxVal) * chartH
+      const x = padding.left + slot * i + (slot - barW) / 2
+      const y = baseY - barH
+      const gradient = ctx.createLinearGradient(0, y, 0, baseY)
+      gradient.addColorStop(0, '#499AE6')
+      gradient.addColorStop(1, 'rgba(73, 154, 230, 0.4)')
+      ctx.setFillStyle(gradient)
+      ctx.fillRect(x, y, barW, barH)
+      ctx.setFillStyle('#333333')
+      ctx.setFontSize(9)
+      ctx.fillText(String(val), x + barW / 2 - 4, y - 4)
+      const display = labels[i]?.length > 4 ? `${labels[i].slice(0, 4)}…` : labels[i] || ''
+      ctx.setFillStyle('#999999')
+      ctx.setFontSize(9)
+      ctx.fillText(display, x + barW / 2 - display.length * 4, height - 8)
+    })
+    ctx.draw()
+  }
+  // #endif
+
+  function drawLineChart() {
+    let p: void | Promise<void>
+    // #ifdef MP-WEIXIN
+    p = drawLineChart2d()
+    // #endif
+    // #ifndef MP-WEIXIN
+    p = drawLineChartLegacy()
+    // #endif
+    return p
+  }
+
+  function drawBarChart() {
+    let p: void | Promise<void>
+    // #ifdef MP-WEIXIN
+    p = drawBarChart2d()
+    // #endif
+    // #ifndef MP-WEIXIN
+    p = drawBarChartLegacy()
+    // #endif
+    return p
+  }
+
+  function drawCharts() {
+    drawLineChart()
+    drawBarChart()
   }
   // #endregion
 </script>

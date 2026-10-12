@@ -140,7 +140,7 @@
   const emit = defineEmits(['update:visible'])
   // #endregion
 
-  // #region 状态
+  // #region 搜索逻辑封装
   /**
    * 创建一个独立的搜索区块状态
    * @param nameField 列表项展示字段名
@@ -163,54 +163,6 @@
       api,
       timer: null
     })
-  }
-
-  // 药品：queryStandardDrug
-  const drugState = createSectionState<DrugShortItem>(
-    'drugStandardName',
-    'standardId',
-    queryStandardDrug
-  )
-  // 药企申办方：queryPharmaShortName
-  const pharmaState = createSectionState<ParentCompanyItem>(
-    'parentCompanyShortName',
-    'parentCompanyId',
-    queryPharmaShortName
-  )
-
-  const sectionStates = [drugState, pharmaState]
-
-  // 下拉列表高度：单行约 88rpx，最多展示约 400rpx，超出可上下滚动
-  const DROPDOWN_ITEM_HEIGHT = 88
-  const DROPDOWN_MAX_HEIGHT = 400
-  function dropdownListStyle(count: number) {
-    const height = Math.min(count * DROPDOWN_ITEM_HEIGHT, DROPDOWN_MAX_HEIGHT)
-    return { height: `${height}rpx` }
-  }
-  // #endregion
-
-  // #region 监听
-  watch(
-    () => props.visible,
-    (val) => {
-      if (!val) {
-        // 关闭时重置所有搜索状态
-        sectionStates.forEach((state) => {
-          if (state.timer) clearTimeout(state.timer)
-          state.timer = null
-          state.keyword = ''
-          state.results = []
-          state.showDropdown = false
-          state.selected = null
-        })
-      }
-    }
-  )
-  // #endregion
-
-  // #region 方法
-  function close() {
-    emit('update:visible', false)
   }
 
   function onSearchInput<T extends AnyItem>(state: SearchSectionState<T>) {
@@ -256,7 +208,59 @@
     state.selected = item
     state.showDropdown = false
   }
+  // #endregion
 
+  // #region 业务模块状态
+  // 药品：queryStandardDrug
+  const drugState = createSectionState<DrugShortItem>(
+    'drugStandardName',
+    'standardId',
+    queryStandardDrug
+  )
+  // 药企申办方：queryPharmaShortName
+  const pharmaState = createSectionState<ParentCompanyItem>(
+    'parentCompanyShortName',
+    'parentCompanyId',
+    queryPharmaShortName
+  )
+
+  const sectionStates = [drugState, pharmaState]
+  // #endregion
+
+  // #region UI 辅助逻辑
+  // 下拉列表高度：单行约 88rpx，最多展示约 400rpx，超出可上下滚动
+  const DROPDOWN_ITEM_HEIGHT = 88
+  const DROPDOWN_MAX_HEIGHT = 400
+  function dropdownListStyle(count: number) {
+    const height = Math.min(count * DROPDOWN_ITEM_HEIGHT, DROPDOWN_MAX_HEIGHT)
+    return { height: `${height}rpx` }
+  }
+
+  function close() {
+    emit('update:visible', false)
+  }
+  // #endregion
+
+  // #region 监听
+  watch(
+    () => props.visible,
+    (val) => {
+      if (!val) {
+        // 关闭时重置所有搜索状态
+        sectionStates.forEach((state) => {
+          if (state.timer) clearTimeout(state.timer)
+          state.timer = null
+          state.keyword = ''
+          state.results = []
+          state.showDropdown = false
+          state.selected = null
+        })
+      }
+    }
+  )
+  // #endregion
+
+  // #region 搜索提交
   function handleSearch() {
     const drug = drugState.selected
     const pharma = pharmaState.selected

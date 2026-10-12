@@ -182,20 +182,40 @@
   import type { UserInfo } from '@/types/api'
   // #endregion
 
-  // #region 状态
-  const showDataStatement = ref(false)
-  const showSearchPopup = ref(false)
-  const showTrialPopup = ref(false)
-  const showFindPopup = ref(false)
-  const showCompanyLabPopup = ref(false)
-  const showSponsorSitePiPopup = ref(false)
-  const showCustomerCustomerPopup = ref(false)
-  const showFreeVipBanner = ref(false)
-  const showDrugPopup = ref(false)
+  // #region 页面基础状态与生命周期
+  const menu = ref({
+    top: 0,
+    left: 0,
+    height: 0
+  })
+
   // 先用本地缓存渲染，登录完成后刷新为最新用户信息
   const userInfo = ref<UserInfo | null>(getUserInfo())
 
-  // 功能网格数据
+  onLoad(async () => {
+    // 获取胶囊位置信息（单位px）
+    const info = uni.getMenuButtonBoundingClientRect()
+    menu.value = info
+
+    // 确保登录成功后再获取数据
+    try {
+      await ensureLogin()
+    } catch {
+      // 登录失败时沿用本地缓存的用户信息，避免页面无 VIP 入口
+    }
+    // 登录接口会返回最新的 vipCode，重新读取以刷新左上角 VIP 状态
+    userInfo.value = getUserInfo()
+    // 查询申请状态
+    fetchVipApplicationStatus()
+  })
+
+  function goTo(path: string, query?: string) {
+    const url = query ? `/pages/${path}?${query}` : `/pages/${path}`
+    uni.navigateTo({ url })
+  }
+  // #endregion
+
+  // #region 功能网格与导航逻辑
   const gridItems = [
     {
       title: '查客户',
@@ -236,6 +256,30 @@
     }
   ]
 
+  function handleGridClick(item: any) {
+    if (!checkPermission()) {
+      return
+    }
+
+    if (item.title === '查药企&CRO\n合作关系') {
+      showSearchPopup.value = true
+    } else if (item.title === '找客户') {
+      showFindPopup.value = true
+    } else if (item.title === '查药企&中心实\n验室合作关系') {
+      showCompanyLabPopup.value = true
+    } else if (item.title === '查药企&医院/研\n究者合作关系') {
+      showSponsorSitePiPopup.value = true
+    } else if (item.title === '查客户') {
+      showCustomerCustomerPopup.value = true
+    } else if (item.title === '查产品') {
+      showDrugPopup.value = true
+    } else if (item.path) {
+      goTo(item.path)
+    } else {
+      uni.showToast({ title: '该功能暂未开启', icon: 'none' })
+    }
+  }
+
   // 数据榜单数据
   const rankLists = [
     {
@@ -265,33 +309,58 @@
   ]
   // #endregion
 
-  function goTo(path: string, query?: string) {
-    const url = query ? `/pages/${path}?${query}` : `/pages/${path}`
-    uni.navigateTo({ url })
+  // #region VIP 状态与权限控制
+  const applicationStatus = ref(0)
+  const applicationInfo = ref<{
+    haveFirstApplication: boolean
+    havePendingApplication: boolean
+  }>({
+    haveFirstApplication: true,
+    havePendingApplication: false
+  })
+  const showFreeVipBanner = ref(false)
+  const showVipExpiredPopup = ref(false)
+
+  async function fetchVipApplicationStatus() {
+    try {
+      const res = await getVipApplication()
+      if (res.data) {
+        applicationStatus.value = res.data.approvalStatus || 0
+        applicationInfo.value.haveFirstApplication = res.data.haveFirstApplication ?? true
+        applicationInfo.value.havePendingApplication = res.data.havePendingApplication ?? false
+        showFreeVipBanner.value = !applicationInfo.value.haveFirstApplication
+      }
+    } catch {
+      applicationStatus.value = 0
+      showFreeVipBanner.value = false
+    }
   }
 
-  function handleGridClick(item: any) {
-    if (!checkPermission()) {
-      return
-    }
+  function checkPermission() {
+    const userInfo = getUserInfo()
+    const vipCode = userInfo?.vipCode ?? 0
 
-    if (item.title === '查药企&CRO\n合作关系') {
-      showSearchPopup.value = true
-    } else if (item.title === '找客户') {
-      showFindPopup.value = true
-    } else if (item.title === '查药企&中心实\n验室合作关系') {
-      showCompanyLabPopup.value = true
-    } else if (item.title === '查药企&医院/研\n究者合作关系') {
-      showSponsorSitePiPopup.value = true
-    } else if (item.title === '查客户') {
-      showCustomerCustomerPopup.value = true
-    } else if (item.title === '查产品') {
-      showDrugPopup.value = true
-    } else if (item.path) {
-      goTo(item.path)
-    } else {
-      uni.showToast({ title: '该功能暂未开启', icon: 'none' })
+    if (
+      applicationInfo.value.haveFirstApplication &&
+      !applicationInfo.value.havePendingApplication &&
+      vipCode === 0
+    ) {
+      showVipExpiredPopup.value = true
+      return false
     }
+    if (
+      applicationInfo.value.haveFirstApplication &&
+      applicationInfo.value.havePendingApplication &&
+      vipCode === 0
+    ) {
+      uni.showToast({
+        title: '您的申请正在审核中，请稍后再试，或者直接联系我们',
+        icon: 'none',
+        duration: 3000
+      })
+      return false
+    }
+    return true
   }
 
   function handleApplyTrialClick() {
@@ -308,94 +377,18 @@
       return
     }
   }
-
-  // #region VIP状态
-  // 申请审批状态：0-无记录/可申请，1-待审批，2-审批通过，3-审批不通过
-  const applicationStatus = ref(0)
-  // VIP 申请详情信息
-  const applicationInfo = ref<{
-    haveFirstApplication: boolean
-    havePendingApplication: boolean
-  }>({
-    haveFirstApplication: true,
-    havePendingApplication: false
-  })
-  const showVipExpiredPopup = ref(false)
-
-  //  统一查询 VIP 申请状态并更新相关视图状态
-  async function fetchVipApplicationStatus() {
-    try {
-      const res = await getVipApplication()
-      if (res.data) {
-        applicationStatus.value = res.data.approvalStatus || 0
-
-        applicationInfo.value.haveFirstApplication = res.data.haveFirstApplication ?? true
-        applicationInfo.value.havePendingApplication = res.data.havePendingApplication ?? false
-
-        if (!applicationInfo.value.haveFirstApplication) {
-          showFreeVipBanner.value = true
-        } else {
-          showFreeVipBanner.value = false
-        }
-      }
-    } catch {
-      applicationStatus.value = 0
-      showFreeVipBanner.value = false
-    }
-  }
-
-  // 检查权限逻辑
-  function checkPermission() {
-    const userInfo = getUserInfo()
-    const vipCode = userInfo?.vipCode ?? 0
-
-    // 可申请试用
-    if (
-      applicationInfo.value.haveFirstApplication &&
-      !applicationInfo.value.havePendingApplication &&
-      vipCode === 0
-    ) {
-      showVipExpiredPopup.value = true
-      return false
-    }
-    // 审核中
-    if (
-      applicationInfo.value.haveFirstApplication &&
-      applicationInfo.value.havePendingApplication &&
-      vipCode === 0
-    ) {
-      uni.showToast({
-        title: '您的申请正在审核中，请稍后再试，或者直接联系我们',
-        icon: 'none',
-        duration: 3000
-      })
-      return false
-    }
-    return true
-  }
   // #endregion
 
-  const menu = ref({
-    top: 0,
-    left: 0,
-    height: 0
-  })
-  onLoad(async () => {
-    // 获取胶囊位置信息（单位px）
-    const info = uni.getMenuButtonBoundingClientRect()
-    menu.value = info
-
-    // 确保登录成功后再获取数据
-    try {
-      await ensureLogin()
-    } catch {
-      // 登录失败时沿用本地缓存的用户信息，避免页面无 VIP 入口
-    }
-    // 登录接口会返回最新的 vipCode，重新读取以刷新左上角 VIP 状态
-    userInfo.value = getUserInfo()
-    // 查询申请状态
-    fetchVipApplicationStatus()
-  })
+  // #region 弹窗状态管理
+  const showDataStatement = ref(false)
+  const showSearchPopup = ref(false)
+  const showTrialPopup = ref(false)
+  const showFindPopup = ref(false)
+  const showCompanyLabPopup = ref(false)
+  const showSponsorSitePiPopup = ref(false)
+  const showCustomerCustomerPopup = ref(false)
+  const showDrugPopup = ref(false)
+  // #endregion
 </script>
 
 <style lang="scss" scoped>

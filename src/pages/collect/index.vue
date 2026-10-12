@@ -72,46 +72,19 @@
 </template>
 
 <script setup lang="ts">
+  // #region 导入
   import { ref } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
   import { getUserCollectList, cancelUserCollect } from '@/api'
-
-  // 收藏的公司类型：1-sponsor, 2-cro, 3-thirdLab
-  const companyTypeMap: Record<number, string> = {
-    1: '申办方',
-    2: 'CRO',
-    3: '中心实验室'
-  }
-
-  const rankList = ref<any[]>([])
-  const loading = ref(false)
-  const noMore = ref(false)
-  const page = ref(1)
-
-  // #region tab 模块切换
-  // 各业务模块对应的 serverId
-  const serverIdTabs = [
-    { label: '查客户', value: 'searchCust' },
-    { label: '找客户', value: 'findCust' },
-    { label: '查药企&CRO', value: 'searchComCRO' },
-    { label: '查药企&医院', value: 'searchComHos' },
-    { label: '查药企&实验室', value: 'searchComLab' },
-    { label: '查产品', value: 'searchProduce' }
-  ]
-  // 当前选中的模块，默认查药企&CRO
-  const activeServerId = ref('searchComCRO')
-
-  const onTabChange = (value: string) => {
-    if (activeServerId.value === value) return
-    activeServerId.value = value
-    // 重置分页并重新加载
-    rankList.value = []
-    noMore.value = false
-    page.value = 1
-    fetchRankData()
-  }
   // #endregion
+
+  // #region 基础状态与生命周期
+  const menu = ref({
+    top: 0,
+    left: 0,
+    height: 0
+  })
 
   const goBack = () => {
     uni.navigateBack({
@@ -122,7 +95,19 @@
     })
   }
 
-  // 获取收藏列表
+  onLoad(async (options: any) => {
+    const info = uni.getMenuButtonBoundingClientRect()
+    menu.value = info
+    fetchRankData()
+  })
+  // #endregion
+
+  // #region 列表数据加载
+  const rankList = ref<any[]>([])
+  const loading = ref(false)
+  const noMore = ref(false)
+  const page = ref(1)
+
   const fetchRankData = async () => {
     if (loading.value || noMore.value) return
     loading.value = true
@@ -153,10 +138,41 @@
     }
   }
 
-  // #region 点击行根据公司类型进入对应主页
+  const onScrollToLower = () => {
+    fetchRankData()
+  }
+  // #endregion
+
+  // #region 选项卡切换
+  const serverIdTabs = [
+    { label: '查客户', value: 'searchCust' },
+    { label: '找客户', value: 'findCust' },
+    { label: '查药企&CRO', value: 'searchComCRO' },
+    { label: '查药企&医院', value: 'searchComHos' },
+    { label: '查药企&实验室', value: 'searchComLab' },
+    { label: '查产品', value: 'searchProduce' }
+  ]
+  const activeServerId = ref('searchComCRO')
+
+  const onTabChange = (value: string) => {
+    if (activeServerId.value === value) return
+    activeServerId.value = value
+    rankList.value = []
+    noMore.value = false
+    page.value = 1
+    fetchRankData()
+  }
+  // #endregion
+
+  // #region 业务逻辑操作
+  const companyTypeMap: Record<number, string> = {
+    1: '申办方',
+    2: 'CRO',
+    3: '中心实验室'
+  }
+
   const onRowClick = (item: any) => {
     if (!item.parentCompanyId) return
-    // 1-申办方进入申办方主页；2-CRO、3-中心实验室进入 CRO/中心实验室主页
     if (item.companyType === 1) {
       uni.navigateTo({
         url: `/pages/sponsor-stat/index?sponsorParentCompanyId=${item.parentCompanyId}&companyName=${encodeURIComponent(item.name)}`
@@ -167,9 +183,7 @@
       })
     }
   }
-  // #endregion
 
-  // #region 取消收藏
   const onCancelCollect = (item: any) => {
     uni.showModal({
       title: '提示',
@@ -179,7 +193,6 @@
         try {
           await cancelUserCollect(item.id)
           uni.showToast({ title: '已取消收藏', icon: 'none' })
-          // 重置分页并重新获取数据
           rankList.value = []
           noMore.value = false
           page.value = 1
@@ -191,26 +204,6 @@
     })
   }
   // #endregion
-
-  // #region 滚动加载逻辑
-  const onScrollToLower = () => {
-    fetchRankData()
-  }
-  // #endregion
-
-  // 胶囊位置信息
-  const menu = ref({
-    top: 0,
-    left: 0,
-    height: 0
-  })
-
-  onLoad(async (options: any) => {
-    // 获取胶囊位置信息（单位px）
-    const info = uni.getMenuButtonBoundingClientRect()
-    menu.value = info
-    fetchRankData()
-  })
 </script>
 
 <style lang="scss" scoped>

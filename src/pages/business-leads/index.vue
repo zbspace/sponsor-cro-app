@@ -189,51 +189,17 @@
   import TabBar from '@/components/tab-bar/index.vue'
   // #endregion
 
-  // #region 状态
+  // #region 页面基础状态与生命周期
   const menu = ref({ top: 0, left: 0, height: 0 })
   const companyName = ref('')
   const companyId = ref()
-  const type = ref<'before' | 'after'>('before')
-
-  const typeOptions = [
-    { label: '上市前', value: 'before' },
-    { label: '上市后', value: 'after' }
-  ] as const
-
-  const list = ref<OpportunityVo[]>([])
-  const pageNum = ref(1)
-  const pageSize = 10
-  const loading = ref(false)
-  const finished = ref(false)
-  const searchKeyword = ref('')
-  let searchTimer: ReturnType<typeof setTimeout> | null = null
-  const selectedCompany = ref<StandardCompanyItem | null>(null)
-  const searchResults = ref<StandardCompanyItem[]>([])
-  const showDropdown = ref(false)
-  const searchLoading = ref(false)
   // 先用本地缓存渲染，登录完成后刷新为最新用户信息
   const userInfo = ref(getUserInfo())
-  const showTrialPopup = ref(false)
-  const showFreeVipBanner = ref(false)
 
-  // 下拉列表高度：单行约 88rpx，最多展示约 400rpx，超出可上下滚动
-  const DROPDOWN_ITEM_HEIGHT = 88
-  const DROPDOWN_MAX_HEIGHT = 400
-  const dropdownListStyle = computed(() => {
-    const count = searchResults.value.length
-    const height = Math.min(count * DROPDOWN_ITEM_HEIGHT, DROPDOWN_MAX_HEIGHT)
-    return { height: `${height}rpx` }
-  })
-  // #endregion
-
-  function getClueClass(item: OpportunityVo) {
-    if (type.value === 'before') return 'before-clue'
-    if (type.value === 'after') return 'after-clue'
-    return item.dataType === 'nda' ? 'after-clue' : 'before-clue'
+  const goBack = () => {
+    uni.navigateBack({ delta: 1, fail: () => uni.reLaunch({ url: '/pages/index/index' }) })
   }
-  // #endregion
 
-  // #region 生命周期
   onLoad((options: any) => {
     const info = uni.getMenuButtonBoundingClientRect()
     menu.value = info
@@ -249,10 +215,23 @@
     }
 
     fetchList()
+    fetchVipApplicationStatus()
   })
   // #endregion
 
-  // #region 方法
+  // #region 线索列表加载逻辑
+  const type = ref<'before' | 'after'>('before')
+  const typeOptions = [
+    { label: '上市前', value: 'before' },
+    { label: '上市后', value: 'after' }
+  ] as const
+
+  const list = ref<OpportunityVo[]>([])
+  const pageNum = ref(1)
+  const pageSize = 10
+  const loading = ref(false)
+  const finished = ref(false)
+
   async function fetchList() {
     if (loading.value || finished.value) return
     loading.value = true
@@ -267,7 +246,7 @@
       // 注意：后端接口命名与线索类型相反
       // 上市前 -> getAfterListingBusinessClueList，上市后 -> getBeforeListingBusinessClueList
       const fetchApi =
-        type.value === 'before' ? getBeforeListingBusinessClueList : getAfterListingBusinessClueList 
+        type.value === 'before' ? getBeforeListingBusinessClueList : getAfterListingBusinessClueList
       const res = await fetchApi(params)
       const resData = res.data
 
@@ -301,21 +280,40 @@
     }
   }
 
-  function goBack() {
-    uni.navigateBack({ delta: 1, fail: () => uni.reLaunch({ url: '/pages/index/index' }) })
+  function getClueClass(item: OpportunityVo) {
+    if (type.value === 'before') return 'before-clue'
+    if (type.value === 'after') return 'after-clue'
+    return item.dataType === 'nda' ? 'after-clue' : 'before-clue'
   }
 
   function isSuccessStatus(status: string) {
     if (!status) return false
     return status.includes('通过') || status.includes('获批')
   }
+  // #endregion
+
+  // #region 搜索联想逻辑
+  const searchKeyword = ref('')
+  let searchTimer: ReturnType<typeof setTimeout> | null = null
+  const selectedCompany = ref<StandardCompanyItem | null>(null)
+  const searchResults = ref<StandardCompanyItem[]>([])
+  const showDropdown = ref(false)
+  const searchLoading = ref(false)
+
+  const DROPDOWN_ITEM_HEIGHT = 88
+  const DROPDOWN_MAX_HEIGHT = 400
+  const dropdownListStyle = computed(() => {
+    const count = searchResults.value.length
+    const height = Math.min(count * DROPDOWN_ITEM_HEIGHT, DROPDOWN_MAX_HEIGHT)
+    return { height: `${height}rpx` }
+  })
 
   function onSearchInput() {
     if (!checkPermission()) {
       return
     }
     if (searchTimer) clearTimeout(searchTimer)
-    selectedCompany.value = null // 输入时重置已选公司
+    selectedCompany.value = null
 
     const keyword = searchKeyword.value.trim()
     if (!keyword) {
@@ -355,18 +353,10 @@
     selectedCompany.value = item
     showDropdown.value = false
   }
+  // #endregion
 
-  function handleBannerApply() {
-    if (applicationStatus.value === VIP_APPLICATION_STATUS.待审批) {
-      uni.showToast({ title: '您已提交试用申请，等待电话联系', icon: 'none' })
-      return
-    }
-  }
-
-  // #region VIP状态
-  // 申请审批状态：0-无记录/可申请，1-待审批，2-审批通过，3-审批不通过
+  // #region VIP 状态与权限控制
   const applicationStatus = ref(0)
-  // VIP 申请详情信息
   const applicationInfo = ref<{
     haveFirstApplication: boolean
     havePendingApplication: boolean
@@ -375,22 +365,16 @@
     havePendingApplication: false
   })
   const showVipExpiredPopup = ref(false)
+  const showFreeVipBanner = ref(false)
 
-  //  统一查询 VIP 申请状态并更新相关视图状态
   async function fetchVipApplicationStatus() {
     try {
       const res = await getVipApplication()
       if (res.data) {
         applicationStatus.value = res.data.approvalStatus || 0
-
         applicationInfo.value.haveFirstApplication = res.data.haveFirstApplication ?? true
         applicationInfo.value.havePendingApplication = res.data.havePendingApplication ?? false
-
-        if (!applicationInfo.value.haveFirstApplication) {
-          showFreeVipBanner.value = true
-        } else {
-          showFreeVipBanner.value = false
-        }
+        showFreeVipBanner.value = !applicationInfo.value.haveFirstApplication
       }
     } catch {
       applicationStatus.value = 0
@@ -398,12 +382,10 @@
     }
   }
 
-  // 检查权限逻辑
   function checkPermission() {
     const userInfo = getUserInfo()
     const vipCode = userInfo?.vipCode ?? 0
 
-    // 可申请试用
     if (
       applicationInfo.value.haveFirstApplication &&
       !applicationInfo.value.havePendingApplication &&
@@ -412,7 +394,6 @@
       showVipExpiredPopup.value = true
       return false
     }
-    // 审核中
     if (
       applicationInfo.value.haveFirstApplication &&
       applicationInfo.value.havePendingApplication &&
@@ -427,7 +408,13 @@
     }
     return true
   }
-  // #endregion
+
+  function handleBannerApply() {
+    if (applicationStatus.value === VIP_APPLICATION_STATUS.待审批) {
+      uni.showToast({ title: '您已提交试用申请，等待电话联系', icon: 'none' })
+      return
+    }
+  }
   // #endregion
 </script>
 

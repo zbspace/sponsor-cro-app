@@ -10,23 +10,37 @@
       <view class="icon-wrapper">
         <!-- 首页图标 -->
         <template v-if="item.key === 'home'">
-          <image class="close-icon" src="../../static/icons/首页1.png"  v-if="active === item.key" mode="aspectFit" />
+          <image
+            class="close-icon"
+            src="../../static/icons/首页1.png"
+            v-if="active === item.key"
+            mode="aspectFit"
+          />
           <image class="close-icon" src="../../static/icons/首页.png" v-else mode="aspectFit" />
         </template>
 
         <!-- 商机图标 -->
         <template v-else-if="item.key === 'opportunity'">
-          <image class="close-icon" src="../../static/icons/商机1.png"  v-if="active === item.key" mode="aspectFit" />
+          <image
+            class="close-icon"
+            src="../../static/icons/商机1.png"
+            v-if="active === item.key"
+            mode="aspectFit"
+          />
           <image class="close-icon" src="../../static/icons/商机.png" v-else mode="aspectFit" />
         </template>
 
         <!-- 我的图标 -->
         <template v-else-if="item.key === 'mine'">
-          <image class="close-icon" src="../../static/icons/我的1.png"  v-if="active === item.key" mode="aspectFit" />
+          <image
+            class="close-icon"
+            src="../../static/icons/我的1.png"
+            v-if="active === item.key"
+            mode="aspectFit"
+          />
           <image class="close-icon" src="../../static/icons/我的.png" v-else mode="aspectFit" />
         </template>
       </view>
-      
       <text class="tab-text" :class="{ active: active === item.key }">{{ item.text }}</text>
     </view>
     <!-- #endregion -->
@@ -106,7 +120,7 @@
       .tab-text {
         font-weight: 400;
         font-size: 20rpx;
-        color: #9199AE;
+        color: #9199ae;
         line-height: 32rpx;
 
         &.active {

@@ -113,12 +113,38 @@
 </template>
 
 <script setup lang="ts">
+  // #region 导入
   import { ref, watch, computed } from 'vue'
   import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
-  import { selectClinicalCroRankList, getUserInfo,queryStandardCompany } from '@/api'
+  import { selectClinicalCroRankList, getUserInfo, queryStandardCompany, getVipApplication } from '@/api'
   import type { OpportunityVo, OpportunityParam, StandardCompanyItem } from '@/types/api'
+  // #endregion
 
-  // #region 分享
+  // #region 页面基础状态与生命周期
+  const menu = ref({ top: 44, height: 32 })
+  const applicationStatus = ref(0)
+  const applicationInfo = ref<{
+    haveFirstApplication: boolean
+    havePendingApplication: boolean
+  }>({
+    haveFirstApplication: true,
+    havePendingApplication: false
+  })
+  const showVipExpiredPopup = ref(false)
+
+  const goBack = () => {
+    uni.navigateBack()
+  }
+
+  onLoad(() => {
+    // #ifdef MP-WEIXIN
+    const info = uni.getMenuButtonBoundingClientRect()
+    menu.value = info
+    // #endif
+    fetchRankData(true)
+    fetchVipApplicationStatus()
+  })
+
   onShareAppMessage(() => {
     return {
       title: '中国临床CRO榜单 - 临床研究一站式查询',
@@ -126,9 +152,54 @@
       imageUrl: '/static/icons/header-bg.png'
     }
   })
+
+  async function fetchVipApplicationStatus() {
+    try {
+      const res = await getVipApplication()
+      if (res.data) {
+        applicationStatus.value = res.data.approvalStatus || 0
+        applicationInfo.value.haveFirstApplication = res.data.haveFirstApplication ?? true
+        applicationInfo.value.havePendingApplication = res.data.havePendingApplication ?? false
+      }
+    } catch {
+      // 静默处理
+    }
+  }
+
+  function checkPermission() {
+    const userInfo = getUserInfo()
+    const vipCode = userInfo?.vipCode ?? 0
+
+    if (
+      applicationInfo.value.haveFirstApplication &&
+      !applicationInfo.value.havePendingApplication &&
+      vipCode === 0
+    ) {
+      showVipExpiredPopup.value = true
+      return false
+    }
+    if (
+      applicationInfo.value.haveFirstApplication &&
+      applicationInfo.value.havePendingApplication &&
+      vipCode === 0
+    ) {
+      uni.showToast({
+        title: '您的申请正在审核中，请稍后再试，或者直接联系我们',
+        icon: 'none',
+        duration: 3000
+      })
+      return false
+    }
+    return true
+  }
   // #endregion
 
-  // #region 筛选
+  // #region 榜单数据加载
+  const rankList = ref<{ name: string; experience: number; partners: number }[]>([])
+  const loading = ref(false)
+  const noMore = ref(false)
+  const page = ref(1)
+  const pageSize = 10
   const selectedYear = ref('')
 
   const yearOptions = (() => {
@@ -139,14 +210,6 @@
     }
     return options
   })()
-  // #endregion
-
-  // #region 榜单数据
-  const rankList = ref<{ name: string; experience: number; partners: number }[]>([])
-  const loading = ref(false)
-  const noMore = ref(false)
-  const page = ref(1)
-  const pageSize = 10
 
   const fetchRankData = async (reset = false) => {
     if (loading.value || noMore.value) return
@@ -192,61 +255,44 @@
     }
   }
 
-  watch(selectedYear, () => {
-    fetchRankData(true)
-  })
-  // #endregion
-
-  // #region 滚动加载
   const onScrollToLower = () => {
     fetchRankData()
   }
-  // #endregion
 
-  // #region 点击行进入 CRO 主页
   const onRowClick = (item: any) => {
     if (!item.parentCompanyId) return
     uni.navigateTo({
       url: `/pages/cro-stat/index?partnerParentCompanyId=${item.parentCompanyId}&parentCompanyShortName=${encodeURIComponent(item.name)}`
     })
   }
+
+  watch(selectedYear, () => {
+    fetchRankData(true)
+  })
   // #endregion
 
-  // #region 公司选择
+  // #region 公司搜索逻辑
   const searchKeyword = ref('')
   const showDropdown = ref(false)
   const searchLoading = ref(false)
   const searchResults = ref<StandardCompanyItem[]>([])
-  const dropdownResults = ref<{ standardId: string; companyStandardName: string }[]>([])
   let searchTimer: ReturnType<typeof setTimeout> | null = null
   const selectedCompany = ref<StandardCompanyItem | null>(null)
-  const showVipExpiredPopup = ref(false)
-  // 申请审批状态：0-无记录/可申请，1-待审批，2-审批通过，3-审批不通过
-  const applicationStatus = ref(0)
-  // VIP 申请详情信息
-  const applicationInfo = ref<{
-    haveFirstApplication: boolean
-    havePendingApplication: boolean
-  }>({
-    haveFirstApplication: true,
-    havePendingApplication: false
-  })
-  // 下拉列表高度：单行约 88rpx，最多展示约 400rpx，超出可上下滚动
+
   const DROPDOWN_ITEM_HEIGHT = 88
   const DROPDOWN_MAX_HEIGHT = 400
-  const selectCompany = (item: any) => {
-    searchKeyword.value = item.companyStandardName
-    selectedCompany.value = item
-    showDropdown.value = false
-    fetchRankData(true)
-  }
+  const dropdownListStyle = computed(() => {
+    const count = searchResults.value.length
+    const height = Math.min(count * DROPDOWN_ITEM_HEIGHT, DROPDOWN_MAX_HEIGHT)
+    return { height: `${height}rpx` }
+  })
 
   function onSearchInput() {
     if (!checkPermission()) {
       return
     }
     if (searchTimer) clearTimeout(searchTimer)
-    selectedCompany.value = null // 输入时重置已选公司
+    selectedCompany.value = null
 
     const keyword = searchKeyword.value.trim()
     if (!keyword) {
@@ -281,56 +327,13 @@
     }
   }
 
-  const dropdownListStyle = computed(() => {
-    const count = searchResults.value.length
-    const height = Math.min(count * DROPDOWN_ITEM_HEIGHT, DROPDOWN_MAX_HEIGHT)
-    return { height: `${height}rpx` }
-  })
-
-  // 检查权限逻辑
-  function checkPermission() {
-    const userInfo = getUserInfo()
-    const vipCode = userInfo?.vipCode ?? 0
-
-    // 可申请试用
-    if (
-      applicationInfo.value.haveFirstApplication &&
-      !applicationInfo.value.havePendingApplication &&
-      vipCode === 0
-    ) {
-      showVipExpiredPopup.value = true
-      return false
-    }
-    // 审核中
-    if (
-      applicationInfo.value.haveFirstApplication &&
-      applicationInfo.value.havePendingApplication &&
-      vipCode === 0
-    ) {
-      uni.showToast({
-        title: '您的申请正在审核中，请稍后再试，或者直接联系我们',
-        icon: 'none',
-        duration: 3000
-      })
-      return false
-    }
-    return true
+  const selectCompany = (item: any) => {
+    searchKeyword.value = item.companyStandardName
+    selectedCompany.value = item
+    showDropdown.value = false
+    fetchRankData(true)
   }
   // #endregion
-
-  const goBack = () => {
-    uni.navigateBack()
-  }
-
-  // 胶囊位置
-  const menu = ref({ top: 44, height: 32 })
-  onLoad(() => {
-    // #ifdef MP-WEIXIN
-    const info = uni.getMenuButtonBoundingClientRect()
-    menu.value = info
-    // #endif
-    fetchRankData(true)
-  })
 </script>
 
 <style lang="scss" scoped>

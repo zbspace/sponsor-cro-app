@@ -223,6 +223,7 @@
 </template>
 
 <script setup lang="ts">
+  // #region 导入
   import { ref, reactive, watch, computed } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
@@ -237,17 +238,65 @@
     getUserCollectList
   } from '@/api'
   import type { CroRankItem } from '@/types/api'
+  // #endregion
 
+  // #region 基础状态与生命周期
+  const menu = ref({
+    top: 0,
+    left: 0,
+    height: 0
+  })
   const activeTab = ref('stat')
-  // 相关公司多选，空数组表示全部
-  const currentCompany = ref<string[]>([])
-  const currentTimeFilter = ref('')
-  const currentTimeFilterObj = ref('')
-  const isStarred = ref(false)
+  const companyName = ref('')
+  const sponsorParentCompanyId = ref(0)
+  const partnerParentCompanyId = ref(0)
+  const routeSponsorCompanyId = ref(0)
 
+  const goBack = () => {
+    uni.navigateBack({
+      delta: 1,
+      fail: () => {
+        uni.reLaunch({ url: '/pages/index/index' })
+      }
+    })
+  }
+
+  onLoad((options: any) => {
+    const info = uni.getMenuButtonBoundingClientRect()
+    menu.value = info
+    if (options?.parentCompanyShortName) {
+      companyName.value = decodeURIComponent(options.parentCompanyShortName)
+    }
+    if (options?.parentCompanyId) {
+      sponsorParentCompanyId.value = Number(options.parentCompanyId)
+    }
+    if (options?.partnerParentCompanyId) {
+      partnerParentCompanyId.value = Number(options.partnerParentCompanyId)
+    }
+    if (options?.sponsorParentCompanyId) {
+      routeSponsorCompanyId.value = Number(options.sponsorParentCompanyId)
+    }
+    if (options?.activeTab === 'list') {
+      activeTab.value = 'list'
+    }
+    const timeFilter = options?.timeFilter
+    if (timeFilter) {
+      currentTimeFilterObj.value = timeFilter
+    }
+    fetchRelatedCompanyList()
+    fetchOutsourcingRatio()
+    fetchSponsorRankList()
+    if (!timeFilter) {
+      fetchProjectList()
+    }
+    fetchCroRank()
+    fetchCollectStatus()
+  })
+  // #endregion
+
+  // #region 筛选配置
   const companyOptions = ref<{ value: string; text: string }[]>([])
-
-  // 时间筛选选项：全部 + 最近三年，值对应接口 lastYear 参数
+  const currentCompany = ref<string[]>([])
   const timeOptions = ref([
     { value: '', text: '全部' },
     ...Array.from({ length: 5 }, (_, i) => {
@@ -255,93 +304,11 @@
       return { value: String(year), text: `${year}年度` }
     })
   ])
+  const currentTimeFilter = ref('')
+  const currentTimeFilterObj = ref('')
 
-  const outsourceRate = reactive({
-    cro: 0,
-    self: 0
-  })
-  // 公司名称，从路由参数获取
-  const companyName = ref('')
-  // 申办方母公司ID，优先从路由参数获取，默认为 0
-  const sponsorParentCompanyId = ref(0)
-  // cro/中心实验室母公司ID，从路由参数获取
-  const partnerParentCompanyId = ref(0)
-  // 跳转来源页面的申办方公司ID，用于项目列表 tab 申办方筛选默认选中
-  const routeSponsorCompanyId = ref(0)
-
-  // #region 收藏功能
-  // 收藏记录id，用于取消收藏
-  const collectId = ref(0)
-  // 当前页面收藏对象：sponsor 场景收藏申办方(1)，其余场景收藏 CRO(2)
-  const collectCompanyType = computed(() => (sponsorParentCompanyId.value ? 1 : 2))
-  // 收藏对象的母公司ID
-  const collectParentCompanyId = computed(
-    () => sponsorParentCompanyId.value || partnerParentCompanyId.value
-  )
-
-  /**
-   * 查询当前公司是否已收藏，初始化收藏按钮状态并保存收藏记录id
-   */
-  async function fetchCollectStatus() {
-    const parentCompanyId = collectParentCompanyId.value
-    if (!parentCompanyId) return
-    try {
-      const res = await getUserCollectList({
-        pageNum: 1,
-        pageSize: 50,
-        companyType: collectCompanyType.value || undefined
-      })
-      const record = (res.data?.list || []).find(
-        (item: any) => item.parentCompanyId === parentCompanyId
-      )
-      isStarred.value = !!record
-      collectId.value = record?.id || 0
-    } catch {
-      // 静默处理
-    }
-  }
-  // #endregion
-
-  // #region 全国临床CRO排名数据
-  const rankData = ref<CroRankItem | null>(null)
-
-  /**
-   * 获取全国临床CRO排名
-   */
-  async function fetchCroRank() {
-    // 仅在查看 CRO 统计时获取排名
-    if (!partnerParentCompanyId.value) return
-    try {
-      const res = await selectClinicalCroRankList({
-        croParentCompanyId: partnerParentCompanyId.value,
-        pageNum: 1,
-        pageSize: 10,
-        lastYear: currentTimeFilterObj.value || undefined
-      })
-      if (res.data?.list) {
-        rankData.value = res.data?.list[0]
-      }
-    } catch {
-      // 静默处理
-    }
-  }
-
-  /**
-   * 跳转到 CRO 榜单页
-   */
-  function goToRankList() {
-    uni.navigateTo({
-      url: '/pages/cro-rank/index'
-    })
-  }
-  // #endregion
-
-  /**
-   * 获取相关公司列表（顶部筛选下拉）
-   */
   async function fetchRelatedCompanyList() {
     try {
-      // 根据进入场景确定查询类型和母公司ID：申办方 / CRO
       const isSponsor = !!sponsorParentCompanyId.value
       const parentId = isSponsor ? sponsorParentCompanyId.value : partnerParentCompanyId.value
       if (!parentId) return
@@ -362,9 +329,125 @@
     }
   }
 
+  const sponsorCompanyOptions = ref<{ value: string; text: string }[]>([{ value: '', text: '全部' }])
+  const currentSponsorCompany = ref('')
+
+  async function fetchSponsorCompanyOptions() {
+    try {
+      const firstRes = await getClinicalSponsorRankList({
+        companyType: 'cro',
+        pageNum: 1,
+        pageSize: 9999,
+        partnerParentCompanyId: partnerParentCompanyId.value
+      })
+      let list = firstRes.data?.list || []
+      sponsorCompanyOptions.value = [
+        { value: '', text: '全部' },
+        ...list.map((item) => ({
+          value: String(item.parentCompanyId),
+          text: item.parentCompanyShortName
+        }))
+      ]
+      if (routeSponsorCompanyId.value) {
+        const target = sponsorCompanyOptions.value.find(
+          (opt) => opt.value === String(routeSponsorCompanyId.value)
+        )
+        if (target) {
+          currentSponsorCompany.value = String(routeSponsorCompanyId.value)
+        }
+      }
+    } catch {
+      // 静默处理
+    }
+  }
+  // #endregion
+
+  // #region 收藏功能
+  const isStarred = ref(false)
+  const collectId = ref(0)
+  const collectCompanyType = computed(() => (sponsorParentCompanyId.value ? 1 : 2))
+  const collectParentCompanyId = computed(
+    () => sponsorParentCompanyId.value || partnerParentCompanyId.value
+  )
+
+  async function fetchCollectStatus() {
+    const parentCompanyId = collectParentCompanyId.value
+    if (!parentCompanyId) return
+    try {
+      const res = await getUserCollectList({
+        pageNum: 1,
+        pageSize: 50,
+        companyType: collectCompanyType.value || undefined
+      })
+      const record = (res.data?.list || []).find(
+        (item: any) => item.parentCompanyId === parentCompanyId
+      )
+      isStarred.value = !!record
+      collectId.value = record?.id || 0
+    } catch {
+      // 静默处理
+    }
+  }
+
+  const toggleStar = async () => {
+    const parentCompanyId = collectParentCompanyId.value
+    if (!parentCompanyId) {
+      uni.showToast({ title: '暂无可收藏的公司', icon: 'none' })
+      return
+    }
+    if (isStarred.value) {
+      if (!collectId.value) return
+      try {
+        await cancelUserCollect(collectId.value)
+        isStarred.value = false
+        collectId.value = 0
+        uni.showToast({ title: '已取消收藏', icon: 'none' })
+      } catch {
+        // 静默处理
+      }
+    } else {
+      try {
+        await userCollect(collectCompanyType.value, parentCompanyId)
+        isStarred.value = true
+        uni.showToast({ title: '已收藏', icon: 'success' })
+        fetchCollectStatus()
+      } catch {
+        // 静默处理
+      }
+    }
+  }
+  // #endregion
+
+  // #region CRO 排名与详情
+  const rankData = ref<CroRankItem | null>(null)
+  const outsourceRate = reactive({
+    cro: 0,
+    self: 0
+  })
+
+  async function fetchCroRank() {
+    if (!partnerParentCompanyId.value) return
+    try {
+      const res = await selectClinicalCroRankList({
+        croParentCompanyId: partnerParentCompanyId.value,
+        pageNum: 1,
+        pageSize: 10,
+        lastYear: currentTimeFilterObj.value || undefined
+      })
+      if (res.data?.list) {
+        rankData.value = res.data?.list[0]
+      }
+    } catch {
+      // 静默处理
+    }
+  }
+
+  function goToRankList() {
+    uni.navigateTo({ url: '/pages/cro-rank/index' })
+  }
+
   async function fetchOutsourcingRatio() {
     try {
-      // 接口必填参数：companyType(cro/thirdLab)、sponsorParentCompanyId
       const res = await getOutsourcingRatio({
         companyType: 'cro',
         sponsorParentCompanyId: sponsorParentCompanyId.value
@@ -377,24 +460,20 @@
       // 静默处理
     }
   }
+  // #endregion
 
+  // #region 申办方合作名单
   const croList = ref<{ name: string; count: number }[]>([])
-  // 申办方合作名单分页参数
   const sponsorPage = ref(1)
   const sponsorPageSize = ref(10)
   const sponsorTotal = ref(0)
-  // 加载状态
   const sponsorLoading = ref(false)
   const sponsorNoMore = ref(false)
 
-  /**
-   * 获取申办方合作名单
-   */
   async function fetchSponsorRankList() {
     if (sponsorLoading.value) return
     sponsorLoading.value = true
     try {
-      // 接口必填参数：companyType(cro/thirdLab)；lastYear 与时间筛选联动
       const res = await getClinicalSponsorRankList({
         companyType: 'cro',
         lastYear: currentTimeFilter.value ? Number(currentTimeFilter.value) : undefined,
@@ -410,7 +489,6 @@
           count: item.projectExperienceNum,
           parentCompanyId: item.parentCompanyId
         }))
-        // 第一页替换，后续页追加
         croList.value = sponsorPage.value === 1 ? newList : [...croList.value, ...newList]
         sponsorTotal.value = res.data.total
         sponsorNoMore.value = croList.value.length >= res.data.total
@@ -424,7 +502,6 @@
     }
   }
 
-  // #region 点击申办方合作名单行进入申办方主页
   const onSponsorClick = (item: any) => {
     if (!item.parentCompanyId) return
     activeTab.value = 'list'
@@ -432,62 +509,11 @@
   }
   // #endregion
 
-  // #region 申办方公司筛选（项目列表 tab）
-  const currentSponsorCompany = ref('')
-  const sponsorCompanyOptions = ref<{ value: string; text: string }[]>([
-    { value: '', text: '全部' }
-  ])
-
-  /**
-   * 查询该 CRO 合作的所有申办方，用于项目列表 tab 的申办方筛选下拉
-   */
-  async function fetchSponsorCompanyOptions() {
-    try {
-      // 先取第一页，得到总页数
-      const firstRes = await getClinicalSponsorRankList({
-        companyType: 'cro',
-        pageNum: 1,
-        pageSize: 9999,
-        partnerParentCompanyId: partnerParentCompanyId.value
-      })
-      let list = firstRes.data?.list || []
-      sponsorCompanyOptions.value = [
-        { value: '', text: '全部' },
-        ...list.map((item) => ({
-          value: String(item.parentCompanyId),
-          text: item.parentCompanyShortName
-        }))
-      ]
-      // 从申办方主页跳转进入时，默认在申办方筛选下拉中选上上个页面的申办方公司
-      if (routeSponsorCompanyId.value) {
-        const target = sponsorCompanyOptions.value.find(
-          (opt) => opt.value === String(routeSponsorCompanyId.value)
-        )
-        if (target) {
-          currentSponsorCompany.value = String(routeSponsorCompanyId.value)
-        }
-      }
-    } catch {
-      // 静默处理
-    }
-  }
-  // #endregion
-
-  const projectList = ref<
-    {
-      title: string
-      approveTime: string
-      sponsor: string
-      approveNo: string
-      cro: string
-      tag: string
-    }[]
-  >([])
-  // 项目列表分页参数
+  // #region 项目列表
+  const projectList = ref<any[]>([])
   const projectPage = ref(1)
   const projectPageSize = ref(10)
   const projectTotal = ref(0)
-  // 加载状态
   const loading = ref(false)
   const noMore = ref(false)
 
@@ -495,15 +521,12 @@
     if (loading.value) return
     loading.value = true
     try {
-      // 接口必填参数：companyType(cro/thirdLab)；lastYear 为筛选年份，空值表示全部
       const res = await getCroProjectList({
         companyType: 'cro',
         lastYear: currentTimeFilterObj.value ? Number(currentTimeFilterObj.value) : undefined,
         pageNum: projectPage.value,
         pageSize: projectPageSize.value,
-        // CRO/中心实验室场景：按合作CRO母公司过滤
         partnerParentCompanyId: partnerParentCompanyId.value || undefined,
-        // 申办方筛选：优先使用项目列表 tab 选择的申办方；下拉未加载完成时退回来源申办方，再退回路由申办方
         sponsorParentCompanyIdList: currentSponsorCompany.value
           ? [Number(currentSponsorCompany.value)]
           : routeSponsorCompanyId.value
@@ -521,7 +544,6 @@
           cro: item.partnerParentCompanyShortName,
           tag: item.category
         }))
-        // 第一页替换，后续页追加
         projectList.value = projectPage.value === 1 ? newList : [...projectList.value, ...newList]
         projectTotal.value = res.data.total
         noMore.value = projectList.value.length >= res.data.total
@@ -535,11 +557,7 @@
     }
   }
 
-  /**
-   * 滚动到底部加载下一页
-   */
   function onScrollToLower() {
-    // 加载中或无更多数据时不再请求
     if (activeTab.value === 'stat') {
       if (sponsorLoading.value || sponsorNoMore.value) return
       sponsorPage.value += 1
@@ -550,15 +568,15 @@
       fetchProjectList()
     }
   }
+  // #endregion
 
-  // 切换相关公司时自动重新请求申办方合作名单
+  // #region 监听与响应
   watch(currentCompany, () => {
     sponsorPage.value = 1
     sponsorNoMore.value = false
     fetchSponsorRankList()
   })
 
-  // 时间筛选变化时自动重新请求列表数据
   watch(currentTimeFilter, () => {
     sponsorPage.value = 1
     sponsorNoMore.value = false
@@ -571,105 +589,18 @@
     fetchProjectList()
   })
 
-  // 切换到项目列表 tab 时，加载申办方筛选下拉数据
   watch(activeTab, (tab) => {
     if (tab === 'list') {
       fetchSponsorCompanyOptions()
     }
   })
 
-  // 申办方筛选变化时自动重新请求项目列表
   watch(currentSponsorCompany, () => {
     projectPage.value = 1
     noMore.value = false
     fetchProjectList()
   })
-
-  const toggleStar = async () => {
-    const parentCompanyId = collectParentCompanyId.value
-    if (!parentCompanyId) {
-      uni.showToast({ title: '暂无可收藏的公司', icon: 'none' })
-      return
-    }
-    if (isStarred.value) {
-      // 取消收藏
-      if (!collectId.value) return
-      try {
-        await cancelUserCollect(collectId.value)
-        isStarred.value = false
-        collectId.value = 0
-        uni.showToast({ title: '已取消收藏', icon: 'none' })
-      } catch {
-        // 请求失败提示已由拦截器统一处理
-      }
-    } else {
-      // 收藏
-      try {
-        await userCollect(collectCompanyType.value, parentCompanyId)
-        isStarred.value = true
-        uni.showToast({ title: '已收藏', icon: 'success' })
-        // 收藏成功后刷新收藏记录，保存记录id供取消使用
-        fetchCollectStatus()
-      } catch {
-        // 请求失败提示已由拦截器统一处理
-      }
-    }
-  }
-
-  const goBack = () => {
-    uni.navigateBack({
-      delta: 1,
-      fail: () => {
-        uni.reLaunch({ url: '/pages/index/index' })
-      }
-    })
-  }
-
-  // 胶囊位置信息
-  const menu = ref({
-    top: 0,
-    left: 0,
-    height: 0
-  })
-
-  onLoad((options: any) => {
-    // 获取胶囊位置信息（单位px）
-    const info = uni.getMenuButtonBoundingClientRect()
-    menu.value = info
-    // 读取路由参数中的公司名称
-    if (options?.parentCompanyShortName) {
-      companyName.value = decodeURIComponent(options.parentCompanyShortName)
-    }
-    // 读取路由参数中的申办方母公司ID
-    if (options?.parentCompanyId) {
-      sponsorParentCompanyId.value = Number(options.parentCompanyId)
-    }
-    // 读取路由参数中的cro/中心实验室母公司ID
-    if (options?.partnerParentCompanyId) {
-      partnerParentCompanyId.value = Number(options.partnerParentCompanyId)
-    }
-    // 读取路由参数中的来源申办方公司ID：从申办方主页跳转进入时，用于申办方筛选默认选中
-    if (options?.sponsorParentCompanyId) {
-      routeSponsorCompanyId.value = Number(options.sponsorParentCompanyId)
-    }
-    // 读取路由参数中的目标tab：支持从申办方主页跳转时默认切换到项目列表tab
-    if (options?.activeTab === 'list') {
-      activeTab.value = 'list'
-    }
-    // 读取路由参数中的时间筛选：有值时通过 watch 触发按指定年份加载项目列表
-    const timeFilter = options?.timeFilter
-    if (timeFilter) {
-      currentTimeFilterObj.value = timeFilter
-    }
-    fetchRelatedCompanyList()
-    fetchOutsourcingRatio()
-    fetchSponsorRankList()
-    if (!timeFilter) {
-      fetchProjectList()
-    }
-    fetchCroRank()
-    fetchCollectStatus()
-  })
+  // #endregion
 </script>
 
 <style lang="scss" scoped>
