@@ -208,10 +208,14 @@
 
     // 解析页面参数
     if (options) {
-      drugInfo.drugStandardName = options.drugStandardName || ''
+      drugInfo.drugStandardName = options.drugStandardName
+        ? decodeURIComponent(options.drugStandardName)
+        : ''
       drugInfo.cleanedClassification = options.cleanedClassification || ''
       drugInfo.cleanedDrugType = options.cleanedDrugType || ''
-      drugInfo.standardCompanyName = options.standardCompanyName || ''
+      drugInfo.standardCompanyName = options.standardCompanyName
+        ? decodeURIComponent(options.standardCompanyName)
+        : ''
       drugInfo.parentCompanyId = options.parentCompanyId || ''
     }
 

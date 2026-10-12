@@ -153,6 +153,9 @@
   <!-- 查客户弹窗 -->
   <search-customer-popup v-model:visible="showCustomerCustomerPopup" />
 
+  <!-- 查产品弹窗 -->
+  <search-drug-popup v-model:visible="showDrugPopup" />
+
   <!-- 底部导航 -->
   <tab-bar active="home" />
 
@@ -188,6 +191,7 @@
   const showSponsorSitePiPopup = ref(false)
   const showCustomerCustomerPopup = ref(false)
   const showFreeVipBanner = ref(false)
+  const showDrugPopup = ref(false)
   // 先用本地缓存渲染，登录完成后刷新为最新用户信息
   const userInfo = ref<UserInfo | null>(getUserInfo())
 
@@ -281,6 +285,8 @@
       showSponsorSitePiPopup.value = true
     } else if (item.title === '查客户') {
       showCustomerCustomerPopup.value = true
+    } else if (item.title === '查产品') {
+      showDrugPopup.value = true
     } else if (item.path) {
       goTo(item.path)
     } else {
