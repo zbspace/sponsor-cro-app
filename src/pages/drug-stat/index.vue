@@ -322,20 +322,14 @@
     border-radius: 24rpx;
     padding: 32rpx;
     box-shadow: 0 8rpx 32rpx rgba(73, 154, 230, 0.08);
-    margin-bottom: 40rpx;
+    margin: 30rpx;
 
     .drug-header {
       margin-bottom: 20rpx;
-      .drug-label {
-        font-size: 32rpx;
-        color: #333;
-        font-weight: 500;
-      }
-      .drug-name {
-        font-size: 36rpx;
-        color: #499ae6;
-        font-weight: 600;
-      }
+      font-weight: bold;
+      font-size: 32rpx;
+      color: #293959;
+      line-height: 52rpx;
     }
 
     .tag-row {
@@ -382,7 +376,7 @@
   .tabs {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 30rpx;
+    margin: 30rpx;
     border-bottom: 2rpx solid #f0f0f0;
 
     .tab-item {

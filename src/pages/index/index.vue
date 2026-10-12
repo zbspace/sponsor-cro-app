@@ -292,7 +292,7 @@
       title: '中国附条件获批上市药品清单',
       icon: 'med',
       iconUrl: '/static/home/12.png',
-      path: 'medicine-rank/conditional'
+      path: 'conditional-drug-list/index'
     },
     {
       title: '中国1类新药获批上市清单',

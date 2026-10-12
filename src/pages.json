@@ -161,6 +161,13 @@
       }
     },
     {
+      "path": "pages/conditional-drug-list/index",
+      "style": {
+        "navigationBarTitleText": "中国附条件获批上市药品清单",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/business-leads/index",
       "style": {
         "navigationBarTitleText": "商机线索",
