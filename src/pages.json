@@ -168,6 +168,13 @@
       }
     },
     {
+      "path": "pages/medicine-rank/new-drug",
+      "style": {
+        "navigationBarTitleText": "中国1类新药获批上市清单",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/business-leads/index",
       "style": {
         "navigationBarTitleText": "商机线索",
