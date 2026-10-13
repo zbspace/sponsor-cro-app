@@ -304,7 +304,7 @@
       title: '中国药企临床试验榜单',
       icon: 'building',
       iconUrl: '/static/home/14.png',
-      path: 'sponsor-stat/index'
+      path: 'sponsor-rank/index'
     }
   ]
   // #endregion

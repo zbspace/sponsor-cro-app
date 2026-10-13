@@ -35,6 +35,13 @@
       }
     },
     {
+      "path": "pages/sponsor-rank/index",
+      "style": {
+        "navigationBarTitleText": "中国药企临床试验榜单",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/sponsor-lab-stat/index",
       "style": {
         "navigationBarTitleText": "合作申办方统计",
