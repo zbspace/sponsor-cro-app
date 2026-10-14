@@ -80,10 +80,11 @@
     <!-- 列表区域 -->
     <scroll-view
       class="container-scroll-view"
+      scroll-y
       :show-scrollbar="false"
       lower-threshold="100"
       :style="{
-        height: `calc(100vh - ${menu.top}px - ${menu.height}px - 100px)`
+        height: `calc(100vh - ${menu.top}px - ${menu.height}px - 180px)`
       }"
       @scrolltolower="loadMore"
     >
@@ -217,6 +218,37 @@
   ])
   // #endregion
 
+  // #region 临时 Mock 数据（仅用于接口无数据时预览效果，联调后删除）
+  const TEMP_MOCK_DATA: NdaProductDataVo[] = (() => {
+    const fmt = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const today = new Date()
+    return [
+      {
+        acceptanceNo: 'CYHS2500001',
+        productName: '磷酸奥司他韦胶囊',
+        cleanedDrugType: '化药',
+        cleanedClassification: '1类',
+        standardCompanyName: '恒瑞医药股份有限公司',
+        approveDate: fmt(today)
+      },
+      {
+        acceptanceNo: 'CXSS2500002',
+        productName: '重组人促红素注射液',
+        cleanedDrugType: '治疗生物药',
+        cleanedClassification: '1类',
+        standardCompanyName: '信达生物制药有限公司',
+        approveDate: fmt(new Date(today.getTime() - 24 * 60 * 60 * 1000))
+      }
+    ]
+  })()
+
+  function useMockData() {
+    list.value = [...TEMP_MOCK_DATA]
+    total.value = TEMP_MOCK_DATA.length
+  }
+  // #endregion
+
   // #region 列表数据
   const list = ref<NdaProductDataVo[]>([])
   const pageNum = ref(1)
@@ -249,6 +281,11 @@
           list.value = [...list.value, ...(res.data.list || [])]
         }
         total.value = res.data.total || 0
+      }
+
+      // 临时：初次加载且接口无数据时注入 Mock 数据预览效果（联调后删除）
+      if (refresh && list.value.length === 0) {
+        useMockData()
       }
     } catch (e) {
       console.error('获取1类新药获批上市清单失败', e)
