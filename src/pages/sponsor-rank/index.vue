@@ -85,48 +85,52 @@
     </view>
 
     <!-- 列表区域 -->
-    <scroll-view
-      class="container-scroll-view"
-      scroll-y
-      :show-scrollbar="false"
-      lower-threshold="100"
+    <view
+      class="rank-scroll-wrapper"
       :style="{
-        height: `calc(100vh - ${menu.top}px - ${menu.height}px - 100px)`
+        height: `calc(100vh - ${menu.top}px - ${menu.height}px - 170px)`
       }"
-      @scrolltolower="loadMore"
     >
-      <!-- 药企临床试验榜单表格 -->
-      <view class="card list-card">
-        <view class="table-header">
-          <text class="col-rank">序号</text>
-          <text class="col-name">药企名称</text>
-          <text class="col-count">临床试验</text>
-        </view>
-        <view class="table-body">
-          <view
-            class="table-row"
-            v-for="(item, index) in list"
-            :key="item.acceptanceNo || index"
-            hover-class="row-hover"
-          >
-            <text class="col-rank">{{ index + 1 }}</text>
-            <text class="col-name">{{ item.standardCompanyName || '--' }}</text>
-            <text class="col-count highlight">{{ item.productName || '--' }}</text>
+      <scroll-view
+        class="container-scroll-view"
+        scroll-y
+        :show-scrollbar="false"
+        lower-threshold="100"
+        @scrolltolower="loadMore"
+      >
+        <!-- 药企临床试验榜单表格 -->
+        <view class="card list-card">
+          <view class="table-header">
+            <text class="col-rank">序号</text>
+            <text class="col-name">药企名称</text>
+            <text class="col-count">临床试验</text>
+          </view>
+          <view class="table-body">
+            <view
+              class="table-row"
+              v-for="(item, index) in list"
+              :key="item.acceptanceNo || index"
+              hover-class="row-hover"
+            >
+              <text class="col-rank">{{ index + 1 }}</text>
+              <text class="col-name">{{ item.standardCompanyName || '--' }}</text>
+              <text class="col-count">{{ item.trialCnt ?? '--' }}</text>
+            </view>
+          </view>
+
+          <!-- 加载状态提示 -->
+          <view class="load-status" v-if="loading && list.length > 0">
+            <text>加载中...</text>
+          </view>
+          <view class="load-status" v-else-if="!hasMore && list.length > 0">
+            <text>{{ list.length >= MAX_COUNT ? '已达200条展示上限' : '没有更多了' }}</text>
+          </view>
+          <view class="load-status" v-if="!loading && list.length === 0">
+            <text>暂无数据</text>
           </view>
         </view>
-
-        <!-- 加载状态提示 -->
-        <view class="load-status" v-if="loading && list.length > 0">
-          <text>加载中...</text>
-        </view>
-        <view class="load-status" v-else-if="!hasMore && list.length > 0">
-          <text>没有更多了</text>
-        </view>
-        <view class="load-status" v-if="!loading && list.length === 0">
-          <text>暂无数据</text>
-        </view>
-      </view>
-    </scroll-view>
+      </scroll-view>
+    </view>
   </view>
 </template>
 
@@ -227,12 +231,18 @@
   // #endregion
 
   // #region 列表数据
-  const list = ref<NdaProductDataVo[]>([])
+  // 临时类型：在 NDA 产品记录基础上扩展“临床试验数量”，便于 mock 预览，联调后由接口字段替换
+  type SponsorRankRow = NdaProductDataVo & { trialCnt?: number }
+  const list = ref<SponsorRankRow[]>([])
   const pageNum = ref(1)
   const pageSize = 20
   const total = ref(0)
   const loading = ref(false)
-  const hasMore = computed(() => list.value.length < total.value)
+  // 最多展示 200 条数据
+  const MAX_COUNT = 200
+  // TODO: 临时模拟数据开关，用于本地预览，联调/上线前请删除并置为 false
+  const USE_MOCK_DATA = true
+  const hasMore = computed(() => list.value.length < Math.min(total.value, MAX_COUNT))
 
   async function fetchList(refresh = false) {
     if (loading.value) return
@@ -240,6 +250,19 @@
       pageNum.value = 1
     }
     loading.value = true
+
+    // TODO: 临时模拟数据，用于本地预览，联调/上线前请删除本分支
+    if (USE_MOCK_DATA) {
+      list.value = Array.from({ length: 20 }, (_, i) => ({
+        acceptanceNo: `MOCK-${i + 1}`,
+        standardCompanyName: `模拟药企${String(i + 1).padStart(2, '0')}`,
+        productName: `模拟临床试验药品${i + 1}`,
+        trialCnt: Math.floor(Math.random() * 100) + 1
+      }))
+      total.value = 20
+      loading.value = false
+      return
+    }
 
     const params: NdaDataStatisticsParam = {
       parentCompanyId: selectedCompany.value?.parentCompanyId || undefined,
@@ -437,6 +460,15 @@
   }
 
   // #region 表格
+  .rank-scroll-wrapper {
+    border-radius: 20px;
+    overflow: hidden;
+    // 容器内撑满高度，配合外层高度裁剪出圆角效果
+    .container-scroll-view {
+      height: 100%;
+    }
+  }
+
   .card {
     background: #ffffff;
     border-radius: 24rpx;
@@ -448,18 +480,23 @@
   .list-card {
     .table-header {
       display: flex;
-      padding: 20rpx 0;
+      padding: 22rpx 0;
       border-bottom: 2rpx solid #f8f8f8;
-      font-size: 26rpx;
-      color: #999;
+      font-weight: 400;
+      font-size: 24rpx;
+      color: #9199ae;
+      line-height: 52rpx;
+      background: #f7f9ff;
     }
 
     .table-row {
       display: flex;
-      padding: 30rpx 0;
+      padding: 22rpx 0;
       border-bottom: 2rpx solid #f8f8f8;
-      font-size: 28rpx;
-      color: #333;
+      font-weight: 400;
+      font-size: 24rpx;
+      color: #293959;
+      line-height: 52rpx;
 
       &:last-child {
         border-bottom: none;
@@ -480,16 +517,15 @@
       flex: 1;
       text-align: center;
       word-break: break-all;
+      &.highlight {
+        color: #499ae6;
+      }
     }
 
     .col-count {
       width: 240rpx;
       text-align: center;
       word-break: break-all;
-
-      &.highlight {
-        color: #499ae6;
-      }
     }
 
     // #region 加载状态

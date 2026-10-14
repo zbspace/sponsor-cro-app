@@ -141,6 +141,10 @@
               <text class="label">适应症</text>
               <text class="value">{{ item.indication }}</text>
             </view>
+            <view class="info-row" v-for="row in getStatusRows(item)" :key="row.label">
+              <text class="label">{{ row.label }}</text>
+              <text class="value">{{ row.value || '--' }}</text>
+            </view>
           </view>
 
           <!-- 商机线索部分 -->
@@ -284,6 +288,35 @@
     if (type.value === 'before') return 'before-clue'
     if (type.value === 'after') return 'after-clue'
     return item.dataType === 'nda' ? 'after-clue' : 'before-clue'
+  }
+
+  /**
+   * 根据数据类型动态展示「状态/编号」信息行
+   * ind: 受理状态 + 受理号
+   * cde: 试验状态 + 登记号 + 备案号
+   * nda: 申请状态 + 受理号
+   */
+  function getStatusRows(item: OpportunityVo) {
+    switch (item.dataType) {
+      case 'ind':
+        return [
+          { label: '受理状态', value: item.applicationStatus },
+          { label: '受理号', value: item.acceptanceNo }
+        ]
+      case 'cde':
+        return [
+          { label: '试验状态', value: item.applicationStatus },
+          // { label: '登记号', value: item.acceptanceNo },
+          { label: '备案号', value: item.acceptanceNo }
+        ]
+      case 'nda':
+        return [
+          { label: '申请状态', value: item.applicationStatus },
+          { label: '受理号', value: item.acceptanceNo }
+        ]
+      default:
+        return []
+    }
   }
 
   function isSuccessStatus(status: string) {

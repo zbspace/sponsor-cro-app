@@ -25,21 +25,6 @@
             placeholder-style="color: #B2B2B2"
           />
         </view>
-        <view class="input-item">
-          <picker
-            @change="onLeadTypeChange"
-            :value="leadTypeIndex"
-            :range="leadTypeOptions"
-            range-key="text"
-          >
-            <view class="picker-inner">
-              <text :class="{ placeholder: leadTypeIndex === -1 }">
-                {{ leadTypeIndex === -1 ? '商机线索类型' : leadTypeOptions[leadTypeIndex].text }}
-              </text>
-              <view class="arrow-down"></view>
-            </view>
-          </picker>
-        </view>
       </view>
 
       <view class="search-btn" @click="handleSearch">
@@ -51,7 +36,7 @@
 
 <script setup lang="ts">
   // #region 导入
-  import { ref, reactive, watch } from 'vue'
+  import { reactive, watch } from 'vue'
   // #endregion
 
   // #region 属性与事件
@@ -65,17 +50,8 @@
   // #region 状态
   const formData = reactive({
     indication: '',
-    drugName: '',
-    leadType: ''
+    drugName: ''
   })
-
-  const leadTypeIndex = ref(-1)
-  const leadTypeOptions = [
-    { value: 'all', text: '全部类型' },
-    { value: 'ind', text: 'IND申请' },
-    { value: 'cde', text: '临床登记' },
-    { value: 'nda', text: 'NDA申请' }
-  ]
   // #endregion
 
   // #region 监听
@@ -86,8 +62,6 @@
         // 关闭时重置表单
         formData.indication = ''
         formData.drugName = ''
-        formData.leadType = ''
-        leadTypeIndex.value = -1
       }
     }
   )
@@ -98,18 +72,13 @@
     emit('update:visible', false)
   }
 
-  function onLeadTypeChange(e: any) {
-    leadTypeIndex.value = e.detail.value
-    formData.leadType = leadTypeOptions[leadTypeIndex.value].value
-  }
-
   function handleSearch() {
-    if (!formData.indication && !formData.drugName && !formData.leadType) {
+    if (!formData.indication && !formData.drugName) {
       uni.showToast({ title: '请填写搜索条件', icon: 'none' })
       return
     }
 
-    const query = `indication=${encodeURIComponent(formData.indication)}&drugName=${encodeURIComponent(formData.drugName)}&leadType=${formData.leadType}`
+    const query = `indication=${encodeURIComponent(formData.indication)}&drugName=${encodeURIComponent(formData.drugName)}`
     uni.navigateTo({
       url: `/pages/customer/matching-degree?${query}`
     })
@@ -181,30 +150,6 @@
           flex: 1;
           font-size: 28rpx;
           color: #333333;
-        }
-
-        .picker-inner {
-          flex: 1;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          width: 500rpx;
-
-          text {
-            font-size: 28rpx;
-            color: #333333;
-            &.placeholder {
-              color: #b2b2b2;
-            }
-          }
-
-          .arrow-down {
-            width: 0;
-            height: 0;
-            border-left: 10rpx solid transparent;
-            border-right: 10rpx solid transparent;
-            border-top: 12rpx solid #b2b2b2;
-          }
         }
       }
     }

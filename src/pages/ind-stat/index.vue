@@ -14,19 +14,11 @@
 
     <!-- 选项卡 -->
     <view class="tabs">
-      <view
-        class="tab-item"
-        :class="{ active: activeTab === 'stat' }"
-        @click="activeTab = 'stat'"
-      >
+      <view class="tab-item" :class="{ active: activeTab === 'stat' }" @click="activeTab = 'stat'">
         <text>IND统计</text>
         <view class="active-line" v-if="activeTab === 'stat'"></view>
       </view>
-      <view
-        class="tab-item"
-        :class="{ active: activeTab === 'list' }"
-        @click="activeTab = 'list'"
-      >
+      <view class="tab-item" :class="{ active: activeTab === 'list' }" @click="activeTab = 'list'">
         <text>IND列表</text>
         <view class="active-line" v-if="activeTab === 'list'"></view>
       </view>
@@ -846,7 +838,7 @@
     const legend = drugTypeList.value
       .filter((item) => (Number(item.number) || 0) > 0)
       .map((item, index) => ({
-        name: item.category,
+        name: item.drugType,
         count: Number(item.number) || 0,
         color: DONUT_COLORS[index % DONUT_COLORS.length]
       }))
@@ -912,7 +904,8 @@
     height: calc(100vh);
     display: flex;
     flex-direction: column;
-    .header,.tabs {
+    .header,
+    .tabs {
       flex: 0;
     }
     .container-scroll-view {

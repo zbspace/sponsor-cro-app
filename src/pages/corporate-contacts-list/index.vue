@@ -43,6 +43,10 @@
               <text class="label">最近一次登记时间</text>
               <text class="value">{{ formatDate(item.latestRegistrationTime) }}</text>
             </view>
+            <view class="info-row">
+              <text class="label">相关登记号</text>
+              <text class="value">{{ item.acceptanceNo }}</text>
+            </view>
             <view class="note">注：电话邮箱需要进入 CDE网站搜索可查看</view>
           </view>
         </view>
