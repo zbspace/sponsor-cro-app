@@ -1221,3 +1221,140 @@ export interface NdaProductRankVo {
 }
 
 // #endregion
+
+// #region 小程序首页-榜单模块
+
+/**
+ * 中国1类新药获批上市清单查询对象
+ */
+export interface ClassOneApprovedMarketingParam {
+  /** 药品类型,可用值:中药,化药,治疗生物药,疫苗 */
+  cleanedDrugType?: string
+  /** 当前页数 */
+  pageNum?: number
+  /** 每页条数 */
+  pageSize?: number
+  /** 查询年份 */
+  queryYear?: number | ''
+  /** 公司id */
+  standardCompanyId?: number | ''
+}
+
+/**
+ * 中国1类新药获批上市清单返回对象
+ */
+export interface ClassOneApprovedMarketingVo {
+  /** 获批记录 */
+  acceptanceNoApprovalDates?: string
+  /** 获批记录数量 */
+  approvedRecordNum?: number
+  /** 清洗后分类,可用值:1类 */
+  cleanedClassification?: string
+  /** 药品名（清洗后） */
+  cleanedDrugName?: string
+  /** 药品类型 */
+  cleanedDrugType?: string
+  /** 公司标准全称 */
+  companyStandardName?: string
+  /** 最后一次上市获批时间 */
+  lastApprovedDate?: string
+  /** 是否为优先审评 */
+  ndaPriorityApproval?: string
+  /** 公司id */
+  standardCompanyId?: number
+}
+
+/**
+ * 中国1类新药获批上市清单分页响应
+ */
+export interface ClassOneApprovedMarketingListResponse {
+  list?: ClassOneApprovedMarketingVo[]
+  pages?: number
+  total?: number
+}
+
+/**
+ * 中国药企临床试验开展榜单查询对象
+ */
+export interface ClinicalTrialDevelopmentRankParam {
+  /** 药品类型,可用值:中药,化药,治疗生物药,疫苗 */
+  cleanedDrugType?: string
+  /** 查询分期,可用值:BE,Ⅰ期,Ⅱ期,Ⅲ期,Ⅳ期,其他 */
+  cleanedTrialStages?: string
+  /** 当前页数 */
+  pageNum?: number
+  /** 每页条数 */
+  pageSize?: number
+  /** 母公司ID */
+  parentCompanyId?: number | ''
+  /** 查询年份 */
+  queryYear?: number | ''
+}
+
+/**
+ * 中国药企临床试验开展榜单返回对象
+ */
+export interface ClinicalTrialDevelopmentRankVo {
+  /** 临床试验数量 */
+  clinicalTrialNum?: number
+  /** 母公司ID */
+  parentCompanyId?: number
+  /** 母公司名称 */
+  parentCompanyName?: string
+  /** 排名序号 */
+  rankNo?: number
+}
+
+/**
+ * 中国药企临床试验开展榜单分页响应
+ */
+export interface ClinicalTrialDevelopmentRankListResponse {
+  list?: ClinicalTrialDevelopmentRankVo[]
+  pages?: number
+  total?: number
+}
+
+/**
+ * 中国附条件获批药品清单查询对象
+ */
+export interface ConditionalApprovalDrugParam {
+  /** 当前页数 */
+  pageNum?: number
+  /** 每页条数 */
+  pageSize?: number
+  /** 查询年份 */
+  queryYear?: number | ''
+  /** 公司id */
+  standardCompanyId?: number | ''
+}
+
+/**
+ * 中国附条件获批药品清单返回对象
+ */
+export interface ConditionalApprovalDrugVo {
+  /** 药品名（清洗后） */
+  cleanedDrugName?: string
+  /** 药品类型 */
+  cleanedDrugType?: string
+  /** 公司标准全称 */
+  companyStandardName?: string
+  /** 本次附条件批准时间(处理后) */
+  conditionalApproveDate?: string
+  /** 适应症 */
+  indication?: string
+  /** 所附条件研究时限（年） */
+  researchDeadlineYears?: number
+  /** 公司id */
+  standardCompanyId?: number
+}
+
+/**
+ * 中国附条件获批药品清单分页响应
+ */
+export interface ConditionalApprovalDrugListResponse {
+  list?: ConditionalApprovalDrugVo[]
+  pages?: number
+  total?: number
+}
+
+// #endregion

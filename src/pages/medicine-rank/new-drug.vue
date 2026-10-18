@@ -88,8 +88,8 @@
       }"
       @scrolltolower="loadMore"
     >
-      <view class="drug-card" v-for="(item, index) in list" :key="item.acceptanceNo || index">
-        <text class="drug-name">{{ item.productName || '--' }}</text>
+      <view class="drug-card" v-for="(item, index) in list" :key="index">
+        <text class="drug-name">{{ item.cleanedDrugName || '--' }}</text>
 
         <view class="tag-row">
           <view class="tag type" v-if="item.cleanedDrugType">{{ item.cleanedDrugType }}</view>
@@ -101,15 +101,15 @@
         <view class="card-body">
           <view class="info-row">
             <text class="label">持有人</text>
-            <text class="value">{{ item.standardCompanyName || '--' }}</text>
+            <text class="value">{{ item.companyStandardName || '--' }}</text>
           </view>
           <view class="info-row">
             <text class="label">本次获批上市时间</text>
-            <text class="value">{{ item.approveDate || '--' }}</text>
+            <text class="value">{{ item.lastApprovedDate || '--' }}</text>
           </view>
           <view class="info-row">
             <text class="label">获批记录</text>
-            <text class="value">--</text>
+            <text class="value">{{ item.acceptanceNoApprovalDates || '--' }}</text>
           </view>
         </view>
       </view>
@@ -131,8 +131,12 @@
 
 <script setup lang="ts">
   import { ref, computed, onMounted, watch } from 'vue'
-  import { queryNdaProductList, queryStandardCompany } from '@/api'
-  import type { NdaDataStatisticsParam, NdaProductDataVo, StandardCompanyItem } from '@/types/api'
+  import { getClassOneApprovedMarketingList, queryStandardCompany } from '@/api'
+  import type {
+    ClassOneApprovedMarketingParam,
+    ClassOneApprovedMarketingVo,
+    StandardCompanyItem
+  } from '@/types/api'
   import { onLoad } from '@dcloudio/uni-app'
 
   // #region 企业查询选择（参考商机线索页搜索联想）
@@ -201,14 +205,14 @@
   // 药品类型取值与 NDA/IND 接口保持一致
   const DRUG_TYPE_VALUES = ['中药', '化药', '治疗生物药', '疫苗']
 
-  const currentYearFilter = ref('')
+  const currentYearFilter = ref<number | ''>('')
   const drugTypeFilter = ref('')
 
   const yearOptions = computed(() => [
     { value: '', text: '获批年份' },
     ...Array.from({ length: 5 }, (_, i) => {
       const year = new Date().getFullYear() - i
-      return { value: String(year), text: `${year}年度` }
+      return { value: year, text: `${year}年度` }
     })
   ])
 
@@ -218,39 +222,8 @@
   ])
   // #endregion
 
-  // #region 临时 Mock 数据（仅用于接口无数据时预览效果，联调后删除）
-  const TEMP_MOCK_DATA: NdaProductDataVo[] = (() => {
-    const fmt = (d: Date) =>
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-    const today = new Date()
-    return [
-      {
-        acceptanceNo: 'CYHS2500001',
-        productName: '磷酸奥司他韦胶囊',
-        cleanedDrugType: '化药',
-        cleanedClassification: '1类',
-        standardCompanyName: '恒瑞医药股份有限公司',
-        approveDate: fmt(today)
-      },
-      {
-        acceptanceNo: 'CXSS2500002',
-        productName: '重组人促红素注射液',
-        cleanedDrugType: '治疗生物药',
-        cleanedClassification: '1类',
-        standardCompanyName: '信达生物制药有限公司',
-        approveDate: fmt(new Date(today.getTime() - 24 * 60 * 60 * 1000))
-      }
-    ]
-  })()
-
-  function useMockData() {
-    list.value = [...TEMP_MOCK_DATA]
-    total.value = TEMP_MOCK_DATA.length
-  }
-  // #endregion
-
   // #region 列表数据
-  const list = ref<NdaProductDataVo[]>([])
+  const list = ref<ClassOneApprovedMarketingVo[]>([])
   const pageNum = ref(1)
   const pageSize = 10
   const total = ref(0)
@@ -264,16 +237,16 @@
     }
     loading.value = true
 
-    const params: NdaDataStatisticsParam = {
-      parentCompanyId: selectedCompany.value?.parentCompanyId || undefined,
-      cleanedDrugType: drugTypeFilter.value || undefined,
-      year: currentYearFilter.value || undefined,
+    const params: ClassOneApprovedMarketingParam = {
+      standardCompanyId: selectedCompany.value?.standardId || '',
+      cleanedDrugType: drugTypeFilter.value || '',
+      queryYear: currentYearFilter.value || '',
       pageNum: pageNum.value,
       pageSize
     }
 
     try {
-      const res = await queryNdaProductList(params)
+      const res = await getClassOneApprovedMarketingList(params)
       if (res.data) {
         if (refresh) {
           list.value = res.data.list || []
@@ -281,11 +254,6 @@
           list.value = [...list.value, ...(res.data.list || [])]
         }
         total.value = res.data.total || 0
-      }
-
-      // 临时：初次加载且接口无数据时注入 Mock 数据预览效果（联调后删除）
-      if (refresh && list.value.length === 0) {
-        useMockData()
       }
     } catch (e) {
       console.error('获取1类新药获批上市清单失败', e)

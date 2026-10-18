@@ -70,6 +70,12 @@ import type {
   NdaLastYearRegisterCategoryVo,
   NdaProductDataListResponse,
   NdaProductRankListResponse,
+  ClassOneApprovedMarketingParam,
+  ClassOneApprovedMarketingListResponse,
+  ClinicalTrialDevelopmentRankParam,
+  ClinicalTrialDevelopmentRankListResponse,
+  ConditionalApprovalDrugParam,
+  ConditionalApprovalDrugListResponse,
   DrugShortListResponse
 } from '@/types/api'
 
@@ -981,6 +987,49 @@ export async function queryNdaProductList(params: NdaDataStatisticsParam) {
  */
 export async function queryProjectRank(params: NdaDataStatisticsParam) {
   return post<NdaProductRankListResponse>('/api/v1/ndaData/queryProjectRank', params, true)
+}
+
+// #endregion
+
+// #region 小程序首页-榜单模块
+
+/**
+ * 中国1类新药获批上市清单
+ * @param params { cleanedDrugType, pageNum, pageSize, queryYear, standardCompanyId }
+ * @returns Promise<ClassOneApprovedMarketingListResponse>
+ */
+export async function getClassOneApprovedMarketingList(params: ClassOneApprovedMarketingParam) {
+  return get<ClassOneApprovedMarketingListResponse>(
+    '/api/rank/getClassOneApprovedMrketingList',
+    params,
+    true
+  )
+}
+
+/**
+ * 中国药企临床试验开展榜单
+ * @param params { cleanedDrugType, cleanedTrialStages, pageNum, pageSize, parentCompanyId, queryYear }
+ * @returns Promise<ClinicalTrialDevelopmentRankListResponse>
+ */
+export async function getClinicalTrialDevelopmentRank(params: ClinicalTrialDevelopmentRankParam) {
+  return get<ClinicalTrialDevelopmentRankListResponse>(
+    '/api/rank/getClinicalTrialDevelopmentRank',
+    params,
+    true
+  )
+}
+
+/**
+ * 中国附条件获批药品清单
+ * @param params { pageNum, pageSize, queryYear, standardCompanyId }
+ * @returns Promise<ConditionalApprovalDrugListResponse>
+ */
+export async function getConditionalApprovalDrugList(params: ConditionalApprovalDrugParam) {
+  return get<ConditionalApprovalDrugListResponse>(
+    '/api/rank/getcde_conditional_approval',
+    params,
+    true
+  )
 }
 
 // #endregion

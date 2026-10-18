@@ -109,12 +109,12 @@
             <view
               class="table-row"
               v-for="(item, index) in list"
-              :key="item.acceptanceNo || index"
+              :key="item.parentCompanyId ?? index"
               hover-class="row-hover"
             >
-              <text class="col-rank">{{ index + 1 }}</text>
-              <text class="col-name">{{ item.standardCompanyName || '--' }}</text>
-              <text class="col-count">{{ item.trialCnt ?? '--' }}</text>
+              <text class="col-rank">{{ item.rankNo ?? index + 1 }}</text>
+              <text class="col-name">{{ item.parentCompanyName || '--' }}</text>
+              <text class="col-count">{{ item.clinicalTrialNum ?? '--' }}</text>
             </view>
           </view>
 
@@ -136,8 +136,12 @@
 
 <script setup lang="ts">
   import { ref, computed, onMounted, watch } from 'vue'
-  import { queryNdaProductList, queryStandardCompany } from '@/api'
-  import type { NdaDataStatisticsParam, NdaProductDataVo, StandardCompanyItem } from '@/types/api'
+  import { getClinicalTrialDevelopmentRank, queryStandardCompany } from '@/api'
+  import type {
+    ClinicalTrialDevelopmentRankParam,
+    ClinicalTrialDevelopmentRankVo,
+    StandardCompanyItem
+  } from '@/types/api'
   import { onLoad } from '@dcloudio/uni-app'
 
   // #region 企业查询选择（参考商机线索页搜索联想）
@@ -207,7 +211,7 @@
   const CDE_TRIAL_STAGES = ['Ⅰ期', 'Ⅱ期', 'Ⅲ期', 'Ⅳ期', 'BE', '其他']
   const DRUG_TYPE_VALUES = ['中药', '化药', '治疗生物药', '疫苗']
 
-  const currentYearFilter = ref('')
+  const currentYearFilter = ref<number | ''>('')
   const stageFilter = ref('')
   const drugTypeFilter = ref('')
 
@@ -215,7 +219,7 @@
     { value: '', text: '年份' },
     ...Array.from({ length: 5 }, (_, i) => {
       const year = new Date().getFullYear() - i
-      return { value: String(year), text: `${year}年度` }
+      return { value: year, text: `${year}年度` }
     })
   ])
 
@@ -231,17 +235,13 @@
   // #endregion
 
   // #region 列表数据
-  // 临时类型：在 NDA 产品记录基础上扩展“临床试验数量”，便于 mock 预览，联调后由接口字段替换
-  type SponsorRankRow = NdaProductDataVo & { trialCnt?: number }
-  const list = ref<SponsorRankRow[]>([])
+  const list = ref<ClinicalTrialDevelopmentRankVo[]>([])
   const pageNum = ref(1)
   const pageSize = 20
   const total = ref(0)
   const loading = ref(false)
   // 最多展示 200 条数据
   const MAX_COUNT = 200
-  // TODO: 临时模拟数据开关，用于本地预览，联调/上线前请删除并置为 false
-  const USE_MOCK_DATA = true
   const hasMore = computed(() => list.value.length < Math.min(total.value, MAX_COUNT))
 
   async function fetchList(refresh = false) {
@@ -251,30 +251,17 @@
     }
     loading.value = true
 
-    // TODO: 临时模拟数据，用于本地预览，联调/上线前请删除本分支
-    if (USE_MOCK_DATA) {
-      list.value = Array.from({ length: 20 }, (_, i) => ({
-        acceptanceNo: `MOCK-${i + 1}`,
-        standardCompanyName: `模拟药企${String(i + 1).padStart(2, '0')}`,
-        productName: `模拟临床试验药品${i + 1}`,
-        trialCnt: Math.floor(Math.random() * 100) + 1
-      }))
-      total.value = 20
-      loading.value = false
-      return
-    }
-
-    const params: NdaDataStatisticsParam = {
-      parentCompanyId: selectedCompany.value?.parentCompanyId || undefined,
-      year: currentYearFilter.value || undefined,
-      trialStage: stageFilter.value || undefined,
-      cleanedDrugType: drugTypeFilter.value || undefined,
+    const params: ClinicalTrialDevelopmentRankParam = {
+      parentCompanyId: selectedCompany.value?.parentCompanyId || '',
+      queryYear: currentYearFilter.value || '',
+      cleanedTrialStages: stageFilter.value || '',
+      cleanedDrugType: drugTypeFilter.value || '',
       pageNum: pageNum.value,
       pageSize
     }
 
     try {
-      const res = await queryNdaProductList(params)
+      const res = await getClinicalTrialDevelopmentRank(params)
       if (res.data) {
         if (refresh) {
           list.value = res.data.list || []

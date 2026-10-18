@@ -79,28 +79,25 @@
       }"
       @scrolltolower="loadMore"
     >
-      <view class="drug-card" v-for="(item, index) in list" :key="item.acceptanceNo || index">
-        <text class="drug-name">{{ item.productName || '--' }}</text>
+      <view class="drug-card" v-for="(item, index) in list" :key="item.standardCompanyId ?? index">
+        <text class="drug-name">{{ item.cleanedDrugName || '--' }}</text>
 
         <view class="tag-row">
           <view class="tag type" v-if="item.cleanedDrugType">{{ item.cleanedDrugType }}</view>
-          <view class="tag class" v-if="item.cleanedClassification">
-            {{ item.cleanedClassification }}
-          </view>
         </view>
 
         <view class="card-body">
           <view class="info-row">
             <text class="label">持有人</text>
-            <text class="value">{{ item.standardCompanyName || '--' }}</text>
+            <text class="value">{{ item.companyStandardName || '--' }}</text>
           </view>
           <view class="info-row">
             <text class="label">本次附条件批准时间</text>
-            <text class="value">{{ item.approveDate || '--' }}</text>
+            <text class="value">{{ item.conditionalApproveDate || '--' }}</text>
           </view>
           <view class="info-row">
             <text class="label">获附条件研究时限(年)</text>
-            <text class="value">--</text>
+            <text class="value">{{ item.researchDeadlineYears ?? '--' }}</text>
           </view>
           <view class="info-row">
             <text class="label">获批记录</text>
@@ -126,8 +123,12 @@
 
 <script setup lang="ts">
   import { ref, computed, onMounted, watch } from 'vue'
-  import { queryNdaProductList, queryStandardCompany } from '@/api'
-  import type { NdaDataStatisticsParam, NdaProductDataVo, StandardCompanyItem } from '@/types/api'
+  import { getConditionalApprovalDrugList, queryStandardCompany } from '@/api'
+  import type {
+    ConditionalApprovalDrugParam,
+    ConditionalApprovalDrugVo,
+    StandardCompanyItem
+  } from '@/types/api'
   import { onLoad } from '@dcloudio/uni-app'
 
   // #region 企业查询选择（参考商机线索页搜索联想）
@@ -193,18 +194,18 @@
   // #endregion
 
   // #region 筛选状态
-  const currentYearFilter = ref('')
+  const currentYearFilter = ref<number | ''>('')
   const yearOptions = computed(() => [
     { value: '', text: '获批年份' },
     ...Array.from({ length: 5 }, (_, i) => {
       const year = new Date().getFullYear() - i
-      return { value: String(year), text: `${year}年度` }
+      return { value: year, text: `${year}年度` }
     })
   ])
   // #endregion
 
   // #region 列表数据
-  const list = ref<NdaProductDataVo[]>([])
+  const list = ref<ConditionalApprovalDrugVo[]>([])
   const pageNum = ref(1)
   const pageSize = 10
   const total = ref(0)
@@ -218,15 +219,15 @@
     }
     loading.value = true
 
-    const params: NdaDataStatisticsParam = {
-      parentCompanyId: selectedCompany.value?.parentCompanyId || undefined,
-      year: currentYearFilter.value || undefined,
+    const params: ConditionalApprovalDrugParam = {
+      standardCompanyId: selectedCompany.value?.standardId || '',
+      queryYear: currentYearFilter.value || '',
       pageNum: pageNum.value,
       pageSize
     }
 
     try {
-      const res = await queryNdaProductList(params)
+      const res = await getConditionalApprovalDrugList(params)
       if (res.data) {
         if (refresh) {
           list.value = res.data.list || []
