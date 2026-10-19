@@ -78,9 +78,10 @@
         height: `calc(100vh - ${menu.top}px - ${menu.height}px - 100px)`
       }"
       @scrolltolower="loadMore"
+      scroll-y
     >
       <view class="drug-card" v-for="(item, index) in list" :key="item.standardCompanyId ?? index">
-        <text class="drug-name">{{ item.cleanedDrugName || '--' }}</text>
+        <text class="drug-name">{{ item.cleanedDrugName || '-' }}</text>
 
         <view class="tag-row">
           <view class="tag type" v-if="item.cleanedDrugType">{{ item.cleanedDrugType }}</view>
@@ -89,19 +90,19 @@
         <view class="card-body">
           <view class="info-row">
             <text class="label">持有人</text>
-            <text class="value">{{ item.companyStandardName || '--' }}</text>
+            <text class="value">{{ item.companyStandardName || '-' }}</text>
           </view>
           <view class="info-row">
             <text class="label">本次附条件批准时间</text>
-            <text class="value">{{ item.conditionalApproveDate || '--' }}</text>
+            <text class="value">{{ item.conditionalApproveDate || '-' }}</text>
           </view>
           <view class="info-row">
             <text class="label">获附条件研究时限(年)</text>
-            <text class="value">{{ item.researchDeadlineYears ?? '--' }}</text>
+            <text class="value">{{ item.researchDeadlineYears ?? '-' }}</text>
           </view>
           <view class="info-row">
             <text class="label">获批记录</text>
-            <text class="value">--</text>
+            <text class="value">-</text>
           </view>
         </view>
       </view>

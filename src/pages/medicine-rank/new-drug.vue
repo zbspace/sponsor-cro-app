@@ -98,18 +98,25 @@
           </view>
         </view>
 
-        <view class="card-body">
+        <view class="card-body" @click="openRecordPopup(item)">
           <view class="info-row">
             <text class="label">持有人</text>
-            <text class="value">{{ item.companyStandardName || '--' }}</text>
+            <text class="value">{{ item.companyStandardName || '-' }}</text>
           </view>
           <view class="info-row">
             <text class="label">本次获批上市时间</text>
-            <text class="value">{{ item.lastApprovedDate || '--' }}</text>
+            <text class="value">{{ item.lastApprovedDate || '-' }}</text>
           </view>
           <view class="info-row">
             <text class="label">获批记录</text>
-            <text class="value">{{ item.acceptanceNoApprovalDates || '--' }}</text>
+            <view v-if="getApprovalRecordCount(item) > 0" class="record-link-container">
+              <text class="value record-link">
+                {{ getApprovalRecordCount(item) }}
+              </text>
+              <view class="arrow-right-icon"></view>
+            </view>
+
+            <text class="value" v-else>-</text>
           </view>
         </view>
       </view>
@@ -126,6 +133,54 @@
         <text>暂无相关记录</text>
       </view>
     </scroll-view>
+  </view>
+
+  <!-- 获批记录弹窗 -->
+  <view
+    class="record-popup-mask"
+    v-if="recordPopupVisible"
+    @click="closeRecordPopup"
+    @touchmove.stop.prevent
+  >
+    <view class="record-popup" @click.stop>
+      <view class="record-popup-header">
+        <text class="record-popup-title">获批记录</text>
+        <image
+          class="record-popup-close"
+          src="../../static/icons/close.png"
+          mode="aspectFit"
+          @click="closeRecordPopup"
+        />
+      </view>
+
+      <view class="record-table">
+        <view class="record-tr record-thead">
+          <text class="record-td col-index">序号</text>
+          <text class="record-td col-date">获批日期</text>
+          <text class="record-td col-no">受理号</text>
+        </view>
+        <scroll-view
+          scroll-y
+          class="record-table-body"
+          :show-scrollbar="false"
+          :style="{ height: recordTableHeight }"
+        >
+          <view
+            class="record-tr"
+            :class="{ striped: index % 2 === 1 }"
+            v-for="(row, index) in recordList"
+            :key="index"
+          >
+            <text class="record-td col-index">{{ index + 1 }}</text>
+            <text class="record-td col-date">{{ row.approvalDate || '--' }}</text>
+            <text class="record-td col-no">{{ row.acceptanceNo || '--' }}</text>
+          </view>
+          <view class="record-empty" v-if="recordList.length === 0">
+            <text>暂无记录</text>
+          </view>
+        </scroll-view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -267,6 +322,56 @@
       pageNum.value++
       fetchList()
     }
+  }
+  // #endregion
+
+  // #region 获批记录弹窗
+  interface ApprovalRecord {
+    approvalDate?: string
+    acceptanceNo?: string
+  }
+
+  const RECORD_ROW_HEIGHT = 84
+  const RECORD_MAX_ROWS = 7
+  const recordPopupVisible = ref(false)
+  const recordList = ref<ApprovalRecord[]>([])
+  const recordTableHeight = computed(
+    () =>
+      `${Math.min(Math.max(recordList.value.length, 1), RECORD_MAX_ROWS) * RECORD_ROW_HEIGHT}rpx`
+  )
+
+  function parseApprovalRecords(raw?: unknown): ApprovalRecord[] {
+    if (!raw) return []
+    let data: any
+    if (Array.isArray(raw)) {
+      data = raw
+    } else {
+      try {
+        data = JSON.parse(String(raw))
+      } catch {
+        return []
+      }
+    }
+    if (!Array.isArray(data)) return []
+    return data.map((row: any) => ({
+      approvalDate: row.approvalDate ?? row.approvedDate ?? row.approveDate ?? '',
+      acceptanceNo: row.acceptanceNo ?? row.acceptanceNumber ?? ''
+    }))
+  }
+
+  function getApprovalRecordCount(item: ClassOneApprovedMarketingVo) {
+    return (
+      parseApprovalRecords(item.acceptanceNoApprovalDates).length || item.approvedRecordNum || 0
+    )
+  }
+
+  function openRecordPopup(item: ClassOneApprovedMarketingVo) {
+    recordList.value = parseApprovalRecords(item.acceptanceNoApprovalDates)
+    recordPopupVisible.value = true
+  }
+
+  function closeRecordPopup() {
+    recordPopupVisible.value = false
   }
   // #endregion
 
@@ -467,6 +572,7 @@
         display: flex;
         font-size: 26rpx;
         line-height: 1.5;
+        justify-content: space-between;
 
         .label {
           color: #999;
@@ -479,8 +585,129 @@
           flex: 1;
           word-break: break-all;
         }
+
+        .record-link {
+          font-weight: 400;
+          font-size: 24rpx;
+          color: #293959;
+          line-height: 40rpx;
+        }
+
+        .record-link-container {
+          display: flex;
+          align-items: center;
+          gap: 8rpx;
+        }
       }
     }
+  }
+
+  /* 获批记录弹窗 */
+  .record-popup-mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 48rpx;
+  }
+
+  .record-popup {
+    width: 100%;
+    background: #ffffff;
+    border-radius: 20rpx;
+    padding: 30rpx;
+    box-sizing: border-box;
+  }
+
+  .record-popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24rpx;
+
+    .record-popup-title {
+      font-size: 32rpx;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .record-popup-close {
+      width: 36rpx;
+      height: 36rpx;
+    }
+  }
+
+  .record-table {
+    border: 1rpx solid #eef0f3;
+    border-radius: 8rpx;
+    overflow: hidden;
+
+    font-weight: 400;
+    font-size: 24rpx;
+    color: #293959;
+    line-height: 52rpx;
+  }
+
+  .record-tr {
+    display: flex;
+    align-items: center;
+    min-height: 84rpx;
+    font-weight: 400;
+    font-size: 24rpx;
+    color: #9199ae;
+    line-height: 52rpx;
+    border-bottom: 1rpx solid #eef0f3;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &.striped {
+      background: #f7f9fc;
+    }
+
+    &.record-thead {
+      background: #f5f7fa;
+
+      .record-td {
+        color: #8b93a1;
+      }
+    }
+  }
+
+  .record-td {
+    padding: 16rpx 12rpx;
+    text-align: center;
+    word-break: break-all;
+
+    &.col-index {
+      width: 100rpx;
+      flex-shrink: 0;
+    }
+
+    &.col-date {
+      width: 200rpx;
+      flex-shrink: 0;
+    }
+
+    &.col-no {
+      flex: 1;
+    }
+  }
+
+  .record-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 84rpx;
+    font-size: 26rpx;
+    color: #999;
   }
 
   .loading-status,
