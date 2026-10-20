@@ -97,12 +97,12 @@
             <text class="value">{{ item.conditionalApproveDate || '-' }}</text>
           </view>
           <view class="info-row">
-            <text class="label">获附条件研究时限(年)</text>
+            <text class="label">获所附条件研究时限(年)</text>
             <text class="value">{{ item.researchDeadlineYears ?? '-' }}</text>
           </view>
           <view class="info-row">
-            <text class="label">获批记录</text>
-            <text class="value">-</text>
+            <text class="label">适应症</text>
+            <text class="value">{{ item.indication || '-' }}</text>
           </view>
         </view>
       </view>
@@ -408,9 +408,10 @@
 
     .drug-name {
       display: block;
-      font-size: 32rpx;
-      color: #333;
       font-weight: bold;
+      font-size: 28rpx;
+      color: #293959;
+      line-height: 52rpx;
     }
 
     .tag-row {
@@ -444,17 +445,17 @@
 
       .info-row {
         display: flex;
-        font-size: 26rpx;
+        font-size: 24rpx;
         line-height: 1.5;
 
         .label {
-          color: #999;
+          color: #9199ae;
           width: 280rpx;
           flex-shrink: 0;
         }
 
         .value {
-          color: #333;
+          color: #293959;
           flex: 1;
           word-break: break-all;
         }
