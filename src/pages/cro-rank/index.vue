@@ -116,7 +116,12 @@
   // #region 导入
   import { ref, watch, computed } from 'vue'
   import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
-  import { selectClinicalCroRankList, getUserInfo, queryStandardCompany, getVipApplication } from '@/api'
+  import {
+    selectClinicalCroRankList,
+    getUserInfo,
+    queryStandardCompany,
+    getVipApplication
+  } from '@/api'
   import type { OpportunityVo, OpportunityParam, StandardCompanyItem } from '@/types/api'
   // #endregion
 
@@ -212,7 +217,8 @@
   })()
 
   const fetchRankData = async (reset = false) => {
-    if (loading.value || noMore.value) return
+    if (loading.value) return
+    if (!reset && noMore.value) return
 
     if (reset) {
       page.value = 1
@@ -227,7 +233,7 @@
         pageNum: page.value,
         pageSize,
         lastYear: selectedYear.value,
-        sponsorParentCompanyId: selectedCompany.value?.standardId
+        croParentCompanyId: selectedCompany.value?.standardId
       })
       if (res.data?.list) {
         const mapped = res.data.list.map((item) => ({
@@ -298,6 +304,8 @@
     if (!keyword) {
       searchResults.value = []
       showDropdown.value = false
+      // 清空企业搜索后恢复全量榜单
+      fetchRankData(true)
       return
     }
 

@@ -104,7 +104,7 @@
             <text class="value">{{ item.companyStandardName || '-' }}</text>
           </view>
           <view class="info-row">
-            <text class="label">本次获批上市时间</text>
+            <text class="label">最近一次上市获批时间</text>
             <text class="value">{{ item.lastApprovedDate || '-' }}</text>
           </view>
           <view class="info-row">

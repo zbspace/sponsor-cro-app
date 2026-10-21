@@ -124,15 +124,6 @@
               <text class="label">申请人</text>
               <text class="value">{{ item.applicationCompany }}</text>
             </view>
-            <view class="info-row">
-              <text class="label">申请状态</text>
-              <text
-                class="value status"
-                :class="{ success: isSuccessStatus(item.applicationStatus) }"
-              >
-                {{ item.applicationStatus }}
-              </text>
-            </view>
             <view class="info-row" v-if="item.approvalTime">
               <text class="label">批准日期</text>
               <text class="value">{{ item.approvalTime }}</text>
