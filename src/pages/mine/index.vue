@@ -46,7 +46,13 @@
           height: `calc(100vh - ${menu.top}px - ${menu.height}px - 320px)`
         }"
       >
-        <view class="table-row" v-for="(item, index) in customers" :key="item.id">
+        <view
+          class="table-row"
+          v-for="(item, index) in customers"
+          :key="item.id"
+          hover-class="row-hover"
+          @click="onRowClick(item)"
+        >
           <text class="col-rank">{{ index + 1 }}</text>
           <text class="col-name highlight">{{ item.name }}</text>
           <text class="col-source">{{ item.source }}</text>
@@ -102,6 +108,7 @@
   // #region 我的客户（收藏数据）
   interface CustomerRow {
     id: number
+    parentCompanyId: number
     name: string
     source: string
     createTime: string
@@ -145,6 +152,7 @@
       const res = await getUserCollectList({ pageNum: page.value, pageSize })
       const list = (res.data?.list || []).map((item: any) => ({
         id: item.id,
+        parentCompanyId: item.parentCompanyId,
         name: item.parentCompanyShortName || '--',
         source:
           COLLECT_MODULE_LABELS[item.serverId] || COMPANY_TYPE_LABELS[item.companyType] || '--',
@@ -165,6 +173,14 @@
 
   const onScrollToLower = () => {
     fetchCustomers()
+  }
+
+  // 跳转客户（企业）详情页
+  const onRowClick = (item: CustomerRow) => {
+    if (!item.parentCompanyId) return
+    uni.navigateTo({
+      url: `/pages/customer/company-detail?companyId=${item.parentCompanyId}&companyName=${encodeURIComponent(item.name)}`
+    })
   }
   // #endregion
 </script>
@@ -276,6 +292,11 @@
 
     &:last-child {
       border-bottom: none;
+    }
+
+    // 点击反馈
+    &.row-hover {
+      background-color: #f2f7fc;
     }
 
     text {

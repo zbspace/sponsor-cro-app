@@ -88,29 +88,31 @@
     <view
       class="rank-scroll-wrapper"
       :style="{
-        height: `calc(100vh - ${menu.top}px - ${menu.height}px - 170px)`
+        height: `calc(100vh - ${menu.top}px - ${menu.height}px - 150px)`
       }"
     >
-      <scroll-view
-        class="container-scroll-view"
-        scroll-y
-        :show-scrollbar="false"
-        lower-threshold="100"
-        @scrolltolower="loadMore"
-      >
-        <!-- 药企临床试验榜单表格 -->
-        <view class="card list-card">
-          <view class="table-header">
-            <text class="col-rank">序号</text>
-            <text class="col-name">药企名称</text>
-            <text class="col-count">临床试验</text>
-          </view>
+      <view class="card list-card">
+        <!-- 表头固定在滚动区域外 -->
+        <view class="table-header">
+          <text class="col-rank">序号</text>
+          <text class="col-name">药企名称</text>
+          <text class="col-count">临床试验</text>
+        </view>
+
+        <scroll-view
+          class="container-scroll-view"
+          scroll-y
+          :show-scrollbar="false"
+          lower-threshold="100"
+          @scrolltolower="loadMore"
+        >
           <view class="table-body">
             <view
               class="table-row"
               v-for="(item, index) in list"
               :key="item.parentCompanyId ?? index"
               hover-class="row-hover"
+              @click="onRowClick(item)"
             >
               <text class="col-rank">{{ item.rankNo ?? index + 1 }}</text>
               <text class="col-name">{{ item.parentCompanyName || '--' }}</text>
@@ -128,8 +130,8 @@
           <view class="load-status" v-if="!loading && list.length === 0">
             <text>暂无数据</text>
           </view>
-        </view>
-      </scroll-view>
+        </scroll-view>
+      </view>
     </view>
   </view>
 </template>
@@ -283,6 +285,14 @@
       fetchList()
     }
   }
+
+  // 跳转客户（企业）详情页
+  function onRowClick(item: ClinicalTrialDevelopmentRankVo) {
+    if (!item.parentCompanyId) return
+    uni.navigateTo({
+      url: `/pages/customer/company-detail?companyId=${item.parentCompanyId}&companyName=${encodeURIComponent(item.parentCompanyName || '')}`
+    })
+  }
   // #endregion
 
   // 筛选变化时自动重新请求列表数据
@@ -325,7 +335,7 @@
 
 <style lang="scss" scoped>
   .container {
-    padding: 30rpx;
+    padding: 0 30rpx 30rpx 30rpx;
   }
 
   .header {
@@ -450,9 +460,19 @@
   .rank-scroll-wrapper {
     border-radius: 20px;
     overflow: hidden;
-    // 容器内撑满高度，配合外层高度裁剪出圆角效果
-    .container-scroll-view {
+
+    // 卡片撑满容器，表头固定，仅表格内容滚动
+    .list-card {
       height: 100%;
+      margin-bottom: 0;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container-scroll-view {
+      flex: 1;
+      min-height: 0;
     }
   }
 
