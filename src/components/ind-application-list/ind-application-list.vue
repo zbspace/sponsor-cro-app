@@ -178,8 +178,8 @@
   const productOptions = computed(() => [
     { value: '', text: '产品' },
     ...productList.value.map((item) => ({
-      value: item.drugStandardName,
-      text: item.drugStandardName
+      value: item.genericNameCn,
+      text: item.genericNameCn
     }))
   ])
 

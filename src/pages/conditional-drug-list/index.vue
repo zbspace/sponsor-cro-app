@@ -286,7 +286,7 @@
 
 <style lang="scss" scoped>
   .container {
-    padding: 30rpx;
+    padding: 0 30rpx 30rpx 30rpx;
   }
 
   .header {

@@ -81,7 +81,7 @@
         @scrolltolower="onScrollToLower"
         :show-scrollbar="false"
         :style="{
-          height: `calc(100vh - ${menu.top}px - ${menu.height}px - 350px)`
+          height: `calc(100vh - ${menu.top}px - ${menu.height}px - 390px)`
         }"
       >
         <view

@@ -2,7 +2,7 @@
   <view class="search-popup-mask" v-if="visible" @click="close">
     <view class="search-popup-content" @click.stop>
       <view class="popup-header">
-        <text class="popup-title">查药企&医院/研究者合作关系</text>
+        <text class="popup-title">查药品</text>
         <view class="close-btn" @click="close">
           <image class="close-icon" src="../../static/icons/close.png" mode="aspectFit" />
         </view>
@@ -102,8 +102,8 @@
 <script setup lang="ts">
   // #region 导入
   import { shallowReactive, watch } from 'vue'
-  import { queryPharmaShortName, queryStandardDrug } from '@/api'
-  import type { ParentCompanyItem, DrugShortItem } from '@/types/api'
+  import { queryCleanedDrugName, queryParentCompanyByDrugName } from '@/api'
+  import type { CompanyShortItem } from '@/types/api'
   // #endregion
 
   // #region 类型定义
@@ -211,17 +211,27 @@
   // #endregion
 
   // #region 业务模块状态
-  // 药品：queryStandardDrug
-  const drugState = createSectionState<DrugShortItem>(
-    'drugStandardName',
-    'standardId',
-    queryStandardDrug
+  // 药品：queryCleanedDrugName，接口返回药品名字符串数组，转成对象以复用下拉逻辑
+  interface DrugNameItem {
+    cleanedDrugName: string
+  }
+  const drugState = createSectionState<DrugNameItem>(
+    'cleanedDrugName',
+    'cleanedDrugName',
+    async (params) => {
+      const res = await queryCleanedDrugName(params)
+      return {
+        data: {
+          list: (res.data?.list || []).map((name) => ({ cleanedDrugName: name }))
+        }
+      }
+    }
   )
-  // 药企申办方：queryPharmaShortName
-  const pharmaState = createSectionState<ParentCompanyItem>(
+  // 药企申办方：queryParentCompanyByDrugName
+  const pharmaState = createSectionState<CompanyShortItem>(
     'parentCompanyShortName',
     'parentCompanyId',
-    queryPharmaShortName
+    queryParentCompanyByDrugName
   )
 
   const sectionStates = [drugState, pharmaState]
@@ -275,12 +285,11 @@
 
     const query: string[] = []
     if (drug) {
-      query.push(`drugStandardName=${encodeURIComponent(drug.drugStandardName)}`)
-      query.push(`cleanedDrugType=${encodeURIComponent(drug.drugType || '')}`)
+      query.push(`drugStandardName=${encodeURIComponent(drug.cleanedDrugName)}`)
     }
     if (pharma) {
-      query.push(`parentCompanyId=${pharma.parentCompanyId}`)
-      query.push(`standardCompanyName=${encodeURIComponent(pharma.parentCompanyShortName)}`)
+      query.push(`parentCompanyId=${pharma.parentCompanyId ?? ''}`)
+      query.push(`standardCompanyName=${encodeURIComponent(pharma.parentCompanyShortName || '')}`)
     }
 
     uni.navigateTo({

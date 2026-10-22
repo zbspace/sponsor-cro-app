@@ -156,8 +156,8 @@
     const options = [
       { value: '', text: '产品' },
       ...productList.value.map((item) => ({
-        value: item.drugStandardName,
-        text: item.drugStandardName
+        value: item.genericNameCn,
+        text: item.genericNameCn
       }))
     ]
     // 父组件带入的药品名可能不在下拉数据中，补一条选项，保证下拉框能找到并回显选中项

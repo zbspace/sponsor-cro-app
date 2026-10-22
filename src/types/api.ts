@@ -88,13 +88,15 @@ export interface ResearcherListResponse {
  * 产品（药品标准名）信息条目
  */
 export interface DrugShortItem {
+  /** 药品名(清洗后) */
+  cleanedDrugName: string
   /** 代号编码 */
-  drugCd: string
-  /** 标准名 */
-  drugStandardName: string
+  developmentCode: string
   /** 类型 */
   drugType: string
-  /** 标准ID */
+  /** 标准名-通用名(中文) */
+  genericNameCn: string
+  /** standardId */
   standardId: number
 }
 
@@ -103,6 +105,42 @@ export interface DrugShortItem {
  */
 export interface DrugShortListResponse {
   list: DrugShortItem[]
+  pages: number
+  total: number
+}
+
+/**
+ * 清洗后的药品名列表响应
+ */
+export interface CleanedDrugNameListResponse {
+  list: string[]
+  pages: number
+  total: number
+}
+
+/**
+ * 药品关联的母公司信息条目
+ */
+export interface CompanyShortItem {
+  /** 简称 */
+  companyShortName?: string
+  /** 标准名 */
+  companyStandardName?: string
+  /** 类型 */
+  companyType?: string
+  /** 父级ID */
+  parentCompanyId?: number
+  /** 父级公司简称 */
+  parentCompanyShortName?: string
+  /** 标准库ID */
+  standardId?: number
+}
+
+/**
+ * 药品关联的母公司信息列表响应
+ */
+export interface CompanyShortListResponse {
+  list: CompanyShortItem[]
   pages: number
   total: number
 }

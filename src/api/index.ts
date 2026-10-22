@@ -76,7 +76,9 @@ import type {
   ClinicalTrialDevelopmentRankListResponse,
   ConditionalApprovalDrugParam,
   ConditionalApprovalDrugListResponse,
-  DrugShortListResponse
+  DrugShortListResponse,
+  CleanedDrugNameListResponse,
+  CompanyShortListResponse
 } from '@/types/api'
 
 // #region 登录模块
@@ -392,6 +394,38 @@ export async function queryStandardDrug(params: {
   searchKey?: string
 }) {
   return post<DrugShortListResponse>('/api/v1/companyHospital/queryStandardDrug', params, true)
+}
+
+/**
+ * 查询清洗后的药品名（查药品搜索下拉）
+ * @param params { id, pageNum, pageSize, searchKey }
+ * @returns Promise<CleanedDrugNameListResponse>
+ */
+export async function queryCleanedDrugName(params: {
+  id?: number
+  pageNum?: number
+  pageSize?: number
+  searchKey?: string
+}) {
+  return post<CleanedDrugNameListResponse>('/api/searchDrug/queryCleanedDrugName', params, true)
+}
+
+/**
+ * 查询药品关联的母公司信息（查公司搜索下拉）
+ * @param params { id, pageNum, pageSize, searchKey }
+ * @returns Promise<CompanyShortListResponse>
+ */
+export async function queryParentCompanyByDrugName(params: {
+  id?: number
+  pageNum?: number
+  pageSize?: number
+  searchKey?: string
+}) {
+  return post<CompanyShortListResponse>(
+    '/api/searchDrug/queryParentCompanyByDrugName',
+    params,
+    true
+  )
 }
 
 // #endregion
