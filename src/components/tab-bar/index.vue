@@ -69,7 +69,7 @@
     {
       key: 'mine',
       text: '我的',
-      path: '/pages/vip/index'
+      path: '/pages/mine/index'
     }
   ]
   // #endregion
