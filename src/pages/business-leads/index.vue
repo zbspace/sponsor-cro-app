@@ -3,7 +3,7 @@
   <!-- 头部导航 -->
   <view class="header" :style="{ paddingTop: `${menu.top}px`, zIndex: 999 }">
     <view class="nav-left" @click="goBack">
-      <view class="back-icon">
+      <view class="back-icon visibility-hidden">
         <view class="arrow"></view>
       </view>
     </view>

@@ -1,16 +1,23 @@
 <!-- 我的 -->
 <template>
+  <!-- 头部导航 -->
+  <view class="header" :style="{ paddingTop: `${menu.top}px`, zIndex: 999 }">
+    <view class="nav-left">
+      <view class="back-icon visibility-hidden">
+        <view class="arrow"></view>
+      </view>
+    </view>
+    <text class="title">{{ '我的' }}</text>
+    <view class="nav-right"></view>
+  </view>
+
   <!-- #region 背景与页面容器 -->
   <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
 
-  <view class="page" :style="{ paddingTop: `${menu.top + menu.height + 20}px` }">
+  <view class="page">
     <!-- #region 用户信息 -->
     <view class="user-card">
-      <image
-        class="avatar"
-        :src="userInfo?.avatarUrl || defaultAvatar"
-        mode="aspectFill"
-      />
+      <image class="avatar" :src="userInfo?.avatarUrl || defaultAvatar" mode="aspectFill" />
       <view class="user-detail">
         <text class="nickname">{{ userInfo?.nickname || '微信用户' }}</text>
         <text class="phone">{{ maskedPhone }}</text>
@@ -30,18 +37,28 @@
         <text class="col-source">来源</text>
       </view>
 
-      <view class="table-row" v-for="(item, index) in customers" :key="item.id">
-        <text class="col-rank">{{ index + 1 }}</text>
-        <text class="col-name highlight">{{ item.name }}</text>
-        <text class="col-source">{{ item.source }}</text>
-      </view>
+      <scroll-view
+        scroll-y
+        class="scroll-view"
+        @scrolltolower="onScrollToLower"
+        :show-scrollbar="false"
+        :style="{
+          height: `calc(100vh - ${menu.top}px - ${menu.height}px - 320px)`
+        }"
+      >
+        <view class="table-row" v-for="(item, index) in customers" :key="item.id">
+          <text class="col-rank">{{ index + 1 }}</text>
+          <text class="col-name highlight">{{ item.name }}</text>
+          <text class="col-source">{{ item.source }}</text>
+        </view>
 
-      <view class="loading-status" v-if="loading">
-        <text>加载中...</text>
-      </view>
-      <view class="empty-tip" v-if="!loading && customers.length === 0">
-        <text>暂无客户</text>
-      </view>
+        <view class="loading-status" v-if="loading || noMore">
+          <text>{{ loading ? '加载中...' : '没有更多了' }}</text>
+        </view>
+        <view class="empty-tip" v-if="!loading && customers.length === 0">
+          <text>暂无客户</text>
+        </view>
+      </scroll-view>
     </view>
     <!-- #endregion -->
 
@@ -78,7 +95,7 @@
 
   onMounted(() => {
     userInfo.value = getUserInfo()
-    fetchCustomers()
+    fetchCustomers(true)
   })
   // #endregion
 
@@ -90,48 +107,64 @@
     createTime: string
   }
 
-  // 收藏记录所属模块，用于展示客户来源
-  const COLLECT_MODULES = [
-    { serverId: 'searchCust', label: '查客户' },
-    { serverId: 'findCust', label: '找客户' },
-    { serverId: 'searchComCRO', label: '药企&CRO合作关系' },
-    { serverId: 'searchComHos', label: '药企&医院合作关系' },
-    { serverId: 'searchComLab', label: '药企&实验室合作关系' },
-    { serverId: 'searchProduce', label: '查产品' }
-  ]
+  // 收藏记录所属模块，接口返回 serverId 时用于展示客户来源
+  const COLLECT_MODULE_LABELS: Record<string, string> = {
+    searchCust: '查客户',
+    findCust: '找客户',
+    searchComCRO: '药企&CRO合作关系',
+    searchComHos: '药企&医院合作关系',
+    searchComLab: '药企&实验室合作关系',
+    searchProduce: '查产品'
+  }
+
+  // 未返回 serverId 时，按收藏的公司类型兜底展示来源
+  const COMPANY_TYPE_LABELS: Record<number, string> = {
+    1: '药企',
+    2: 'CRO',
+    3: '实验室'
+  }
 
   const customers = ref<CustomerRow[]>([])
   const loading = ref(false)
+  const noMore = ref(false)
+  const page = ref(1)
+  const pageSize = 20
 
-  async function fetchCustomers() {
+  async function fetchCustomers(reset = false) {
+    if (loading.value) return
+    if (!reset && noMore.value) return
+
+    if (reset) {
+      page.value = 1
+      customers.value = []
+      noMore.value = false
+    }
+
     loading.value = true
     try {
-      const results = await Promise.all(
-        COLLECT_MODULES.map(async (module) => {
-          try {
-            const res = await getUserCollectList({
-              pageNum: 1,
-              pageSize: 100,
-              serverId: module.serverId
-            })
-            return (res.data?.list || []).map((item) => ({
-              id: item.id,
-              name: item.parentCompanyShortName || '--',
-              source: module.label,
-              createTime: item.createTime || ''
-            }))
-          } catch {
-            return []
-          }
-        })
-      )
+      const res = await getUserCollectList({ pageNum: page.value, pageSize })
+      const list = (res.data?.list || []).map((item: any) => ({
+        id: item.id,
+        name: item.parentCompanyShortName || '--',
+        source:
+          COLLECT_MODULE_LABELS[item.serverId] || COMPANY_TYPE_LABELS[item.companyType] || '--',
+        createTime: item.createTime || ''
+      }))
 
-      customers.value = results
-        .flat()
-        .sort((a, b) => (b.createTime || '').localeCompare(a.createTime || ''))
+      customers.value = reset ? list : [...customers.value, ...list]
+      if (page.value >= (res.data?.pages || 1)) {
+        noMore.value = true
+      }
+      page.value++
+    } catch {
+      // 静默处理
     } finally {
       loading.value = false
     }
+  }
+
+  const onScrollToLower = () => {
+    fetchCustomers()
   }
   // #endregion
 </script>
@@ -141,10 +174,9 @@
   .page {
     position: relative;
     z-index: 1;
-    min-height: 100vh;
     padding-left: 30rpx;
     padding-right: 30rpx;
-    padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
+    margin-top: 30rpx;
   }
   /* #endregion */
 
@@ -228,6 +260,10 @@
     text {
       text-align: center;
     }
+  }
+
+  .scroll-view {
+    width: 100%;
   }
 
   .table-row {

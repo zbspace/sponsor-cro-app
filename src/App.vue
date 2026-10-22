@@ -140,4 +140,8 @@
     width: 36rpx;
     height: 36rpx;
   }
+
+  .visibility-hidden {
+    visibility: hidden;
+  }
 </style>
