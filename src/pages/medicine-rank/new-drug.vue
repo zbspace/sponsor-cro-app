@@ -525,6 +525,11 @@
     }
   }
 
+  .container-scroll-view {
+    border-radius: 24rpx;
+    overflow: hidden;
+  }
+
   .drug-card {
     background: #ffffff;
     border-radius: 24rpx;
