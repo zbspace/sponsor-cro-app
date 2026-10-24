@@ -58,11 +58,11 @@
           <view class="recent-list">
             <view
               class="recent-item"
-              v-for="name in recentList"
-              :key="name"
-              @click="selectRecent(name)"
+              v-for="item in recentList"
+              :key="item.cleanedDrugName"
+              @click="selectRecent(item)"
             >
-              <text>{{ name }}</text>
+              <text>{{ item.cleanedDrugName }}</text>
             </view>
           </view>
         </view>
@@ -125,20 +125,16 @@
   // #region 导入
   import { shallowReactive, ref, watch } from 'vue'
   import { queryCleanedDrugName, queryParentCompanyByDrugName } from '@/api'
-  import type { CompanyShortItem } from '@/types/api'
+  import type { CleanedDrugItem, CompanyShortItem } from '@/types/api'
   // #endregion
 
   // #region 类型定义
-  interface DrugNameItem {
-    cleanedDrugName: string
-  }
-
   interface DrugSearchState {
     keyword: string
-    results: DrugNameItem[]
+    results: CleanedDrugItem[]
     showDropdown: boolean
     loading: boolean
-    selected: DrugNameItem | null
+    selected: CleanedDrugItem | null
     timer: ReturnType<typeof setTimeout> | null
   }
   // #endregion
@@ -190,7 +186,7 @@
         pageSize: 20,
         searchKey: keyword
       })
-      drugState.results = (res.data?.list || []).map((name) => ({ cleanedDrugName: name }))
+      drugState.results = res.data?.list || []
     } catch {
       drugState.results = []
     } finally {
@@ -198,7 +194,7 @@
     }
   }
 
-  function selectDrug(item: DrugNameItem) {
+  function selectDrug(item: CleanedDrugItem) {
     drugState.keyword = item.cleanedDrugName
     drugState.selected = item
     drugState.showDropdown = false
@@ -226,7 +222,7 @@
     if (drugState.timer) clearTimeout(drugState.timer)
     drugState.showDropdown = false
     currentDrugName.value = drugName
-    saveRecent(drugName)
+    saveRecent(drugState.selected || { cleanedDrugName: drugName })
 
     // 第二步：展示相关企业列表
     showCompanyList.value = true
@@ -255,10 +251,13 @@
 
   // 第三步：选择企业后进入药品统计主页
   function selectCompany(company: CompanyShortItem) {
+    const drug = drugState.selected
     const query = [
       `drugStandardName=${encodeURIComponent(currentDrugName.value)}`,
       `parentCompanyId=${company.parentCompanyId ?? ''}`,
-      `standardCompanyName=${encodeURIComponent(company.parentCompanyShortName || '')}`
+      `standardCompanyName=${encodeURIComponent(company.parentCompanyShortName || '')}`,
+      `cleanedDrugType=${encodeURIComponent(drug?.drugType || '')}`,
+      `cleanedClassification=${encodeURIComponent((drug?.registrationCategoryList || []).join('、'))}`
     ]
 
     uni.navigateTo({
@@ -272,31 +271,35 @@
   // #region 最近搜索记录
   const RECENT_STORAGE_KEY = 'searchDrugRecentList'
   const RECENT_MAX_COUNT = 10
-  const recentList = ref<string[]>([])
+  const recentList = ref<CleanedDrugItem[]>([])
 
   function loadRecentList() {
     try {
       const data = uni.getStorageSync(RECENT_STORAGE_KEY)
-      recentList.value = Array.isArray(data) ? data.slice(0, RECENT_MAX_COUNT) : []
+      // 兼容旧版本仅存药品名的记录
+      const list: CleanedDrugItem[] = Array.isArray(data)
+        ? data.filter((item: any) => item && typeof item === 'object')
+        : []
+      recentList.value = list.slice(0, RECENT_MAX_COUNT)
     } catch {
       recentList.value = []
     }
   }
 
-  // 记录搜索药品名：去重、最新的排前面、最多保留 10 条
-  function saveRecent(name: string) {
-    const list = [name, ...recentList.value.filter((item) => item !== name)].slice(
-      0,
-      RECENT_MAX_COUNT
-    )
+  // 记录搜索药品信息：去重、最新的排前面、最多保留 10 条
+  function saveRecent(item: CleanedDrugItem) {
+    const list = [
+      item,
+      ...recentList.value.filter((record) => record.cleanedDrugName !== item.cleanedDrugName)
+    ].slice(0, RECENT_MAX_COUNT)
     recentList.value = list
     uni.setStorageSync(RECENT_STORAGE_KEY, list)
   }
 
-  // 点击历史记录：回填药品名并直接查询相关企业
-  function selectRecent(name: string) {
-    drugState.keyword = name
-    drugState.selected = null
+  // 点击历史记录：回填药品信息并直接查询相关企业
+  function selectRecent(item: CleanedDrugItem) {
+    drugState.keyword = item.cleanedDrugName
+    drugState.selected = item
     drugState.showDropdown = false
     handleSearch()
   }

@@ -196,8 +196,12 @@
       drugInfo.drugStandardName = options.drugStandardName
         ? decodeURIComponent(options.drugStandardName)
         : ''
-      drugInfo.cleanedClassification = options.cleanedClassification || ''
-      drugInfo.cleanedDrugType = options.cleanedDrugType || ''
+      drugInfo.cleanedClassification = options.cleanedClassification
+        ? decodeURIComponent(options.cleanedClassification)
+        : ''
+      drugInfo.cleanedDrugType = options.cleanedDrugType
+        ? decodeURIComponent(options.cleanedDrugType)
+        : ''
       drugInfo.standardCompanyName = options.standardCompanyName
         ? decodeURIComponent(options.standardCompanyName)
         : ''

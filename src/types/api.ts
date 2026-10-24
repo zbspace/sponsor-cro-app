@@ -110,10 +110,22 @@ export interface DrugShortListResponse {
 }
 
 /**
+ * 清洗后的药品信息条目
+ */
+export interface CleanedDrugItem {
+  /** 清洗后的药品名 */
+  cleanedDrugName: string
+  /** 药品类型 */
+  drugType?: string
+  /** 注册分类列表 */
+  registrationCategoryList?: string[]
+}
+
+/**
  * 清洗后的药品名列表响应
  */
 export interface CleanedDrugNameListResponse {
-  list: string[]
+  list: CleanedDrugItem[]
   pages: number
   total: number
 }
