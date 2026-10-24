@@ -35,6 +35,8 @@ import type {
   ResearcherTrialStatisticResponse,
   HospitalStatisticsQuery,
   SearchCustIndexReq,
+  MatchingScoreParam,
+  MatchingScoreListResponse,
   BusinessClueStatisticsResponse,
   CroAndThirdLabStatisticsResponse,
   PipelineStatisticsResponse,
@@ -747,6 +749,15 @@ export async function reviewWord(wordId: number, answerResult: boolean) {
 // #endregion
 
 // #region 查客户首页模块
+
+/**
+ * 找客户-匹配度列表
+ * @param params { indication, productName, parentCompanyId, pageNum, pageSize }
+ * @returns Promise<MatchingScoreListResponse>
+ */
+export async function getMatchingScoreList(params: MatchingScoreParam) {
+  return post<MatchingScoreListResponse>('/api/seekCust/matchingScoreList', params, true)
+}
 
 /**
  * 查客户首页-商机线索统计

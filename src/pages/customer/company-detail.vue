@@ -315,8 +315,10 @@
     if (options?.companyName) {
       companyName.value = decodeURIComponent(options.companyName)
     }
-    if (options?.companyId) {
-      companyId.value = decodeURIComponent(options.companyId)
+    // 母公司ID：兼容 parentCompanyId 与 companyId 两种传参
+    const parentId = options?.parentCompanyId || options?.companyId
+    if (parentId) {
+      companyId.value = decodeURIComponent(parentId)
     }
     fetchCollectStatus()
     fetchCompanyOptions()

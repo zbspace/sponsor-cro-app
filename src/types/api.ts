@@ -694,6 +694,49 @@ export interface SearchCustIndexReq {
 }
 
 /**
+ * 找客户-匹配度列表请求参数
+ */
+export interface MatchingScoreParam {
+  /** 适应症 */
+  indication?: string
+  /** 产品名称 */
+  productName?: string
+  /** 母公司ID */
+  parentCompanyId?: number
+  /** 当前页数 */
+  pageNum?: number
+  /** 每页条数 */
+  pageSize?: number
+}
+
+/**
+ * 找客户-匹配度列表条目
+ */
+export interface MatchingScoreItem {
+  /** 母公司ID */
+  parentCompanyId: number
+  /** 母公司名称 */
+  parentCompanyName: string
+  /** 匹配度 */
+  matchingScore: number
+  /** 适应症匹配记录 */
+  matchingIndicationCnt: number
+  /** 药品匹配记录 */
+  matchingDrugCnt: number
+  /** 商机线索匹配记录 */
+  matchingBusinessClueCnt: number
+}
+
+/**
+ * 找客户-匹配度列表响应
+ */
+export interface MatchingScoreListResponse {
+  list: MatchingScoreItem[]
+  pages: number
+  total: number
+}
+
+/**
  * 查客户首页商机线索总的统计返回对象
  */
 export interface BusinessClueStatisticsResponse {

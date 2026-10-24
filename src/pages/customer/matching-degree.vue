@@ -67,12 +67,13 @@
       maxHeight: `calc(100vh - 130px - ${menu.top}px - ${menu.height}px)`,
       marginTop: `${menu.top + menu.height + 88}rpx`
     }"
+    @scrolltolower="onScrollToLower"
   >
     <view class="list-container">
       <view
         class="company-card"
-        v-for="(item, index) in list"
-        :key="index"
+        v-for="item in list"
+        :key="item.parentCompanyId"
         @click="goToDetail(item)"
       >
         <view class="card-header">
@@ -81,7 +82,7 @@
             <text class="company-name">{{ item.name }}</text>
           </view>
           <view class="match-score">
-            <text class="label">匹配分配：</text>
+            <text class="label">匹配分数：</text>
             <text class="value">{{ item.score }}</text>
           </view>
         </view>
@@ -122,6 +123,11 @@
           </view>
         </view>
       </view>
+
+      <!-- 加载状态 -->
+      <view class="loading-status" v-if="list.length > 0 && (listLoading || noMore)">
+        <text>{{ listLoading ? '加载中...' : '没有更多了' }}</text>
+      </view>
     </view>
   </scroll-view>
 
@@ -133,7 +139,7 @@
   import { ref, computed } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
-  import { getParentShortNameList } from '@/api'
+  import { getParentShortNameList, getMatchingScoreList } from '@/api'
   import type { ParentCompanyItem } from '@/types/api'
 
   // #endregion
@@ -141,63 +147,32 @@
   // #region 状态
   const searchKeyword = ref('')
 
-  const list = ref([
-    {
-      name: '恒瑞医药',
-      shortName: '恒',
-      score: 47,
-      indicationMatch: true,
-      indicationCount: 12,
-      drugMatch: true,
-      drugCount: 12,
-      leadMatch: false,
-      leadCount: 12
-    },
-    {
-      name: '恒瑞医药',
-      shortName: '恒',
-      score: 47,
-      indicationMatch: true,
-      indicationCount: 12,
-      drugMatch: true,
-      drugCount: 12,
-      leadMatch: true,
-      leadCount: 12
-    },
-    {
-      name: '恒瑞医药',
-      shortName: '恒',
-      score: 47,
-      indicationMatch: true,
-      indicationCount: 12,
-      drugMatch: true,
-      drugCount: 12,
-      leadMatch: true,
-      leadCount: 12
-    },
-    {
-      name: '恒瑞医药',
-      shortName: '恒',
-      score: 47,
-      indicationMatch: true,
-      indicationCount: 12,
-      drugMatch: true,
-      drugCount: 12,
-      leadMatch: true,
-      leadCount: 12
-    },
-    {
-      name: '恒瑞医药',
-      shortName: '恒',
-      score: 47,
-      indicationMatch: true,
-      indicationCount: 12,
-      drugMatch: true,
-      drugCount: 12,
-      leadMatch: true,
-      leadCount: 12
-    }
-  ])
+  interface MatchingItem {
+    parentCompanyId: number
+    name: string
+    shortName: string
+    score: number
+    indicationMatch: boolean
+    indicationCount: number
+    drugMatch: boolean
+    drugCount: number
+    leadMatch: boolean
+    leadCount: number
+  }
+
+  const list = ref<MatchingItem[]>([])
+  const pageNum = ref(1)
+  const pageSize = 20
+  const listLoading = ref(false)
+  const noMore = ref(false)
+  // 请求序号，用于丢弃过期响应
+  let requestId = 0
+
+  // 搜索条件（来自找客户弹窗，仅用于查询，不回填搜索框）
+  const queryParams = {
+    indication: '',
+    productName: ''
+  }
 
   // 胶囊位置信息
   const menu = ref({
@@ -211,9 +186,11 @@
   onLoad((options) => {
     const info = uni.getMenuButtonBoundingClientRect()
     menu.value = info
-    if (options?.indication || options?.drugName) {
-      searchKeyword.value = options.indication || options.drugName
-    }
+
+    queryParams.indication = options?.indication ? decodeURIComponent(options.indication) : ''
+    queryParams.productName = options?.drugName ? decodeURIComponent(options.drugName) : ''
+
+    fetchMatchingList(true)
   })
   // #endregion
 
@@ -222,10 +199,64 @@
     uni.navigateBack({ delta: 1, fail: () => uni.reLaunch({ url: '/pages/index/index' }) })
   }
 
-  function goToDetail(item: any) {
+  function goToDetail(item: MatchingItem) {
     uni.navigateTo({
-      url: `/pages/customer/company-detail?name=${encodeURIComponent(item.name)}`
+      url: `/pages/customer/company-detail?companyName=${encodeURIComponent(item.name)}&parentCompanyId=${item.parentCompanyId}`
     })
+  }
+
+  // 获取匹配度列表，isRefresh 为 true 时重新从第一页加载
+  async function fetchMatchingList(isRefresh = false) {
+    if (!isRefresh) {
+      if (listLoading.value || noMore.value) return
+    } else {
+      pageNum.value = 1
+      noMore.value = false
+      list.value = []
+    }
+
+    const currentRequestId = ++requestId
+    listLoading.value = true
+    try {
+      const res = await getMatchingScoreList({
+        indication: queryParams.indication || undefined,
+        productName: queryParams.productName || undefined,
+        parentCompanyId: selectedCompany.value?.parentCompanyId,
+        pageNum: pageNum.value,
+        pageSize
+      })
+      // 已有更新的请求，忽略本次结果
+      if (currentRequestId !== requestId) return
+
+      const newList = (res.data?.list || []).map((item) => ({
+        parentCompanyId: item.parentCompanyId,
+        name: item.parentCompanyName,
+        shortName: (item.parentCompanyName || '').charAt(0),
+        score: item.matchingScore,
+        indicationMatch: item.matchingIndicationCnt > 0,
+        indicationCount: item.matchingIndicationCnt,
+        drugMatch: item.matchingDrugCnt > 0,
+        drugCount: item.matchingDrugCnt,
+        leadMatch: item.matchingBusinessClueCnt > 0,
+        leadCount: item.matchingBusinessClueCnt
+      }))
+      list.value = [...list.value, ...newList]
+
+      if (newList.length < pageSize) {
+        noMore.value = true
+      } else {
+        pageNum.value++
+      }
+    } catch {
+      if (currentRequestId === requestId) noMore.value = true
+    } finally {
+      if (currentRequestId === requestId) listLoading.value = false
+    }
+  }
+
+  // 滚动到底部加载下一页
+  function onScrollToLower() {
+    fetchMatchingList()
   }
   // #endregion
 
@@ -238,7 +269,10 @@
 
   function onSearchInput() {
     if (searchTimer) clearTimeout(searchTimer)
+    // 选中值发生变化时重新查询匹配列表
+    const hadSelected = selectedCompany.value !== null
     selectedCompany.value = null // 输入时重置已选公司
+    if (hadSelected) fetchMatchingList(true)
 
     const keyword = searchKeyword.value.trim()
     if (!keyword) {
@@ -287,6 +321,8 @@
     searchKeyword.value = item.parentCompanyShortName
     selectedCompany.value = item
     showDropdown.value = false
+    // 选中值发生变化时重新查询匹配列表
+    fetchMatchingList(true)
   }
   // #endregion
 </script>
@@ -302,6 +338,13 @@
 
   .list-container {
     padding: 0 30rpx 30rpx;
+  }
+
+  .loading-status {
+    text-align: center;
+    padding: 30rpx 0;
+    font-size: 24rpx;
+    color: #999999;
   }
 
   .company-card {
