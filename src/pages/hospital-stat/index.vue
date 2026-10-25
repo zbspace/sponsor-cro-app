@@ -319,7 +319,8 @@
   const researcherName = ref('')
 
   function goBack() {
-    uni.navigateBack({ delta: 1, fail: () => uni.reLaunch({ url: '/pages/index/index' }) })
+    // 直接返回小程序首页
+    uni.reLaunch({ url: '/pages/index/index' })
   }
 
   onLoad((options: any) => {

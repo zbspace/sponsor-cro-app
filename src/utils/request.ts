@@ -36,7 +36,7 @@ function handleResponse<T>(res: UniApp.RequestSuccessCallbackResult): Promise<Ap
     console.log(response.code)
     if (response.code === 200) {
       resolve(response)
-    }  else {
+    } else {
       uni.showToast({
         title: response.msg || '请求失败',
         icon: 'none'
@@ -101,6 +101,40 @@ function logError(url: string, err: any) {
 
 // #endregion
 
+// #region 登录过期处理
+
+/**
+ * 判断响应是否为登录过期
+ * @param res uni.request 成功回调结果
+ */
+function isLoginExpired(res: UniApp.RequestSuccessCallbackResult): boolean {
+  const response = res.data as ApiResponse<any>
+  if (res.statusCode === 401 || response?.code === 401) return true
+  const msg = response?.msg || ''
+  return /未登录|登录.{0,4}(过期|失效)|token.{0,4}(过期|失效)/i.test(msg)
+}
+
+/**
+ * 登录过期后重新登录（并发请求共用同一次登录）
+ */
+let reloginPromise: Promise<void> | null = null
+async function relogin() {
+  if (!reloginPromise) {
+    reloginPromise = (async () => {
+      uni.removeStorageSync('userInfo')
+      // 动态引入，避免与 api 模块循环依赖
+      const { ensureLogin, resetEnsureLogin } = await import('@/api')
+      resetEnsureLogin()
+      await ensureLogin()
+    })().finally(() => {
+      reloginPromise = null
+    })
+  }
+  return reloginPromise
+}
+
+// #endregion
+
 // #region 请求方法
 
 /**
@@ -114,35 +148,60 @@ export function request<T = any>(config: RequestConfig): Promise<ApiResponse<T>>
   // 打印接口请求日志（接口名 + 入参）
   logRequest(url, method, data)
 
-  const header: any = {
-    'Content-Type': 'application/json'
-  }
-
-  // 如果需要 Token，自动添加到请求头
-  if (needToken) {
-    const token = getToken()
-    if (token) {
-      header.Authorization = `Bearer_${token}`
-      header.token = token
-    }
-  }
-
   return new Promise((resolve, reject) => {
-    uni.request({
-      url: BASE_URL + url,
-      method,
-      data,
-      header,
-      success: (res) => {
-        // 打印接口响应日志（接口名 + 出参）
-        logResponse(url, res.data)
-        handleResponse<T>(res).then(resolve).catch(reject)
-      },
-      fail: (err) => {
-        logError(url, err)
-        handleError(err)
+    let retried = false
+
+    const send = () => {
+      const header: any = {
+        'Content-Type': 'application/json'
       }
-    })
+
+      // 如果需要 Token，自动添加到请求头
+      if (needToken) {
+        const token = getToken()
+        if (token) {
+          header.Authorization = `Bearer_${token}`
+          header.token = token
+        }
+      }
+
+      uni.request({
+        url: BASE_URL + url,
+        method,
+        data,
+        header,
+        success: async (res) => {
+          // 打印接口响应日志（接口名 + 出参）
+          logResponse(url, res.data)
+
+          // 登录过期：重新登录后重试一次
+          if (needToken && isLoginExpired(res)) {
+            if (retried) {
+              handleResponse<T>(res).then(resolve).catch(reject)
+              return
+            }
+            retried = true
+            try {
+              await relogin()
+            } catch (err) {
+              logError(url, err)
+              reject(err)
+              return
+            }
+            send()
+            return
+          }
+
+          handleResponse<T>(res).then(resolve).catch(reject)
+        },
+        fail: (err) => {
+          logError(url, err)
+          handleError(err).catch(reject)
+        }
+      })
+    }
+
+    send()
   })
 }
 
