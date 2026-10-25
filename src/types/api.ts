@@ -893,7 +893,7 @@ export interface IndApplicationNumItem {
  * 研发管线-IND-注册分类查询对象
  */
 export interface IndRegistrationCategoryNumReq extends PipelineCompanyQuery {
-  /** 药品类型(中药,化药,治疗生物药,疫苗) */
+  /** 药品类型(化药,预防用生物制品,治疗用生物制品,中药/天然药物,体外诊断试剂,其他) */
   drugType?: string
 }
 
@@ -1321,7 +1321,7 @@ export interface NdaProductRankVo {
  * 中国1类新药获批上市清单查询对象
  */
 export interface ClassOneApprovedMarketingParam {
-  /** 药品类型,可用值:中药,化药,治疗生物药,疫苗 */
+  /** 药品类型,可用值:化药,预防用生物制品,治疗用生物制品,中药/天然药物,体外诊断试剂,其他 */
   cleanedDrugType?: string
   /** 当前页数 */
   pageNum?: number
@@ -1370,7 +1370,7 @@ export interface ClassOneApprovedMarketingListResponse {
  * 中国药企临床试验开展榜单查询对象
  */
 export interface ClinicalTrialDevelopmentRankParam {
-  /** 药品类型,可用值:中药,化药,治疗生物药,疫苗 */
+  /** 药品类型,可用值:化药,预防用生物制品,治疗用生物制品,中药/天然药物,体外诊断试剂,其他 */
   cleanedDrugType?: string
   /** 查询分期,可用值:BE,Ⅰ期,Ⅱ期,Ⅲ期,Ⅳ期,其他 */
   cleanedTrialStages?: string
