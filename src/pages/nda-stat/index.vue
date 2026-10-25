@@ -82,7 +82,7 @@
         <!-- 注册分类 -->
         <view class="section-card">
           <view class="section-header">
-            <view class="section-title">注册分类</view>
+            <view class="section-title">近5年NDA申请注册分类</view>
             <view class="filter-dropdown">
               <picker
                 class="filter-picker"
@@ -343,9 +343,9 @@
   // #region 注册分类统计
   const DRUG_TYPE_OPTIONS = [
     { value: 1, text: '化药' },
-    { value: 2, text: '预防用生物制品' },
-    { value: 3, text: '治疗用生物制品' },
-    { value: 4, text: '中药/天然药物' }
+    { value: 2, text: '疫苗' },
+    { value: 3, text: '治疗生物药' },
+    { value: 4, text: '中药' }
   ]
   const drugTypeOptions = computed(() => DRUG_TYPE_OPTIONS)
   const drugTypeCode = ref(DRUG_TYPE_OPTIONS[0].value)

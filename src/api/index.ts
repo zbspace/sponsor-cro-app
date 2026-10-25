@@ -413,6 +413,20 @@ export async function queryCleanedDrugName(params: {
 }
 
 /**
+ * 查询清洗后的药品（支持 searchKey 模糊查询）
+ * @param params { id, pageNum, pageSize, searchKey }
+ * @returns Promise<CleanedDrugNameListResponse>
+ */
+export async function queryCleanedDrug(params: {
+  id?: number
+  pageNum?: number
+  pageSize?: number
+  searchKey?: string
+}) {
+  return post<CleanedDrugNameListResponse>('/api/v1/companyHospital/queryCleanedDrug', params, true)
+}
+
+/**
  * 查询药品关联的母公司信息（查公司搜索下拉）
  * @param params { id, pageNum, pageSize, searchKey }
  * @returns Promise<CompanyShortListResponse>

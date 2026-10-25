@@ -64,6 +64,22 @@
         </view>
       </view>
 
+      <!-- #region 最近搜索记录 -->
+      <view class="recent-section" v-if="recentList.length > 0">
+        <text class="recent-label">最近搜索记录：</text>
+        <view class="recent-list">
+          <view
+            class="recent-item"
+            v-for="name in recentList"
+            :key="name"
+            @click="selectRecent(name)"
+          >
+            <text>{{ name }}</text>
+          </view>
+        </view>
+      </view>
+      <!-- #endregion -->
+
       <view class="search-btn" @click="handleSearch">
         <text>搜索</text>
       </view>
@@ -109,15 +125,56 @@
   watch(
     () => props.visible,
     (val) => {
-      if (!val) {
-        // 关闭时重置状态
-        searchKeyword.value = ''
-        searchResults.value = []
-        showDropdown.value = false
-        selectedCompany.value = null
+      if (val) {
+        // 打开时读取当前 Tab 的最近搜索记录
+        loadRecentList()
+        return
       }
+      // 关闭时重置状态
+      searchKeyword.value = ''
+      searchResults.value = []
+      showDropdown.value = false
+      selectedCompany.value = null
     }
   )
+  // #endregion
+
+  // #region 最近搜索记录
+  const RECENT_MAX_COUNT = 10
+  const recentList = ref<string[]>([])
+
+  // 最近搜索记录按 Tab 分开存储
+  function getRecentStorageKey() {
+    return `searchCompanyCroRecent_${currentTab.value}`
+  }
+
+  function loadRecentList() {
+    try {
+      const data = uni.getStorageSync(getRecentStorageKey())
+      recentList.value = Array.isArray(data) ? data.slice(0, RECENT_MAX_COUNT) : []
+    } catch {
+      recentList.value = []
+    }
+  }
+
+  // 记录公司名：去重、最新的排前面、最多保留 10 条
+  function saveRecent(name: string) {
+    if (!name) return
+    const list = [name, ...recentList.value.filter((item) => item !== name)].slice(
+      0,
+      RECENT_MAX_COUNT
+    )
+    recentList.value = list
+    uni.setStorageSync(getRecentStorageKey(), list)
+  }
+
+  // 点击历史记录：回填公司名并直接搜索
+  function selectRecent(name: string) {
+    searchKeyword.value = name
+    selectedCompany.value = null
+    showDropdown.value = false
+    handleSearch()
+  }
   // #endregion
 
   // #region 方法
@@ -132,6 +189,8 @@
     searchResults.value = []
     showDropdown.value = false
     selectedCompany.value = null
+    // 切换 Tab 后读取对应 Tab 的最近搜索记录
+    loadRecentList()
   }
 
   function onSearchInput() {
@@ -190,17 +249,18 @@
     // 如果用户输入了但没在下拉选，尝试使用当前输入的关键词（虽然逻辑上最好选下拉，但这里兼容下）
     const company = selectedCompany.value
     const keyword = searchKeyword.value.trim()
+    const id = company ? company.parentCompanyId : ''
+    const name = company ? company.parentCompanyShortName : keyword
+
+    // 记录最近搜索
+    saveRecent(name)
 
     if (currentTab.value === 'sponsor') {
-      const id = company ? company.parentCompanyId : ''
-      const name = company ? company.parentCompanyShortName : keyword
       const query = `sponsorParentCompanyId=${id}&companyName=${encodeURIComponent(name)}`
       uni.navigateTo({
         url: `/pages/sponsor-stat/index?${query}`
       })
     } else {
-      const id = company ? company.parentCompanyId : ''
-      const name = company ? company.parentCompanyShortName : keyword
       const query = `partnerParentCompanyId=${id}&parentCompanyShortName=${encodeURIComponent(name)}`
       uni.navigateTo({
         url: `/pages/cro-stat/index?${query}`
@@ -351,6 +411,38 @@
           text-align: center;
           font-size: 26rpx;
           color: #999999;
+        }
+      }
+    }
+
+    // 最近搜索记录
+    .recent-section {
+      margin-bottom: 30rpx;
+
+      .recent-label {
+        font-size: 26rpx;
+        color: #4096ee;
+      }
+
+      .recent-list {
+        display: flex;
+        flex-wrap: wrap;
+        margin-top: 20rpx;
+      }
+
+      .recent-item {
+        padding: 10rpx 24rpx;
+        margin: 0 20rpx 20rpx 0;
+        border: 1rpx solid #d9d9d9;
+        border-radius: 8rpx;
+
+        text {
+          font-size: 26rpx;
+          color: #333333;
+        }
+
+        &:active {
+          background: #f7f8fa;
         }
       }
     }

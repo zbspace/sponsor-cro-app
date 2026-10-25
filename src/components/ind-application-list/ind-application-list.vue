@@ -38,13 +38,43 @@
             placeholder="请选择"
           ></uni-data-select>
         </view>
-        <view class="time-filter-wrapper">
-          <uni-data-select
-            v-model="productFilter"
-            :localdata="productOptions"
-            :clear="false"
-            placeholder="请选择"
-          ></uni-data-select>
+        <view class="time-filter-wrapper product-filter-wrapper">
+          <input
+            type="text"
+            v-model="productKeyword"
+            placeholder="产品"
+            placeholder-style="color: #999999"
+            @input="onProductInput"
+            @focus="onProductFocus"
+          />
+          <text class="clear-icon" v-if="productKeyword" @click="clearProduct">×</text>
+
+          <!-- 产品模糊搜索下拉 -->
+          <view
+            class="dropdown-mask"
+            v-if="showProductDropdown"
+            @click="showProductDropdown = false"
+          />
+          <view class="product-dropdown" v-if="showProductDropdown">
+            <view class="dropdown-loading" v-if="productLoading">
+              <text>加载中...</text>
+            </view>
+            <template v-else>
+              <scroll-view scroll-y class="dropdown-list" v-if="productOptions.length > 0">
+                <view
+                  class="dropdown-item"
+                  v-for="item in productOptions"
+                  :key="item.value"
+                  @click="selectProduct(item.value)"
+                >
+                  <text>{{ item.text }}</text>
+                </view>
+              </scroll-view>
+              <view class="dropdown-empty" v-else>
+                <text>未找到相关产品</text>
+              </view>
+            </template>
+          </view>
         </view>
       </view>
 
@@ -73,9 +103,6 @@
             <text class="date">{{ item.undertakeDate }}</text>
           </view>
           <view class="tag-row">
-            <view class="tag status" :class="getStatusClass(item.applicationStatus)">
-              {{ item.applicationStatus || '未知' }}
-            </view>
             <view class="tag stage" v-if="item.cleanedDrugType">
               {{ item.cleanedDrugType }}
             </view>
@@ -87,12 +114,18 @@
 
         <view class="card-body">
           <view class="info-row">
-            <text class="label">适应症</text>
-            <text class="value">{{ item.indication || '--' }}</text>
-          </view>
-          <view class="info-row">
             <text class="label">申请人</text>
             <text class="value">{{ item.applicationCompany || '--' }}</text>
+          </view>
+          <view class="info-row">
+            <text class="label">申请状态</text>
+            <text class="value">
+              {{ item.applicationStatus || '未知' }}
+            </text>
+          </view>
+          <view class="info-row">
+            <text class="label">适应症</text>
+            <text class="value">{{ item.indication || '--' }}</text>
           </view>
           <view class="info-row">
             <text class="label">受理号</text>
@@ -126,8 +159,8 @@
 <script setup lang="ts">
   // #region 导入
   import { ref, computed, onMounted, watch } from 'vue'
-  import { getIndApplicationList, queryStandardDrug } from '@/api'
-  import type { IndApplicationItem, IndApplicationListReq, DrugShortItem } from '@/types/api'
+  import { getIndApplicationList, queryCleanedDrug } from '@/api'
+  import type { IndApplicationItem, IndApplicationListReq, CleanedDrugItem } from '@/types/api'
   // #endregion
 
   // #region 组件属性
@@ -180,15 +213,19 @@
   const drugTypeFilter = ref('')
   const cleanedClassification = ref('')
 
-  // #region 产品下拉（数据来源于 queryStandardDrug 接口）
-  const productList = ref<DrugShortItem[]>([])
-  const productOptions = computed(() => [
-    { value: '', text: '产品' },
-    ...productList.value.map((item) => ({
-      value: item.genericNameCn,
-      text: item.genericNameCn
-    }))
-  ])
+  // #region 产品筛选（queryCleanedDrug 模糊搜索）
+  interface ProductOption {
+    value: string
+    text: string
+  }
+
+  const productOptions = ref<ProductOption[]>([])
+  const productKeyword = ref(props.productName || '')
+  const productLoading = ref(false)
+  const showProductDropdown = ref(false)
+  let productSearchTimer: ReturnType<typeof setTimeout> | null = null
+  // 请求序号，用于丢弃过期的联想结果
+  let productRequestId = 0
 
   /** 产品筛选与 productName 属性双向绑定，保证榜单带入与下拉选择共用同一数据源 */
   const productFilter = computed({
@@ -196,20 +233,58 @@
     set: (value: string) => emit('update:productName', value)
   })
 
-  /** 查询产品下拉选项 */
-  async function fetchProductOptions() {
+  /** 按 searchKey 模糊查询清洗后的药品 */
+  async function fetchProductOptions(searchKey = '') {
+    const currentRequestId = ++productRequestId
+    productLoading.value = true
     try {
-      const res = await queryStandardDrug({ pageNum: 1, pageSize: 100 })
-      productList.value = res.data?.list || []
+      const res = await queryCleanedDrug({
+        pageNum: 1,
+        pageSize: 50,
+        searchKey: searchKey || undefined
+      })
+      if (currentRequestId !== productRequestId) return
+      const rows = (res.data?.list || []) as unknown as Array<CleanedDrugItem | string>
+      productOptions.value = rows
+        .map((item) => (typeof item === 'string' ? item : item?.cleanedDrugName))
+        .filter((name): name is string => !!name)
+        .map((name) => ({ value: name, text: name }))
     } catch (e) {
-      console.error('获取产品下拉选项失败', e)
+      if (currentRequestId === productRequestId) productOptions.value = []
+      console.error('获取产品选项失败', e)
+    } finally {
+      if (currentRequestId === productRequestId) productLoading.value = false
     }
   }
-  // #endregion
 
-  /** 清空榜单带入的药品名称过滤 */
-  function clearProductFilter() {
-    emit('update:productName', '')
+  /** 输入时防抖模糊查询 */
+  function onProductInput() {
+    if (productSearchTimer) clearTimeout(productSearchTimer)
+    showProductDropdown.value = true
+    // 清空输入时同步清空筛选条件
+    if (!productKeyword.value.trim() && productFilter.value) {
+      productFilter.value = ''
+    }
+    productSearchTimer = setTimeout(() => {
+      fetchProductOptions(productKeyword.value.trim())
+    }, 300)
+  }
+
+  function onProductFocus() {
+    showProductDropdown.value = true
+    fetchProductOptions(productKeyword.value.trim())
+  }
+
+  function selectProduct(value: string) {
+    productKeyword.value = value
+    productFilter.value = value
+    showProductDropdown.value = false
+  }
+
+  function clearProduct() {
+    productKeyword.value = ''
+    productFilter.value = ''
+    showProductDropdown.value = false
   }
   // #endregion
 
@@ -306,6 +381,14 @@
       fetchList(true)
     }
   )
+
+  // 榜单带入的药品名同步到产品输入框
+  watch(
+    () => props.productName,
+    (val) => {
+      productKeyword.value = val || ''
+    }
+  )
   // #endregion
 </script>
 
@@ -363,6 +446,77 @@
         .uni-select__selector {
           width: 220rpx;
           left: -30rpx;
+        }
+      }
+    }
+
+    /* 产品模糊搜索 */
+    .product-filter-wrapper {
+      position: relative;
+      overflow: visible;
+
+      input {
+        flex: 1;
+        font-size: 28rpx;
+        color: #333;
+      }
+
+      .clear-icon {
+        font-size: 32rpx;
+        color: #cccccc;
+        padding-left: 10rpx;
+        line-height: 1;
+      }
+
+      .dropdown-mask {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 95;
+      }
+
+      .product-dropdown {
+        position: absolute;
+        top: 100rpx;
+        left: 0;
+        right: 0;
+        background: #ffffff;
+        border-radius: 12rpx;
+        box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
+        z-index: 96;
+        max-height: 400rpx;
+        overflow: hidden;
+
+        .dropdown-list {
+          max-height: 400rpx;
+        }
+
+        .dropdown-item {
+          padding: 24rpx 30rpx;
+          border-bottom: 1rpx solid #f5f5f5;
+
+          &:last-child {
+            border-bottom: none;
+          }
+
+          &:active {
+            background: #f7f8fa;
+          }
+
+          text {
+            font-size: 28rpx;
+            color: #333333;
+          }
+        }
+
+        .dropdown-loading,
+        .dropdown-empty {
+          padding: 30rpx 0;
+          text-align: center;
+          font-size: 26rpx;
+          color: #999999;
         }
       }
     }
@@ -469,18 +623,6 @@
             padding: 4rpx 16rpx;
             border-radius: 8rpx;
 
-            &.pending {
-              background: #e9f4ff;
-              color: #499ae6;
-            }
-            &.passed {
-              background: #eaf7ea;
-              color: #52c41a;
-            }
-            &.rejected {
-              background: #fdecec;
-              color: #f5222d;
-            }
             &.stage {
               background: #f3e9ff;
               color: #9013fe;
@@ -513,6 +655,17 @@
           .value {
             color: #333;
             flex: 1;
+
+            // 申请状态颜色
+            &.pending {
+              color: #499ae6;
+            }
+            &.passed {
+              color: #52c41a;
+            }
+            &.rejected {
+              color: #f5222d;
+            }
           }
         }
       }

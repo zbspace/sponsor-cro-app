@@ -2,7 +2,7 @@
   <view class="search-popup-mask" v-if="visible" @click="close">
     <view class="search-popup-content" @click.stop>
       <view class="popup-header">
-        <text class="popup-title">查药企&CRO合作关系</text>
+        <text class="popup-title">查药企&中心实验室合作关系</text>
         <view class="close-btn" @click="close">
           <image class="close-icon" src="../../static/icons/close.png" mode="aspectFit" />
         </view>
