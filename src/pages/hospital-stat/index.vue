@@ -212,7 +212,7 @@
               >
                 <text class="col-rank">{{ index + 1 }}</text>
                 <text class="col-name">{{ item.drugStandardName }}</text>
-                <text class="col-count">{{ item.trialCount }}</text>
+                <text class="col-count highlight">{{ item.trialCount }}</text>
               </view>
               <view class="empty-tip" v-if="!productList.length">暂无数据</view>
             </view>
@@ -255,7 +255,7 @@
               >
                 <text class="col-rank">{{ index + 1 }}</text>
                 <text class="col-name">{{ item.researcherName }}</text>
-                <text class="col-count">{{ item.trialCount }}</text>
+                <text class="col-count highlight">{{ item.trialCount }}</text>
               </view>
               <view class="empty-tip" v-if="!researcherList.length">暂无数据</view>
             </view>
@@ -1262,6 +1262,10 @@
     .col-count {
       width: 200rpx;
       text-align: center;
+
+      &.highlight {
+        color: #499ae6;
+      }
     }
 
     .empty-tip {

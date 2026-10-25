@@ -263,9 +263,16 @@
 
   // #region 近五年IND注册分类
   // 药品类型（注册分类接口筛选条件）
-  const DRUG_TYPE_VALUES = ['中药', '化药', '治疗生物药', '疫苗']
+  const DRUG_TYPE_VALUES = [
+    '化药',
+    '预防用生物制品',
+    '治疗用生物制品',
+    '中药/天然药物',
+    '体外诊断试剂',
+    '其他'
+  ]
   const categoryDrugTypeOptions = [
-    { value: '', text: '药品类型' },
+    { value: '', text: '注册类型' },
     ...DRUG_TYPE_VALUES.map((text) => ({ value: text, text }))
   ]
   const categoryList = ref<RegistrationCategoryItem[]>([])

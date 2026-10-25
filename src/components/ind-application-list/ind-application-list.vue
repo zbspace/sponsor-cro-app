@@ -145,7 +145,14 @@
 
   // #region 筛选状态
   // 药品类型取值与 IND 接口保持一致
-  const DRUG_TYPE_VALUES = ['中药', '化药', '治疗生物药', '疫苗']
+  const DRUG_TYPE_VALUES = [
+    '化药',
+    '预防用生物制品',
+    '治疗用生物制品',
+    '中药/天然药物',
+    '体外诊断试剂',
+    '其他'
+  ]
 
   const yearOptions = computed(() => [
     { value: '', text: '年份' },
