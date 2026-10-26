@@ -50,6 +50,22 @@
         </view>
       </view>
 
+      <!-- #region 最近搜索记录 -->
+      <view class="recent-section" v-if="recentList.length > 0">
+        <text class="recent-label">最近搜索记录：</text>
+        <view class="recent-list">
+          <view
+            class="recent-item"
+            v-for="item in recentList"
+            :key="item.id"
+            @click="selectRecent(item)"
+          >
+            <text>{{ item.name }}</text>
+          </view>
+        </view>
+      </view>
+      <!-- #endregion -->
+
       <view class="search-btn" @click="handleSearch">
         <text>搜索</text>
       </view>
@@ -59,7 +75,7 @@
 
 <script setup lang="ts">
   // #region 导入
-  import { shallowReactive, watch } from 'vue'
+  import { shallowReactive, ref, watch } from 'vue'
   import { queryPharmaShortName } from '@/api'
   import type { ParentCompanyItem } from '@/types/api'
   // #endregion
@@ -139,19 +155,62 @@
   watch(
     () => props.visible,
     (val) => {
-      if (!val) {
-        // 关闭时重置所有搜索状态
-        sectionStates.forEach((state) => {
-          if (state.timer) clearTimeout(state.timer)
-          state.timer = null
-          state.keyword = ''
-          state.results = []
-          state.showDropdown = false
-          state.selected = null
-        })
+      if (val) {
+        // 打开时读取最近搜索记录
+        loadRecentList()
+        return
       }
+      // 关闭时重置所有搜索状态
+      sectionStates.forEach((state) => {
+        if (state.timer) clearTimeout(state.timer)
+        state.timer = null
+        state.keyword = ''
+        state.results = []
+        state.showDropdown = false
+        state.selected = null
+      })
     }
   )
+  // #endregion
+
+  // #region 最近搜索记录
+  interface RecentCompany {
+    id: number
+    name: string
+  }
+
+  const RECENT_STORAGE_KEY = 'searchCustomerRecentList'
+  const RECENT_MAX_COUNT = 10
+  const recentList = ref<RecentCompany[]>([])
+
+  function loadRecentList() {
+    try {
+      const data = uni.getStorageSync(RECENT_STORAGE_KEY)
+      recentList.value = Array.isArray(data) ? data.slice(0, RECENT_MAX_COUNT) : []
+    } catch {
+      recentList.value = []
+    }
+  }
+
+  // 记录企业：去重、最新的排前面、最多保留 10 条
+  function saveRecent(company: RecentCompany) {
+    if (!company.name) return
+    const list = [company, ...recentList.value.filter((item) => item.id !== company.id)].slice(
+      0,
+      RECENT_MAX_COUNT
+    )
+    recentList.value = list
+    uni.setStorageSync(RECENT_STORAGE_KEY, list)
+  }
+
+  // 点击历史记录：直接进入企业详情
+  function selectRecent(company: RecentCompany) {
+    saveRecent(company)
+    uni.navigateTo({
+      url: `/pages/customer/company-detail?companyId=${company.id}&companyName=${encodeURIComponent(company.name)}`
+    })
+    close()
+  }
   // #endregion
 
   // #region 方法
@@ -213,6 +272,8 @@
     if (pharma) {
       query.push(`companyId=${pharma.parentCompanyId}`)
       query.push(`companyName=${encodeURIComponent(pharma.parentCompanyShortName)}`)
+      // 记录最近搜索
+      saveRecent({ id: pharma.parentCompanyId, name: pharma.parentCompanyShortName })
     }
 
     uni.navigateTo({
@@ -327,6 +388,38 @@
           text-align: center;
           font-size: 26rpx;
           color: #999999;
+        }
+      }
+    }
+
+    // 最近搜索记录
+    .recent-section {
+      margin-bottom: 30rpx;
+
+      .recent-label {
+        font-size: 26rpx;
+        color: #4096ee;
+      }
+
+      .recent-list {
+        display: flex;
+        flex-wrap: wrap;
+        margin-top: 20rpx;
+      }
+
+      .recent-item {
+        padding: 10rpx 24rpx;
+        margin: 0 20rpx 20rpx 0;
+        border: 1rpx solid #d9d9d9;
+        border-radius: 8rpx;
+
+        text {
+          font-size: 26rpx;
+          color: #333333;
+        }
+
+        &:active {
+          background: #f7f8fa;
         }
       }
     }

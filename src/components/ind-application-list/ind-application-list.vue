@@ -203,9 +203,9 @@
   // 注册分类
   const DRUG_TYPE_OPTIONS = [
     { value: 1, text: '化药' },
-    { value: 2, text: '预防用生物制品' },
-    { value: 3, text: '治疗用生物制品' },
-    { value: 4, text: '中药/天然药物' }
+    { value: 2, text: '疫苗' },
+    { value: 3, text: '治疗生物药' },
+    { value: 4, text: '中药' }
   ]
   const classificationOptions = [{ value: '', text: '注册分类' }, ...DRUG_TYPE_OPTIONS]
 
@@ -347,6 +347,9 @@
     fetchList(true)
   })
   watch(drugTypeFilter, () => {
+    fetchList(true)
+  })
+  watch(cleanedClassification, () => {
     fetchList(true)
   })
   // #endregion

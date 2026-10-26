@@ -32,13 +32,43 @@
         ></uni-data-select>
       </view>
 
-      <view class="time-filter-wrapper">
-        <uni-data-select
-          v-model="productFilter"
-          :localdata="productOptions"
-          :clear="false"
-          placeholder="请选择"
-        ></uni-data-select>
+      <view class="time-filter-wrapper product-filter-wrapper">
+        <input
+          type="text"
+          v-model="productKeyword"
+          placeholder="产品"
+          placeholder-style="color: #999999"
+          @input="onProductInput"
+          @focus="onProductFocus"
+        />
+        <text class="clear-icon" v-if="productKeyword" @click="clearProduct">×</text>
+
+        <!-- 产品模糊搜索下拉 -->
+        <view
+          class="dropdown-mask"
+          v-if="showProductDropdown"
+          @click="showProductDropdown = false"
+        />
+        <view class="product-dropdown" v-if="showProductDropdown">
+          <view class="dropdown-loading" v-if="productLoading">
+            <text>加载中...</text>
+          </view>
+          <template v-else>
+            <scroll-view scroll-y class="dropdown-list" v-if="productOptions.length > 0">
+              <view
+                class="dropdown-item"
+                v-for="item in productOptions"
+                :key="item.value"
+                @click="selectProduct(item.value)"
+              >
+                <text>{{ item.text }}</text>
+              </view>
+            </scroll-view>
+            <view class="dropdown-empty" v-else>
+              <text>未找到相关产品</text>
+            </view>
+          </template>
+        </view>
       </view>
     </view>
 
@@ -124,8 +154,8 @@
 
 <script setup lang="ts">
   import { ref, computed, onMounted, watch } from 'vue'
-  import { getCdeTrailList, queryStandardDrug } from '@/api'
-  import type { CdeTrialItem, CdeTrailListReq, DrugShortItem } from '@/types/api'
+  import { getCdeTrailList, queryCleanedDrug } from '@/api'
+  import type { CdeTrialItem, CdeTrailListReq, CleanedDrugItem } from '@/types/api'
   import CdeCenterResearcherPopup from '../cde-center-researcher-popup/cde-center-researcher-popup.vue'
 
   const props = defineProps<{
@@ -177,40 +207,78 @@
     ...CDE_TRIAL_STATUS.map((text) => ({ value: text, text }))
   ])
 
-  // #region 产品下拉（数据来源于 queryStandardDrug 接口）
-  const productList = ref<DrugShortItem[]>([])
-  const productOptions = computed(() => {
-    const options = [
-      { value: '', text: '产品' },
-      ...productList.value.map((item) => ({
-        value: item.genericNameCn,
-        text: item.genericNameCn
-      }))
-    ]
-    // 父组件带入的药品名可能不在下拉数据中，补一条选项，保证下拉框能找到并回显选中项
-    const current = props.drugName
-    if (current && !options.some((option) => option.value === current)) {
-      options.push({ value: current, text: current })
-    }
-    return options
-  })
+  // #region 产品筛选（queryCleanedDrug 模糊搜索）
+  interface ProductOption {
+    value: string
+    text: string
+  }
 
-  /** 产品筛选与 productName 属性双向绑定，保证榜单带入与下拉选择共用同一数据源 */
+  const productOptions = ref<ProductOption[]>([])
+  const productKeyword = ref(props.drugName || '')
+  const productLoading = ref(false)
+  const showProductDropdown = ref(false)
+  let productSearchTimer: ReturnType<typeof setTimeout> | null = null
+  // 请求序号，用于丢弃过期的联想结果
+  let productRequestId = 0
+
+  /** 产品筛选与 drugName 属性双向绑定，保证榜单带入与输入选择共用同一数据源 */
   const productFilter = computed({
     get: () => props.drugName || '',
     set: (value: string) => emit('update:drugName', value)
   })
 
-  // #endregion
-
-  /** 查询产品下拉选项 */
-  async function fetchProductOptions() {
+  /** 按 searchKey 模糊查询清洗后的药品 */
+  async function fetchProductOptions(searchKey = '') {
+    const currentRequestId = ++productRequestId
+    productLoading.value = true
     try {
-      const res = await queryStandardDrug({ pageNum: 1, pageSize: 100 })
-      productList.value = res.data?.list || []
+      const res = await queryCleanedDrug({
+        pageNum: 1,
+        pageSize: 50,
+        searchKey: searchKey || undefined
+      })
+      if (currentRequestId !== productRequestId) return
+      const rows = (res.data?.list || []) as unknown as Array<CleanedDrugItem | string>
+      productOptions.value = rows
+        .map((item) => (typeof item === 'string' ? item : item?.cleanedDrugName))
+        .filter((name): name is string => !!name)
+        .map((name) => ({ value: name, text: name }))
     } catch (e) {
-      console.error('获取产品下拉选项失败', e)
+      if (currentRequestId === productRequestId) productOptions.value = []
+      console.error('获取产品选项失败', e)
+    } finally {
+      if (currentRequestId === productRequestId) productLoading.value = false
     }
+  }
+
+  /** 输入时防抖模糊查询 */
+  function onProductInput() {
+    if (productSearchTimer) clearTimeout(productSearchTimer)
+    showProductDropdown.value = true
+    // 清空输入时同步清空筛选条件
+    if (!productKeyword.value.trim() && productFilter.value) {
+      productFilter.value = ''
+    }
+    productSearchTimer = setTimeout(() => {
+      fetchProductOptions(productKeyword.value.trim())
+    }, 300)
+  }
+
+  function onProductFocus() {
+    showProductDropdown.value = true
+    fetchProductOptions(productKeyword.value.trim())
+  }
+
+  function selectProduct(value: string) {
+    productKeyword.value = value
+    productFilter.value = value
+    showProductDropdown.value = false
+  }
+
+  function clearProduct() {
+    productKeyword.value = ''
+    productFilter.value = ''
+    showProductDropdown.value = false
   }
   // #endregion
 
@@ -319,6 +387,14 @@
       currentTimeFilter.value = val || ''
     }
   )
+
+  // 榜单带入的药品名同步到产品输入框
+  watch(
+    () => props.drugName,
+    (val) => {
+      productKeyword.value = val || ''
+    }
+  )
 </script>
 
 <script lang="ts">
@@ -386,6 +462,77 @@
         color: #f38a8a; /* 更柔和的红色 */
         line-height: 1.4;
         padding: 0 10rpx;
+      }
+    }
+
+    /* 产品模糊搜索 */
+    .product-filter-wrapper {
+      position: relative;
+      overflow: visible;
+
+      input {
+        flex: 1;
+        font-size: 28rpx;
+        color: #333;
+      }
+
+      .clear-icon {
+        font-size: 32rpx;
+        color: #cccccc;
+        padding-left: 10rpx;
+        line-height: 1;
+      }
+
+      .dropdown-mask {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 95;
+      }
+
+      .product-dropdown {
+        position: absolute;
+        top: 100rpx;
+        left: 0;
+        right: 0;
+        background: #ffffff;
+        border-radius: 12rpx;
+        box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
+        z-index: 96;
+        max-height: 400rpx;
+        overflow: hidden;
+
+        .dropdown-list {
+          max-height: 400rpx;
+        }
+
+        .dropdown-item {
+          padding: 24rpx 30rpx;
+          border-bottom: 1rpx solid #f5f5f5;
+
+          &:last-child {
+            border-bottom: none;
+          }
+
+          &:active {
+            background: #f7f8fa;
+          }
+
+          text {
+            font-size: 28rpx;
+            color: #333333;
+          }
+        }
+
+        .dropdown-loading,
+        .dropdown-empty {
+          padding: 30rpx 0;
+          text-align: center;
+          font-size: 26rpx;
+          color: #999999;
+        }
       }
     }
 
