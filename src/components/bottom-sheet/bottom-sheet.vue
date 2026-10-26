@@ -25,7 +25,7 @@
       maskClosable?: boolean
     }>(),
     {
-      zIndex: 999,
+      zIndex: 1000,
       maskClosable: true
     }
   )

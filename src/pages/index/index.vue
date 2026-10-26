@@ -40,6 +40,69 @@
         <text class="sub-title">明熟客情 稳妥商机</text>
       </view>
 
+      <!-- 搜索栏 -->
+      <view class="search-section">
+        <view class="search-box">
+          <view class="search-type" :class="{ open: typeMenuOpen }" @click="toggleTypeMenu">
+            <text class="search-type-label">{{ HOME_SEARCH_META[searchType].label }}</text>
+            <view class="st-chev"></view>
+            <view class="st-menu" v-if="typeMenuOpen" @click.stop>
+              <view
+                v-for="item in SEARCH_TYPE_OPTIONS"
+                :key="item.value"
+                class="st-opt"
+                :class="{ active: searchType === item.value }"
+                @click.stop="selectSearchType(item.value)"
+              >
+                <text>{{ item.label }}</text>
+                <view class="st-check" v-if="searchType === item.value"></view>
+              </view>
+            </view>
+          </view>
+          <input
+            class="search-input"
+            type="text"
+            v-model="searchKeyword"
+            :placeholder="HOME_SEARCH_META[searchType].placeholder"
+            placeholder-style="color: #B2B2B2"
+            @input="onSearchInput"
+            @focus="typeMenuOpen = false"
+          />
+          <view class="search-go" @click="handleHomeSearch">
+            <text>搜索</text>
+          </view>
+        </view>
+
+        <!-- 搜索下拉联想 -->
+        <view class="search-dropdown" v-if="showDropdown">
+          <view class="dropdown-loading" v-if="searchLoading">
+            <text>加载中...</text>
+          </view>
+          <template v-else>
+            <!-- 结果较多时可上下滚动 -->
+            <scroll-view
+              scroll-y
+              class="dropdown-list"
+              :show-scrollbar="false"
+              :style="dropdownListStyle"
+              v-if="searchResults.length > 0"
+            >
+              <view
+                class="dropdown-item"
+                v-for="item in searchResults"
+                :key="item.parentCompanyId"
+                @click="selectCompany(item)"
+              >
+                <text class="dropdown-name">{{ item.parentCompanyShortName }}</text>
+              </view>
+            </scroll-view>
+            <view class="dropdown-empty" v-if="searchResults.length === 0">
+              <text>未找到相关结果</text>
+            </view>
+          </template>
+        </view>
+      </view>
+
       <!-- 内容 -->
       <!-- #region 功能网格 -->
       <view class="feature-grid">
@@ -165,7 +228,7 @@
 
 <script setup lang="ts">
   // #region 导入
-  import { ref } from 'vue'
+  import { ref, computed } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import TabBar from '@/components/tab-bar/index.vue'
   import FreeVipBanner from '@/components/free-vip-banner/free-vip-banner.vue'
@@ -178,8 +241,14 @@
   import SearchCustomerPopup from '@/components/search-customer-popup/search-customer-popup.vue'
   import VipExpiredPopup from '@/components/vip-expired-popup/vip-expired-popup.vue'
   import { VIP_CODE, VIP_APPLICATION_STATUS } from '@/utils/enums'
-  import { getVipApplication, ensureLogin, getUserInfo } from '@/api'
-  import type { UserInfo } from '@/types/api'
+  import {
+    getVipApplication,
+    ensureLogin,
+    getUserInfo,
+    getParentShortNameList,
+    queryPharmaShortName
+  } from '@/api'
+  import type { UserInfo, ParentCompanyItem } from '@/types/api'
   // #endregion
 
   // #region 页面基础状态与生命周期
@@ -218,6 +287,141 @@
   function goTo(path: string, query?: string) {
     const url = query ? `/pages/${path}?${query}` : `/pages/${path}`
     uni.navigateTo({ url })
+  }
+  // #endregion
+
+  // #region 首页搜索
+  type HomeSearchType = 'co' | 'cro' | 'lab'
+
+  const HOME_SEARCH_META: Record<HomeSearchType, { label: string; placeholder: string }> = {
+    co: { label: '查客户', placeholder: '请输入企业简称' },
+    cro: { label: '查CRO', placeholder: '请输入CRO名称' },
+    lab: { label: '查LAB', placeholder: '请输入实验室名称' }
+  }
+
+  const SEARCH_TYPE_OPTIONS: { value: HomeSearchType; label: string }[] = [
+    { value: 'co', label: '查客户' },
+    { value: 'cro', label: '查CRO' },
+    { value: 'lab', label: '查LAB' }
+  ]
+
+  const searchType = ref<HomeSearchType>('co')
+  const searchKeyword = ref('')
+  const searchResults = ref<ParentCompanyItem[]>([])
+  const showDropdown = ref(false)
+  const searchLoading = ref(false)
+  const typeMenuOpen = ref(false)
+  const selectedCompany = ref<ParentCompanyItem | null>(null)
+  let searchTimer: ReturnType<typeof setTimeout> | null = null
+
+  // 下拉列表高度：单行约 88rpx，最多展示约 400rpx，超出可上下滚动
+  const DROPDOWN_ITEM_HEIGHT = 88
+  const DROPDOWN_MAX_HEIGHT = 400
+  const dropdownListStyle = computed(() => {
+    const height = Math.min(searchResults.value.length * DROPDOWN_ITEM_HEIGHT, DROPDOWN_MAX_HEIGHT)
+    return { height: `${height}rpx` }
+  })
+
+  function toggleTypeMenu() {
+    typeMenuOpen.value = !typeMenuOpen.value
+    showDropdown.value = false
+  }
+
+  function selectSearchType(type: HomeSearchType) {
+    typeMenuOpen.value = false
+    if (searchType.value === type) return
+    if (searchTimer) clearTimeout(searchTimer)
+    searchTimer = null
+    searchType.value = type
+    searchKeyword.value = ''
+    searchResults.value = []
+    showDropdown.value = false
+    selectedCompany.value = null
+  }
+
+  function onSearchInput() {
+    if (searchTimer) clearTimeout(searchTimer)
+    selectedCompany.value = null // 输入时重置已选
+
+    const keyword = searchKeyword.value.trim()
+    if (!keyword) {
+      searchResults.value = []
+      showDropdown.value = false
+      return
+    }
+
+    searchTimer = setTimeout(() => {
+      fetchSearchResults()
+    }, 300)
+  }
+
+  async function fetchSearchResults() {
+    const keyword = searchKeyword.value.trim()
+    if (!keyword) return
+
+    const type = searchType.value
+    searchLoading.value = true
+    showDropdown.value = true
+
+    try {
+      if (type === 'co') {
+        const res = await queryPharmaShortName({ pageNum: 1, pageSize: 20, searchKey: keyword })
+        searchResults.value = res.data?.list || []
+      } else {
+        const res = await getParentShortNameList({
+          companyType: type === 'cro' ? 'cro' : 'thirdLab',
+          pageNum: 1,
+          pageSize: 20,
+          shortName: keyword
+        })
+        searchResults.value = res.data?.list || []
+      }
+    } catch {
+      searchResults.value = []
+    } finally {
+      searchLoading.value = false
+    }
+  }
+
+  function selectCompany(item: ParentCompanyItem) {
+    searchKeyword.value = item.parentCompanyShortName
+    selectedCompany.value = item
+    showDropdown.value = false
+  }
+
+  function handleHomeSearch() {
+    if (!checkPermission()) return
+
+    typeMenuOpen.value = false
+    const keyword = searchKeyword.value.trim()
+    const company = selectedCompany.value
+    const id = company ? company.parentCompanyId : ''
+    const name = company ? company.parentCompanyShortName : keyword
+
+    if (!name) {
+      uni.showToast({ title: '请输入查询关键词', icon: 'none' })
+      return
+    }
+
+    if (searchType.value === 'co') {
+      if (!company) {
+        uni.showToast({ title: '请输入并选择企业', icon: 'none' })
+        return
+      }
+      uni.navigateTo({
+        url: `/pages/customer/company-detail?companyId=${id}&companyName=${encodeURIComponent(name)}`
+      })
+    } else if (searchType.value === 'cro') {
+      uni.navigateTo({
+        url: `/pages/cro-stat/index?partnerParentCompanyId=${id}&parentCompanyShortName=${encodeURIComponent(name)}`
+      })
+    } else {
+      uni.navigateTo({
+        url: `/pages/lab-stat/index?partnerParentCompanyId=${id}&parentCompanyShortName=${encodeURIComponent(name)}`
+      })
+    }
+
+    showDropdown.value = false
   }
   // #endregion
 
@@ -418,6 +622,162 @@
       line-height: 52rpx;
       margin-bottom: 40rpx;
       display: block;
+    }
+  }
+  /* #endregion */
+
+  /* #region 首页搜索 */
+  .search-section {
+    position: relative;
+    z-index: 30;
+    margin-bottom: 30rpx;
+
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+      height: 84rpx;
+      padding: 0 8rpx 0 12rpx;
+      background: #ffffff;
+      border-radius: 44rpx;
+      box-shadow: 0 8rpx 28rpx rgba(61, 123, 224, 0.12);
+    }
+
+    .search-type {
+      position: relative;
+      display: flex;
+      align-items: center;
+      height: 64rpx;
+      padding: 0 16rpx;
+      flex-shrink: 0;
+      border-right: 2rpx solid #eef0f4;
+
+      .search-type-label {
+        font-size: 26rpx;
+        font-weight: 500;
+        color: #293959;
+        white-space: nowrap;
+      }
+
+      .st-chev {
+        width: 10rpx;
+        height: 10rpx;
+        margin-left: 8rpx;
+        margin-top: -6rpx;
+        border-right: 3rpx solid #9199ae;
+        border-bottom: 3rpx solid #9199ae;
+        transform: rotate(45deg);
+        transition: transform 0.2s ease;
+      }
+
+      &.open .st-chev {
+        margin-top: 4rpx;
+        transform: rotate(-135deg);
+      }
+
+      .st-menu {
+        position: absolute;
+        top: 78rpx;
+        left: -8rpx;
+        width: 264rpx;
+        padding: 12rpx;
+        background: #ffffff;
+        border-radius: 24rpx;
+        box-shadow:
+          0 24rpx 60rpx rgba(10, 37, 64, 0.18),
+          0 4rpx 16rpx rgba(10, 37, 64, 0.08);
+        z-index: 300;
+
+        .st-opt {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 18rpx 20rpx;
+          border-radius: 16rpx;
+          font-size: 26rpx;
+          color: #293959;
+
+          &:active {
+            background: #f2f6fc;
+          }
+
+          &.active {
+            font-weight: 600;
+            color: #3d7bff;
+            background: #edf4ff;
+          }
+
+          .st-check {
+            width: 20rpx;
+            height: 10rpx;
+            border-left: 4rpx solid #3d7bff;
+            border-bottom: 4rpx solid #3d7bff;
+            transform: rotate(-45deg);
+          }
+        }
+      }
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 0;
+      height: 84rpx;
+      padding: 0 20rpx;
+      font-size: 28rpx;
+      color: #293959;
+    }
+
+    .search-go {
+      width: 116rpx;
+      height: 68rpx;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-shrink: 0;
+      background: #3d7bff;
+      border-radius: 36rpx;
+
+      text {
+        color: #ffffff;
+        font-size: 26rpx;
+        font-weight: 600;
+      }
+
+      &:active {
+        background: #1553ee;
+      }
+    }
+
+    .search-dropdown {
+      position: absolute;
+      top: 92rpx;
+      left: 0;
+      right: 0;
+      padding: 8rpx 0;
+      background: #ffffff;
+      border-radius: 24rpx;
+      box-shadow:
+        0 24rpx 60rpx rgba(10, 37, 64, 0.18),
+        0 4rpx 16rpx rgba(10, 37, 64, 0.08);
+      z-index: 290;
+
+      .dropdown-loading,
+      .dropdown-empty {
+        padding: 24rpx;
+        font-size: 26rpx;
+        color: #9199ae;
+        text-align: center;
+      }
+
+      .dropdown-item {
+        padding: 22rpx 26rpx;
+        font-size: 28rpx;
+        color: #293959;
+
+        &:active {
+          background: #f7f8fa;
+        }
+      }
     }
   }
   /* #endregion */

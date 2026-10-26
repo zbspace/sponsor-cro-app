@@ -74,6 +74,7 @@
   /* #region 手机号绑定弹窗 */
   .phone-modal {
     width: 100%;
+    min-height: 520rpx;
     max-height: 80vh;
     background: #fff;
     border-radius: 40rpx 40rpx 0 0;
@@ -99,15 +100,17 @@
 
     .bind-btn {
       width: 100%;
-      height: 88rpx;
-      background: #499ae6;
+      height: 92rpx;
+      background: linear-gradient(135deg, #3d7bff 0%, #1e5fff 100%);
       color: #fff;
       font-size: 32rpx;
-      border-radius: 44rpx;
+      font-weight: 600;
+      border-radius: 46rpx;
       display: flex;
       justify-content: center;
       align-items: center;
       border: none;
+      box-shadow: 0 16rpx 36rpx rgba(30, 95, 255, 0.3);
 
       &::after {
         border: none;

@@ -312,6 +312,7 @@
 <style lang="scss" scoped>
   .find-popup-content {
     width: 100%;
+    min-height: 520rpx;
     max-height: 88vh;
     background: #ffffff;
     border-radius: 40rpx 40rpx 0 0;
@@ -505,23 +506,24 @@
     /* #endregion */
 
     .search-btn {
-      width: 266rpx;
-      height: 100rpx;
-      background: linear-gradient(90deg, #4295f3 0%, #2b66ef 100%);
-      border-radius: 20rpx 20rpx 20rpx 20rpx;
+      width: 100%;
+      height: 92rpx;
+      margin-top: 8rpx;
+      background: linear-gradient(135deg, #3d7bff 0%, #1e5fff 100%);
+      border-radius: 46rpx;
       display: flex;
       justify-content: center;
       align-items: center;
-      margin: 20rpx auto 0;
+      box-shadow: 0 16rpx 36rpx rgba(30, 95, 255, 0.3);
 
       text {
         color: #ffffff;
         font-size: 32rpx;
-        font-weight: bold;
+        font-weight: 600;
       }
 
       &:active {
-        opacity: 0.9;
+        background: linear-gradient(135deg, #2f6bef 0%, #1553ee 100%);
       }
     }
   }

@@ -37,6 +37,7 @@
 <style lang="scss" scoped>
   .vip-expired-content {
     width: 100%;
+    min-height: 520rpx;
     max-height: 80vh;
     background: #ffffff;
     border-radius: 40rpx 40rpx 0 0;
@@ -67,23 +68,23 @@
     }
 
     .submit-btn {
-      width: 400rpx;
-      height: 88rpx;
-      background: linear-gradient(90deg, #4295f3 0%, #2b66ef 100%);
-      border-radius: 44rpx;
+      width: 100%;
+      height: 92rpx;
+      background: linear-gradient(135deg, #3d7bff 0%, #1e5fff 100%);
+      border-radius: 46rpx;
       display: flex;
       justify-content: center;
       align-items: center;
-      box-shadow: 0 8rpx 20rpx rgba(43, 118, 246, 0.3);
+      box-shadow: 0 16rpx 36rpx rgba(30, 95, 255, 0.3);
 
       text {
         color: #ffffff;
-        font-size: 30rpx;
-        font-weight: bold;
+        font-size: 32rpx;
+        font-weight: 600;
       }
 
       &:active {
-        opacity: 0.9;
+        background: linear-gradient(135deg, #2f6bef 0%, #1553ee 100%);
         transform: scale(0.98);
       }
     }

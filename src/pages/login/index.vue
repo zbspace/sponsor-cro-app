@@ -26,7 +26,8 @@
           <text>{{ item.label }}</text>
         </view>
         <view class="lg-s-num">
-          {{ item.num }}<text class="lg-s-plus">+</text>
+          {{ item.num }}
+          <text class="lg-s-plus">+</text>
         </view>
       </view>
     </view>
@@ -43,7 +44,10 @@
           <view class="ck-tick"></view>
         </view>
         <text class="auth-agree-text">
-          我已阅读并同意<text class="link">《用户协议》</text>和<text class="link">《隐私政策》</text>
+          我已阅读并同意
+          <text class="link">《用户协议》</text>
+          和
+          <text class="link">《隐私政策》</text>
         </text>
       </view>
     </view>
@@ -109,7 +113,8 @@
       if (!getUserInfo()?.token) {
         throw new Error('登录失败')
       }
-      uni.reLaunch({ url: '/pages/index/index' })
+      // 登录成功后进入完善资料页
+      uni.reLaunch({ url: '/pages/profile-setup/index' })
     } catch {
       uni.showToast({ title: '登录失败，请稍后重试', icon: 'none' })
     } finally {

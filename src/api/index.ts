@@ -151,6 +151,25 @@ export async function bandPhone(code: string) {
   return post('/api/v1/wechat/searchComCRO/bandPhone', { code }, true)
 }
 
+/**
+ * 完善微信用户信息（头像、昵称等）
+ * @param params 用户资料
+ * @returns Promise
+ */
+export async function updateWxUserInfo(params: {
+  avatar?: string
+  city?: string
+  nickname?: string
+  province?: string
+  wxNickname?: string
+}) {
+  return post<{ avatarUrl?: string; nickname?: string }>(
+    '/api/v1/wechat/searchComCRO/updateUserInfo',
+    params,
+    true
+  )
+}
+
 // #endregion
 
 // #region VIP支付模块

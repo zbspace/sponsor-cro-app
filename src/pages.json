@@ -15,6 +15,13 @@
       }
     },
     {
+      "path": "pages/profile-setup/index",
+      "style": {
+        "navigationBarTitleText": "完善资料",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/vip/index",
       "style": {
         "navigationBarTitleText": "会员"

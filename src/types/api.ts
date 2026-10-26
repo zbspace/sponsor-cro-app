@@ -501,6 +501,8 @@ export interface UserInfo {
   vipCode?: number
   avatarUrl?: string
   nickname?: string
+  /** 微信昵称 */
+  wxNickname?: string
   phone?: string
   vipExpirationTime?: string
 }
@@ -515,6 +517,8 @@ export interface LoginResponse {
   vipCode?: number
   avatarUrl?: string
   nickname?: string
+  /** 微信昵称 */
+  wxNickname?: string
 }
 
 /**
