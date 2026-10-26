@@ -193,6 +193,12 @@
   const userInfo = ref<UserInfo | null>(getUserInfo())
 
   onLoad(async () => {
+    // 未登录用户先进入登录页
+    if (!getUserInfo()?.token) {
+      uni.reLaunch({ url: '/pages/login/index' })
+      return
+    }
+
     // 获取胶囊位置信息（单位px）
     const info = uni.getMenuButtonBoundingClientRect()
     menu.value = info
