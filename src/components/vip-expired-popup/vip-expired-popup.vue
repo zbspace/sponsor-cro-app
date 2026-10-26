@@ -1,6 +1,6 @@
 <template>
-  <view class="vip-expired-mask" v-if="visible" @click="close" @touchmove.stop.prevent>
-    <view class="vip-expired-content" @click.stop>
+  <bottom-sheet :visible="visible" :z-index="9999" @close="close">
+    <view class="vip-expired-content">
       <view class="popup-body">
         <text class="title">你的试用VIP名额已经用完</text>
         <text class="sub-title">继续使用，需要开通会员</text>
@@ -10,7 +10,7 @@
         <text>申请开通</text>
       </view>
     </view>
-  </view>
+  </bottom-sheet>
 </template>
 
 <script setup lang="ts">
@@ -35,24 +35,13 @@
 </script>
 
 <style lang="scss" scoped>
-  .vip-expired-mask {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-  }
-
   .vip-expired-content {
-    width: 600rpx;
+    width: 100%;
+    max-height: 80vh;
     background: #ffffff;
-    border-radius: 32rpx;
-    padding: 60rpx 40rpx;
+    border-radius: 40rpx 40rpx 0 0;
+    padding: 60rpx 48rpx calc(60rpx + env(safe-area-inset-bottom));
+    box-sizing: border-box;
     position: relative;
     display: flex;
     flex-direction: column;

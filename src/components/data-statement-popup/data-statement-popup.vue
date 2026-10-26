@@ -1,6 +1,6 @@
 <template>
-  <view class="popup-mask" v-if="visible" @click="close">
-    <view class="popup-content" @click.stop>
+  <bottom-sheet :visible="visible" :z-index="10000" @close="close">
+    <view class="popup-content">
       <view class="popup-header">
         <text class="popup-title">数据声明</text>
         <image
@@ -132,7 +132,7 @@
         </view>
       </scroll-view>
     </view>
-  </view>
+  </bottom-sheet>
 </template>
 
 <script setup lang="ts">
@@ -148,32 +148,19 @@
 </script>
 
 <style lang="scss" scoped>
-  .popup-mask {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10000;
-    padding: 20rpx;
-  }
-
   .popup-content {
     width: 100%;
-    max-height: 85vh;
+    max-height: 88vh;
+    padding-bottom: env(safe-area-inset-bottom);
     background-color: #fff;
-    border-radius: 24rpx;
+    border-radius: 40rpx 40rpx 0 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
   }
 
   .popup-header {
-    padding: 20rpx 30rpx;
+    padding: 56rpx 30rpx 20rpx;
     border-bottom: 2rpx solid #f0f0f0;
     display: flex;
     justify-content: space-between;

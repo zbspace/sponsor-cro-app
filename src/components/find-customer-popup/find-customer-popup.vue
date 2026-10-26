@@ -1,6 +1,6 @@
 <template>
-  <view class="find-popup-mask" v-if="visible" @click="close" @touchmove.stop.prevent>
-    <view class="find-popup-content" @click.stop>
+  <bottom-sheet :visible="visible" @close="close">
+    <view class="find-popup-content">
       <view class="popup-header">
         <text class="popup-title">找客户</text>
         <view class="close-btn" @click="close">
@@ -104,7 +104,7 @@
         <text>搜索</text>
       </view>
     </view>
-  </view>
+  </bottom-sheet>
 </template>
 
 <script setup lang="ts">
@@ -310,25 +310,14 @@
 </script>
 
 <style lang="scss" scoped>
-  .find-popup-mask {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 999;
-  }
-
   .find-popup-content {
-    width: 600rpx;
+    width: 100%;
+    max-height: 88vh;
     background: #ffffff;
-    border-radius: 32rpx;
-    padding: 40rpx;
+    border-radius: 40rpx 40rpx 0 0;
+    padding: 40rpx 40rpx calc(40rpx + env(safe-area-inset-bottom));
     position: relative;
+    box-sizing: border-box;
 
     .popup-header {
       display: flex;

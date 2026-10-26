@@ -1,6 +1,6 @@
 <template>
-  <view class="popup-mask" v-if="visible" @click="close">
-    <view class="popup-content" @click.stop>
+  <bottom-sheet :visible="visible" :z-index="10000" @close="close">
+    <view class="popup-content">
       <view class="popup-header">
         <text class="popup-title">中心及研究者</text>
         <view class="close-btn" @click="close">
@@ -48,7 +48,7 @@
         <view class="btn next" :class="{ disabled: !hasMore }" @click="nextPage">下一页</view>
       </view> -->
     </view>
-  </view>
+  </bottom-sheet>
 </template>
 
 <script setup lang="ts">
@@ -127,24 +127,13 @@
 </script>
 
 <style lang="scss" scoped>
-  .popup-mask {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10000;
-    padding: 40rpx;
-  }
-
   .popup-content {
-    width: 600rpx;
+    width: 100%;
+    max-height: 84vh;
+    padding-bottom: env(safe-area-inset-bottom);
+    box-sizing: border-box;
     background-color: #fff;
-    border-radius: 32rpx;
+    border-radius: 40rpx 40rpx 0 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -152,7 +141,7 @@
   }
 
   .popup-header {
-    padding: 40rpx 40rpx 20rpx;
+    padding: 56rpx 40rpx 20rpx;
     display: flex;
     justify-content: space-between;
     align-items: center;

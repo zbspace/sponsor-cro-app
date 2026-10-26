@@ -136,13 +136,8 @@
   </view>
 
   <!-- 获批记录弹窗 -->
-  <view
-    class="record-popup-mask"
-    v-if="recordPopupVisible"
-    @click="closeRecordPopup"
-    @touchmove.stop.prevent
-  >
-    <view class="record-popup" @click.stop>
+  <bottom-sheet :visible="recordPopupVisible" :z-index="10000" @close="closeRecordPopup">
+    <view class="record-popup">
       <view class="record-popup-header">
         <text class="record-popup-title">获批记录</text>
         <image
@@ -181,7 +176,7 @@
         </scroll-view>
       </view>
     </view>
-  </view>
+  </bottom-sheet>
 </template>
 
 <script setup lang="ts">
@@ -615,26 +610,15 @@
   }
 
   /* 获批记录弹窗 */
-  .record-popup-mask {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-    padding: 48rpx;
-  }
-
   .record-popup {
     width: 100%;
+    max-height: 88vh;
     background: #ffffff;
-    border-radius: 20rpx;
-    padding: 30rpx;
+    border-radius: 40rpx 40rpx 0 0;
+    padding: 56rpx 30rpx calc(30rpx + env(safe-area-inset-bottom));
     box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
   }
 
   .record-popup-header {

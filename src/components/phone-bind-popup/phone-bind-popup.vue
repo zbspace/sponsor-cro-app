@@ -1,6 +1,6 @@
 <template>
   <!-- #region 手机号绑定弹窗 -->
-  <view class="phone-overlay" v-if="visible">
+  <bottom-sheet :visible="visible" :z-index="9999" :mask-closable="false">
     <view class="phone-modal">
       <text class="modal-title">绑定手机号</text>
       <text class="modal-desc">为保障账号安全，请绑定手机号</text>
@@ -8,7 +8,7 @@
         授权手机号
       </button>
     </view>
-  </view>
+  </bottom-sheet>
   <!-- #endregion -->
 </template>
 
@@ -72,55 +72,45 @@
 
 <style lang="scss" scoped>
   /* #region 手机号绑定弹窗 */
-  .phone-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+  .phone-modal {
+    width: 100%;
+    max-height: 80vh;
+    background: #fff;
+    border-radius: 40rpx 40rpx 0 0;
+    padding: 60rpx 48rpx calc(60rpx + env(safe-area-inset-bottom));
+    box-sizing: border-box;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    z-index: 9999;
+    position: relative;
 
-    .phone-modal {
-      width: 560rpx;
-      background: #fff;
-      border-radius: 24rpx;
-      padding: 60rpx 40rpx;
+    .modal-title {
+      font-size: 36rpx;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 20rpx;
+    }
+
+    .modal-desc {
+      font-size: 28rpx;
+      color: #999;
+      margin-bottom: 60rpx;
+    }
+
+    .bind-btn {
+      width: 100%;
+      height: 88rpx;
+      background: #499ae6;
+      color: #fff;
+      font-size: 32rpx;
+      border-radius: 44rpx;
       display: flex;
-      flex-direction: column;
+      justify-content: center;
       align-items: center;
+      border: none;
 
-      .modal-title {
-        font-size: 36rpx;
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 20rpx;
-      }
-
-      .modal-desc {
-        font-size: 28rpx;
-        color: #999;
-        margin-bottom: 60rpx;
-      }
-
-      .bind-btn {
-        width: 100%;
-        height: 88rpx;
-        background: #499ae6;
-        color: #fff;
-        font-size: 32rpx;
-        border-radius: 44rpx;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+      &::after {
         border: none;
-
-        &::after {
-          border: none;
-        }
       }
     }
   }

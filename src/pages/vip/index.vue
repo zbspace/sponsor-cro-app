@@ -83,13 +83,8 @@
     </view>
 
     <!-- 协议弹窗 -->
-    <view
-      class="modal-mask"
-      v-if="showAgreement"
-      @click="showAgreement = false"
-      @touchmove.stop.prevent=""
-    >
-      <view class="modal-content" @click.stop>
+    <bottom-sheet :visible="showAgreement" @close="showAgreement = false">
+      <view class="modal-content">
         <view class="modal-header">
           <text class="modal-title">VIP 会员服务协议</text>
           <text class="close-icon" @click="showAgreement = false">×</text>
@@ -101,7 +96,7 @@
           <button class="confirm-btn" @click="showAgreement = false">已阅读并同意</button>
         </view>
       </view>
-    </view>
+    </bottom-sheet>
 
     <!-- 底部导航 -->
     <tab-bar active="mine" />
@@ -495,29 +490,18 @@
   /* #endregion */
 
   /* #region 弹窗样式 */
-  .modal-mask {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 999;
-  }
   .modal-content {
-    width: 85%;
-    max-height: 80vh;
+    width: 100%;
+    max-height: 88vh;
     background-color: white;
-    border-radius: 32rpx;
+    border-radius: 40rpx 40rpx 0 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    position: relative;
   }
   .modal-header {
-    padding: 40rpx;
+    padding: 56rpx 40rpx 40rpx;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -537,7 +521,7 @@
     flex: 1;
     padding: 40rpx;
     // overflow-y: auto;
-    height: 800rpx;
+    height: 56vh;
   }
   .agreement-text {
     font-size: 28rpx;
@@ -546,7 +530,7 @@
     white-space: pre-wrap;
   }
   .modal-footer {
-    padding: 40rpx;
+    padding: 40rpx 40rpx calc(40rpx + env(safe-area-inset-bottom));
     border-top: 2rpx solid #eee;
   }
   .confirm-btn {
