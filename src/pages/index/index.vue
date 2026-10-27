@@ -417,20 +417,20 @@
       path: 'drug-stat/index'
     },
     {
-      title: '查药企&CRO\n合作关系',
+      title: '查药企&CRO',
       desc: '立即前往',
       icon: '/static/home/4.png',
       path: 'cro-stat/index',
       special: true
     },
     {
-      title: '查药企&中心实\n验室合作关系',
+      title: '查药企&实验室',
       desc: '立即前往',
       icon: '/static/home/5.png',
       path: 'lab-stat/index'
     },
     {
-      title: '查药企&医院/研\n究者合作关系',
+      title: '查药企&医院',
       desc: '立即前往',
       icon: '/static/home/6.png',
       path: 'hospital-stat/index'
@@ -442,13 +442,13 @@
       return
     }
 
-    if (item.title === '查药企&CRO\n合作关系') {
+    if (item.title === '查药企&CRO') {
       showSearchPopup.value = true
     } else if (item.title === '找客户') {
       showFindPopup.value = true
-    } else if (item.title === '查药企&中心实\n验室合作关系') {
+    } else if (item.title === '查药企&实验室') {
       showCompanyLabPopup.value = true
-    } else if (item.title === '查药企&医院/研\n究者合作关系') {
+    } else if (item.title === '查药企&医院') {
       showSponsorSitePiPopup.value = true
     } else if (item.title === '查客户') {
       showCustomerCustomerPopup.value = true

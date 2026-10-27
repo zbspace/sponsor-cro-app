@@ -12,152 +12,73 @@
         </view>
       </view>
 
-      <!-- 药企名称 -->
-      <view class="form-item">
-        <text class="field-label">
-          药企名称
-          <text class="req">*</text>
-        </text>
-        <view class="search-wrap">
-          <view class="modal-search">
-            <view class="search-ico"></view>
-            <input
-              type="text"
-              v-model="pharmaState.keyword"
-              placeholder="输入及选择企业（必填）"
-              placeholder-style="color: #9CA3AF"
-              @input="onSearchInput(pharmaState)"
-            />
+      <!-- 药企名称搜索 -->
+      <view class="search-wrap">
+        <view class="modal-search">
+          <view class="search-ico"></view>
+          <input
+            type="text"
+            v-model="keyword"
+            placeholder="输入药企名称，如：百济神州"
+            placeholder-style="color: #9CA3AF"
+            @input="onSearchInput"
+          />
+          <view class="modal-confirm" @click="handleSearch">
+            <text>查询</text>
           </view>
+        </view>
 
-          <!-- 搜索下拉联想 -->
-          <view class="search-dropdown" v-if="pharmaState.showDropdown">
-            <view class="dropdown-loading" v-if="pharmaState.loading">
-              <text>加载中...</text>
-            </view>
-            <template v-else>
-              <!-- 结果较多时可上下滚动 -->
-              <scroll-view
-                scroll-y
-                class="dropdown-list"
-                :show-scrollbar="false"
-                :style="dropdownListStyle(pharmaState.results.length)"
-                v-if="pharmaState.results.length > 0"
-              >
-                <view
-                  class="dropdown-item"
-                  v-for="item in pharmaState.results"
-                  :key="item[pharmaState.keyField]"
-                  @click="selectItem(pharmaState, item)"
-                >
-                  <text class="dropdown-name">{{ item[pharmaState.nameField] }}</text>
-                </view>
-              </scroll-view>
-              <view class="dropdown-empty" v-if="pharmaState.results.length === 0">
-                <text>未找到相关公司</text>
-              </view>
-            </template>
+        <!-- 搜索下拉联想 -->
+        <view class="search-dropdown" v-if="showDropdown">
+          <view class="dropdown-loading" v-if="loading">
+            <text>加载中...</text>
           </view>
+          <template v-else>
+            <!-- 结果较多时可上下滚动 -->
+            <scroll-view
+              scroll-y
+              class="dropdown-list"
+              :show-scrollbar="false"
+              :style="dropdownListStyle(results.length)"
+              v-if="results.length > 0"
+            >
+              <view
+                class="dropdown-item"
+                v-for="item in results"
+                :key="item.parentCompanyId"
+                @click="selectItem(item)"
+              >
+                <text class="dropdown-name">{{ item.parentCompanyShortName }}</text>
+              </view>
+            </scroll-view>
+            <view class="dropdown-empty" v-if="results.length === 0">
+              <text>未找到相关公司</text>
+            </view>
+          </template>
         </view>
       </view>
 
-      <!-- 医院 -->
-      <view class="form-item">
-        <text class="field-label">
-          医院
-          <text class="req">*</text>
-        </text>
-        <view class="search-wrap">
-          <view class="modal-search">
-            <view class="search-ico"></view>
-            <input
-              type="text"
-              v-model="hospitalState.keyword"
-              placeholder="输入及选择医院（必填）"
-              placeholder-style="color: #9CA3AF"
-              @input="onSearchInput(hospitalState)"
-            />
-          </view>
-
-          <!-- 搜索下拉联想 -->
-          <view class="search-dropdown" v-if="hospitalState.showDropdown">
-            <view class="dropdown-loading" v-if="hospitalState.loading">
-              <text>加载中...</text>
-            </view>
-            <template v-else>
-              <!-- 结果较多时可上下滚动 -->
-              <scroll-view
-                scroll-y
-                class="dropdown-list"
-                :show-scrollbar="false"
-                :style="dropdownListStyle(hospitalState.results.length)"
-                v-if="hospitalState.results.length > 0"
-              >
-                <view
-                  class="dropdown-item"
-                  v-for="item in hospitalState.results"
-                  :key="item[hospitalState.keyField]"
-                  @click="selectItem(hospitalState, item)"
-                >
-                  <text class="dropdown-name">{{ item[hospitalState.nameField] }}</text>
-                </view>
-              </scroll-view>
-              <view class="dropdown-empty" v-if="hospitalState.results.length === 0">
-                <text>未找到相关医院</text>
-              </view>
-            </template>
+      <!-- 搜索历史 -->
+      <view class="modal-history">
+        <view class="mh-head">
+          <text class="mh-title">搜索历史</text>
+          <text class="mh-clear" v-if="recentList.length > 0" @click="clearRecentList">清空</text>
+        </view>
+        <view class="mh-chips" v-if="recentList.length > 0">
+          <view
+            class="mh-chip"
+            v-for="item in recentList"
+            :key="item.parentCompanyId"
+            @click="selectRecent(item)"
+          >
+            <text>{{ item.parentCompanyShortName }}</text>
           </view>
         </view>
-      </view>
-
-      <!-- 研究者 -->
-      <view class="form-item">
-        <text class="field-label">研究者</text>
-        <view class="search-wrap">
-          <view class="modal-search">
-            <view class="search-ico"></view>
-            <input
-              type="text"
-              v-model="researcherState.keyword"
-              placeholder="输入及选择研究者（选填）"
-              placeholder-style="color: #9CA3AF"
-              @input="onSearchInput(researcherState)"
-            />
-          </view>
-
-          <!-- 搜索下拉联想 -->
-          <view class="search-dropdown" v-if="researcherState.showDropdown">
-            <view class="dropdown-loading" v-if="researcherState.loading">
-              <text>加载中...</text>
-            </view>
-            <template v-else>
-              <!-- 结果较多时可上下滚动 -->
-              <scroll-view
-                scroll-y
-                class="dropdown-list"
-                :show-scrollbar="false"
-                :style="dropdownListStyle(researcherState.results.length)"
-                v-if="researcherState.results.length > 0"
-              >
-                <view
-                  class="dropdown-item"
-                  v-for="item in researcherState.results"
-                  :key="item[researcherState.keyField]"
-                  @click="selectItem(researcherState, item)"
-                >
-                  <text class="dropdown-name">{{ item[researcherState.nameField] }}</text>
-                </view>
-              </scroll-view>
-              <view class="dropdown-empty" v-if="researcherState.results.length === 0">
-                <text>未找到相关研究者</text>
-              </view>
-            </template>
-          </view>
+        <view class="mh-empty" v-else>
+          <view class="mh-empty-ico"><view class="search-ico"></view></view>
+          <text>暂无搜索记录</text>
         </view>
-      </view>
-
-      <view class="modal-submit" @click="handleSearch">
-        <text>查询</text>
+        <view class="modal-history-divider"></view>
       </view>
     </view>
   </bottom-sheet>
@@ -165,35 +86,9 @@
 
 <script setup lang="ts">
   // #region 导入
-  import { shallowReactive, watch } from 'vue'
-  import { queryPharmaShortName, queryHospitalData, queryResearcherData } from '@/api'
-  import type { ParentCompanyItem, HospitalItem, ResearcherItem } from '@/types/api'
-  // #endregion
-
-  // #region 类型定义
-  type AnyItem = Record<string, any>
-
-  interface SearchSectionState<T extends AnyItem = AnyItem> {
-    keyword: string
-    results: T[]
-    showDropdown: boolean
-    loading: boolean
-    selected: T | null
-    /** 列表项展示字段名 */
-    nameField: keyof T & string
-    /** 列表项唯一键字段名 */
-    keyField: keyof T & string
-    /** 查询接口 */
-    api: (params: {
-      id?: number
-      pageNum?: number
-      pageSize?: number
-      searchKey?: string
-    }) => Promise<{
-      data?: { list?: T[] }
-    }>
-    timer: ReturnType<typeof setTimeout> | null
-  }
+  import { ref, watch } from 'vue'
+  import { queryPharmaShortName } from '@/api'
+  import type { ParentCompanyItem } from '@/types/api'
   // #endregion
 
   // #region 属性与事件
@@ -205,51 +100,132 @@
   // #endregion
 
   // #region 状态
-  /**
-   * 创建一个独立的搜索区块状态
-   * @param nameField 列表项展示字段名
-   * @param keyField 列表项唯一键字段名
-   * @param api 该区块对应的查询接口
-   */
-  function createSectionState<T extends AnyItem>(
-    nameField: string,
-    keyField: string,
-    api: SearchSectionState<T>['api']
-  ): SearchSectionState<T> {
-    return shallowReactive({
-      keyword: '',
-      results: [] as T[],
-      showDropdown: false,
-      loading: false,
-      selected: null as T | null,
-      nameField,
-      keyField,
-      api,
-      timer: null
-    })
+  const keyword = ref('')
+  const results = ref<ParentCompanyItem[]>([])
+  const showDropdown = ref(false)
+  const loading = ref(false)
+  // 当前选中的药企，未选中时不允许查询
+  const selected = ref<ParentCompanyItem | null>(null)
+  let timer: ReturnType<typeof setTimeout> | null = null
+  // #endregion
+
+  // #region 搜索联想
+  function onSearchInput() {
+    if (timer) clearTimeout(timer)
+    selected.value = null // 输入时重置已选
+
+    const kw = keyword.value.trim()
+    if (!kw) {
+      results.value = []
+      showDropdown.value = false
+      return
+    }
+
+    timer = setTimeout(() => {
+      fetchCompanies()
+    }, 300)
   }
 
-  // 药企申办方：queryPharmaShortName
-  const pharmaState = createSectionState<ParentCompanyItem>(
-    'parentCompanyShortName',
-    'parentCompanyId',
-    queryPharmaShortName
-  )
-  // 医院：queryHospitalData
-  const hospitalState = createSectionState<HospitalItem>(
-    'hosStandardName',
-    'hosStandardId',
-    queryHospitalData
-  )
-  // 研究者：queryResearcherData
-  const researcherState = createSectionState<ResearcherItem>(
-    'researcherName',
-    'researcherId',
-    queryResearcherData
-  )
+  async function fetchCompanies() {
+    const kw = keyword.value.trim()
+    if (!kw) return
 
-  const sectionStates = [pharmaState, hospitalState, researcherState]
+    loading.value = true
+    showDropdown.value = true
 
+    try {
+      const res = await queryPharmaShortName({
+        pageNum: 1,
+        pageSize: 20,
+        searchKey: kw
+      })
+      results.value = res.data?.list || []
+    } catch {
+      results.value = []
+    } finally {
+      loading.value = false
+    }
+  }
+
+  function selectItem(item: ParentCompanyItem) {
+    keyword.value = item.parentCompanyShortName
+    selected.value = item
+    showDropdown.value = false
+  }
+  // #endregion
+
+  // #region 查询
+  function handleSearch() {
+    if (timer) clearTimeout(timer)
+    showDropdown.value = false
+
+    const company = selected.value
+    if (!company) {
+      uni.showToast({
+        title: '请选择药企',
+        icon: 'none'
+      })
+      return
+    }
+
+    saveRecent(company)
+    gotoHospitalList(company)
+  }
+
+  /** 进入「合作医院」中间页，由该页再下钻到医院合作情况统计页 */
+  function gotoHospitalList(company: ParentCompanyItem) {
+    uni.navigateTo({
+      url: `/pages/sponsor-hospital-list/index?companyParentId=${
+        company.parentCompanyId
+      }&companyName=${encodeURIComponent(company.parentCompanyShortName)}`
+    })
+    close()
+  }
+  // #endregion
+
+  // #region 最近搜索记录
+  const RECENT_STORAGE_KEY = 'searchSponsorHospitalRecentList'
+  const RECENT_MAX_COUNT = 10
+  const recentList = ref<ParentCompanyItem[]>([])
+
+  function loadRecentList() {
+    try {
+      const data = uni.getStorageSync(RECENT_STORAGE_KEY)
+      const list: ParentCompanyItem[] = Array.isArray(data)
+        ? data.filter((item: any) => item && typeof item === 'object' && item.parentCompanyId)
+        : []
+      recentList.value = list.slice(0, RECENT_MAX_COUNT)
+    } catch {
+      recentList.value = []
+    }
+  }
+
+  // 记录搜索药企：去重、最新的排前面、最多保留 10 条
+  function saveRecent(item: ParentCompanyItem) {
+    const list = [
+      item,
+      ...recentList.value.filter((record) => record.parentCompanyId !== item.parentCompanyId)
+    ].slice(0, RECENT_MAX_COUNT)
+    recentList.value = list
+    uni.setStorageSync(RECENT_STORAGE_KEY, list)
+  }
+
+  // 清空搜索历史
+  function clearRecentList() {
+    recentList.value = []
+    uni.removeStorageSync(RECENT_STORAGE_KEY)
+  }
+
+  // 点击历史记录：直接查询该药企的合作医院
+  function selectRecent(item: ParentCompanyItem) {
+    keyword.value = item.parentCompanyShortName
+    selected.value = item
+    showDropdown.value = false
+    handleSearch()
+  }
+  // #endregion
+
+  // #region UI 辅助逻辑
   // 下拉列表高度：单行约 88rpx，最多展示约 400rpx，超出可上下滚动
   const DROPDOWN_ITEM_HEIGHT = 88
   const DROPDOWN_MAX_HEIGHT = 400
@@ -257,124 +233,30 @@
     const height = Math.min(count * DROPDOWN_ITEM_HEIGHT, DROPDOWN_MAX_HEIGHT)
     return { height: `${height}rpx` }
   }
+
+  function close() {
+    emit('update:visible', false)
+  }
   // #endregion
 
   // #region 监听
   watch(
     () => props.visible,
     (val) => {
-      if (!val) {
-        // 关闭时重置所有搜索状态
-        sectionStates.forEach((state) => {
-          if (state.timer) clearTimeout(state.timer)
-          state.timer = null
-          state.keyword = ''
-          state.results = []
-          state.showDropdown = false
-          state.selected = null
-        })
+      if (val) {
+        // 打开时读取最近搜索记录
+        loadRecentList()
+        return
       }
+      // 关闭时重置搜索状态
+      if (timer) clearTimeout(timer)
+      timer = null
+      keyword.value = ''
+      results.value = []
+      showDropdown.value = false
+      selected.value = null
     }
   )
-  // #endregion
-
-  // #region 方法
-  function close() {
-    emit('update:visible', false)
-  }
-
-  function onSearchInput<T extends AnyItem>(state: SearchSectionState<T>) {
-    if (state.timer) clearTimeout(state.timer)
-    state.selected = null // 输入时重置已选
-
-    const keyword = state.keyword.trim()
-    if (!keyword) {
-      state.results = []
-      state.showDropdown = false
-      return
-    }
-
-    state.timer = setTimeout(() => {
-      fetchSearchResults(state)
-    }, 300)
-  }
-
-  async function fetchSearchResults<T extends AnyItem>(state: SearchSectionState<T>) {
-    const keyword = state.keyword.trim()
-    if (!keyword) return
-
-    state.loading = true
-    state.showDropdown = true
-
-    try {
-      const params: { id?: number; pageNum?: number; pageSize?: number; searchKey?: string } = {
-        pageNum: 1,
-        pageSize: 20,
-        searchKey: keyword
-      }
-      // 研究者查询需携带所选医院的 id
-      if (
-        state === (researcherState as unknown as SearchSectionState<T>) &&
-        hospitalState.selected
-      ) {
-        params.id = hospitalState.selected.hosStandardId
-      }
-      const res = await state.api(params)
-      state.results = (res.data?.list || []) as T[]
-    } catch {
-      state.results = []
-    } finally {
-      state.loading = false
-    }
-  }
-
-  function selectItem<T extends AnyItem>(state: SearchSectionState<T>, item: T) {
-    state.keyword = String(item[state.nameField] ?? '')
-    state.selected = item
-    state.showDropdown = false
-  }
-
-  function handleSearch() {
-    const pharma = pharmaState.selected
-    const hospital = hospitalState.selected
-    const researcher = researcherState.selected
-
-    if (!pharma) {
-      uni.showToast({
-        title: '请选择药企申办方',
-        icon: 'none'
-      })
-      return
-    }
-    if (!hospital) {
-      uni.showToast({
-        title: '请选择医院',
-        icon: 'none'
-      })
-      return
-    }
-
-    // 携带已选中的参数跳转到医院/研究者合作统计页
-    const query: string[] = []
-    if (pharma) {
-      query.push(`companyParentId=${pharma.parentCompanyId}`)
-      query.push(`companyName=${encodeURIComponent(pharma.parentCompanyShortName)}`)
-    }
-    if (hospital) {
-      query.push(`hosStandardId=${hospital.hosStandardId}`)
-      query.push(`hosStandardName=${encodeURIComponent(hospital.hosStandardName)}`)
-    }
-    if (researcher) {
-      query.push(`researcherId=${researcher.researcherId}`)
-      query.push(`researcherName=${encodeURIComponent(researcher.researcherName)}`)
-    }
-
-    uni.navigateTo({
-      url: `/pages/hospital-stat/index?${query.join('&')}`
-    })
-
-    close()
-  }
   // #endregion
 </script>
 
@@ -432,32 +314,6 @@
 
       &:active {
         background: #eceef1;
-      }
-    }
-  }
-  /* #endregion */
-
-  /* #region 查询方向切换 */
-  .fc-mode {
-    display: flex;
-    padding: 6rpx;
-    margin-bottom: 16rpx;
-    background: #f7f8fa;
-    border-radius: 20rpx;
-
-    .fc-mode-tab {
-      flex: 1;
-      padding: 14rpx 0;
-      text-align: center;
-      font-size: 26rpx;
-      color: #6b7280;
-      border-radius: 16rpx;
-
-      &.active {
-        background: #ffffff;
-        color: #1e6fff;
-        font-weight: 600;
-        box-shadow: 0 2rpx 8rpx rgba(15, 23, 42, 0.06);
       }
     }
   }
@@ -659,45 +515,6 @@
       height: 2rpx;
       margin-top: 20rpx;
       background: #f0f1f3;
-    }
-  }
-  /* #endregion */
-
-  /* #region 表单字段 */
-  .form-item {
-    margin-bottom: 8rpx;
-
-    .field-label {
-      display: block;
-      margin-bottom: 12rpx;
-      font-size: 26rpx;
-      color: #6b7280;
-
-      .req {
-        color: #f0483e;
-        margin-left: 4rpx;
-      }
-    }
-  }
-
-  .modal-submit {
-    width: 100%;
-    height: 88rpx;
-    margin-top: 16rpx;
-    border-radius: 20rpx;
-    background: #1e6fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    text {
-      color: #ffffff;
-      font-size: 30rpx;
-      font-weight: 600;
-    }
-
-    &:active {
-      opacity: 0.85;
     }
   }
   /* #endregion */

@@ -189,6 +189,13 @@
       }
     },
     {
+      "path": "pages/sponsor-hospital-list/index",
+      "style": {
+        "navigationBarTitleText": "合作医院",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/conditional-drug-list/index",
       "style": {
         "navigationBarTitleText": "中国附条件获批上市药品清单",
