@@ -1,14 +1,14 @@
 <template>
   <bottom-sheet :visible="visible" :z-index="10000" @close="close">
     <view class="popup-content">
-      <view class="popup-header">
-        <text class="popup-title">数据声明</text>
-        <image
-          class="close-icon"
-          src="../../static/icons/close.png"
-          @click="close"
-          mode="aspectFit"
-        />
+      <view class="modal-head-row">
+        <view class="modal-title-wrap">
+          <text class="modal-title">数据声明</text>
+          <text class="modal-sub">数据来源与使用说明</text>
+        </view>
+        <view class="modal-close" @click="close">
+          <text>×</text>
+        </view>
       </view>
       <scroll-view scroll-y="true" class="popup-body" :show-scrollbar="false">
         <view class="scroll-content">
@@ -152,36 +152,60 @@
     width: 100%;
     min-height: 70vh;
     max-height: 88vh;
-    padding-bottom: env(safe-area-inset-bottom);
+    padding: 56rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
     background-color: #fff;
     border-radius: 40rpx 40rpx 0 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    box-sizing: border-box;
   }
 
-  .popup-header {
-    padding: 56rpx 30rpx 20rpx;
-    border-bottom: 2rpx solid #f0f0f0;
+  /* #region 头部 */
+  .modal-head-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    background-color: #fff;
+    gap: 20rpx;
+    padding-bottom: 20rpx;
 
-    .popup-title {
-      font-weight: bold;
-      font-size: 28rpx;
-      color: #293959;
-      line-height: 52rpx;
+    .modal-title-wrap {
+      flex: 1;
+      min-width: 0;
     }
 
-    .close-btn {
-      font-size: 44rpx;
-      color: #999;
-      padding: 20rpx;
+    .modal-title {
+      display: block;
+      font-size: 32rpx;
+      font-weight: 600;
+      color: #1f2329;
+    }
+
+    .modal-sub {
+      display: block;
+      margin-top: 4rpx;
+      font-size: 22rpx;
+      color: #9ca3af;
+    }
+
+    .modal-close {
+      width: 60rpx;
+      height: 60rpx;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: #f7f8fa;
+      color: #6b7280;
+      font-size: 40rpx;
       line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:active {
+        background: #eceef1;
+      }
     }
   }
+  /* #endregion */
 
   .popup-body {
     height: 70vh; // 使用相对高度，确保在内容超出时可以滚动

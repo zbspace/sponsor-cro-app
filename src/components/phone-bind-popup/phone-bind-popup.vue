@@ -73,39 +73,38 @@
     max-height: 80vh;
     background: #fff;
     border-radius: 40rpx 40rpx 0 0;
-    padding: 60rpx 48rpx calc(60rpx + env(safe-area-inset-bottom));
+    padding: 56rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    align-items: center;
     position: relative;
 
     .modal-title {
-      font-size: 36rpx;
+      display: block;
+      font-size: 32rpx;
       font-weight: 600;
-      color: #333;
-      margin-bottom: 20rpx;
+      color: #1f2329;
     }
 
     .modal-desc {
-      font-size: 28rpx;
-      color: #999;
-      margin-bottom: 60rpx;
+      font-size: 24rpx;
+      color: #9ca3af;
+      margin-top: 8rpx;
     }
 
     .bind-btn {
       width: 100%;
-      height: 92rpx;
-      background: linear-gradient(135deg, #3d7bff 0%, #1e5fff 100%);
+      height: 88rpx;
+      margin-top: 40rpx;
+      border-radius: 20rpx;
+      background: #1e6fff;
       color: #fff;
-      font-size: 32rpx;
+      font-size: 30rpx;
       font-weight: 600;
-      border-radius: 46rpx;
       display: flex;
       justify-content: center;
       align-items: center;
       border: none;
-      box-shadow: 0 16rpx 36rpx rgba(30, 95, 255, 0.3);
 
       &::after {
         border: none;

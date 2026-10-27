@@ -138,14 +138,14 @@
   <!-- 获批记录弹窗 -->
   <bottom-sheet :visible="recordPopupVisible" :z-index="10000" @close="closeRecordPopup">
     <view class="record-popup">
-      <view class="record-popup-header">
-        <text class="record-popup-title">获批记录</text>
-        <image
-          class="record-popup-close"
-          src="../../static/icons/close.png"
-          mode="aspectFit"
-          @click="closeRecordPopup"
-        />
+      <view class="modal-head-row">
+        <view class="modal-title-wrap">
+          <text class="modal-title">获批记录</text>
+          <text class="modal-sub">产品获批上市记录</text>
+        </view>
+        <view class="modal-close" @click="closeRecordPopup">
+          <text>×</text>
+        </view>
       </view>
 
       <view class="record-table">
@@ -616,29 +616,57 @@
     max-height: 88vh;
     background: #ffffff;
     border-radius: 40rpx 40rpx 0 0;
-    padding: 56rpx 30rpx calc(30rpx + env(safe-area-inset-bottom));
+    padding: 56rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
     box-sizing: border-box;
     position: relative;
     overflow: hidden;
   }
 
-  .record-popup-header {
+  /* #region 头部 */
+  .modal-head-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24rpx;
+    gap: 20rpx;
+    padding-bottom: 20rpx;
 
-    .record-popup-title {
-      font-size: 32rpx;
-      font-weight: bold;
-      color: #333;
+    .modal-title-wrap {
+      flex: 1;
+      min-width: 0;
     }
 
-    .record-popup-close {
-      width: 36rpx;
-      height: 36rpx;
+    .modal-title {
+      display: block;
+      font-size: 32rpx;
+      font-weight: 600;
+      color: #1f2329;
+    }
+
+    .modal-sub {
+      display: block;
+      margin-top: 4rpx;
+      font-size: 22rpx;
+      color: #9ca3af;
+    }
+
+    .modal-close {
+      width: 60rpx;
+      height: 60rpx;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: #f7f8fa;
+      color: #6b7280;
+      font-size: 40rpx;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:active {
+        background: #eceef1;
+      }
     }
   }
+  /* #endregion */
 
   .record-table {
     border: 1rpx solid #eef0f3;

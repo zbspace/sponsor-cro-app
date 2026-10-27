@@ -14,20 +14,66 @@
   <!-- #region 背景与页面容器 -->
   <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
 
-  <view class="page">
+  <view class="page" :style="{ height: `calc(100vh - ${menu.top}px - ${menu.height}px - 70px)` }">
     <!-- #region 用户信息 -->
-    <view class="user-card">
-      <image class="avatar" :src="userInfo?.avatarUrl || defaultAvatar" mode="aspectFill" />
-      <view class="user-detail">
-        <text class="nickname">{{ userInfo?.nickname || '微信用户' }}</text>
-        <text class="phone">{{ maskedPhone }}</text>
+    <view class="profile-card">
+      <view class="pc-top" @click="goProfileSetup">
+        <view class="pc-ava-wrap">
+          <image class="pc-ava" :src="userInfo?.avatarUrl || defaultAvatar" mode="aspectFill" />
+          <view class="pc-ava-edit">
+            <view class="edit-ico"></view>
+          </view>
+        </view>
+        <view class="pc-info">
+          <view class="pc-name">
+            <text class="pc-name-text">{{ userInfo?.nickname || '微信用户' }}</text>
+            <text class="pc-tag" v-if="vipTag">{{ vipTag }}</text>
+          </view>
+          <text class="pc-meta">手机 {{ maskedPhone }}</text>
+        </view>
+      </view>
+
+      <view class="pc-membership" v-if="vipExpiry">
+        <text class="pcm-label">尊享会员</text>
+        <text class="pcm-expiry">
+          到期
+          <text class="pcm-date">{{ vipExpiry }}</text>
+        </text>
+      </view>
+    </view>
+    <!-- #endregion -->
+
+    <!-- #region 功能入口 -->
+    <view class="menu-group">
+      <view class="menu-item" @click="goTo('contact/index')">
+        <view class="menu-ico ico-amber">
+          <image class="menu-ico-img" src="/static/icons/联系我们.png" mode="aspectFit" />
+        </view>
+        <text class="menu-label">联系我们</text>
+        <view class="menu-arrow"></view>
+      </view>
+
+      <button class="menu-item menu-item-btn" open-type="share">
+        <view class="menu-ico ico-teal">
+          <image class="menu-ico-img" src="/static/icons/分享.png" mode="aspectFit" />
+        </view>
+        <text class="menu-label">分享好友</text>
+        <view class="menu-arrow"></view>
+      </button>
+
+      <view class="menu-item" @click="showDataStatement = true">
+        <view class="menu-ico ico-blue">
+          <image class="menu-ico-img" src="/static/icons/数据声明.png" mode="aspectFit" />
+        </view>
+        <text class="menu-label">数据声明</text>
+        <view class="menu-arrow"></view>
       </view>
     </view>
     <!-- #endregion -->
 
     <!-- #region 我的客户 -->
-    <view class="section-title">
-      <text>我的客户：</text>
+    <view class="sec-head">
+      <text class="sec-title">我的客户</text>
     </view>
 
     <view class="list-card">
@@ -42,9 +88,6 @@
         class="scroll-view"
         @scrolltolower="onScrollToLower"
         :show-scrollbar="false"
-        :style="{
-          height: `calc(100vh - ${menu.top}px - ${menu.height}px - 320px)`
-        }"
       >
         <view
           class="table-row"
@@ -67,26 +110,56 @@
       </scroll-view>
     </view>
     <!-- #endregion -->
-
-    <!-- 底部导航 -->
-    <tab-bar active="mine" />
   </view>
   <!-- #endregion -->
+
+  <!-- 数据声明弹窗 -->
+  <data-statement-popup v-model:visible="showDataStatement" />
+
+  <!-- 底部导航 -->
+  <tab-bar active="mine" />
 </template>
 
 <script setup lang="ts">
   // #region 导入
   import { ref, computed, onMounted } from 'vue'
-  import { onLoad } from '@dcloudio/uni-app'
+  import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
   import TabBar from '@/components/tab-bar/index.vue'
+  import DataStatementPopup from '@/components/data-statement-popup/data-statement-popup.vue'
   import { getUserCollectList, getUserInfo } from '@/api'
+  import { VIP_CODE } from '@/utils/enums'
   import type { UserInfo } from '@/types/api'
+  // #endregion
+
+  // #region 分享
+  onShareAppMessage(() => {
+    return {
+      title: '临研商机宝 - 明熟客情 稳妥商机',
+      path: '/pages/index/index',
+      imageUrl: '/static/icons/header-bg.png'
+    }
+  })
   // #endregion
 
   // #region 页面基础状态
   const menu = ref({ top: 0, left: 0, height: 0 })
   const defaultAvatar = '../../static/icons/default-avatar-1.png'
   const userInfo = ref<UserInfo | null>(null)
+  const showDataStatement = ref(false)
+
+  // 会员标签：仅 VIP 用户 / 试用中展示
+  const vipTag = computed(() => {
+    if (userInfo.value?.vipCode === VIP_CODE.VIP用户) return '尊享会员'
+    if (userInfo.value?.vipCode === VIP_CODE.VIP试用) return '试用中'
+    return ''
+  })
+
+  // 会员到期时间：仅 VIP 用户展示
+  const vipExpiry = computed(() => {
+    if (userInfo.value?.vipCode !== VIP_CODE.VIP用户) return ''
+    const time = userInfo.value?.vipExpirationTime || ''
+    return time ? time.slice(0, 10) : ''
+  })
 
   // 手机号脱敏：138****8888
   const maskedPhone = computed(() => {
@@ -103,6 +176,18 @@
     userInfo.value = getUserInfo()
     fetchCustomers(true)
   })
+  // #endregion
+
+  // #region 导航
+  function goTo(path: string, query?: string) {
+    const url = query ? `/pages/${path}?${query}` : `/pages/${path}`
+    uni.navigateTo({ url })
+  }
+
+  // 完善资料（头像、昵称）
+  function goProfileSetup() {
+    uni.navigateTo({ url: '/pages/profile-setup/index' })
+  }
   // #endregion
 
   // #region 我的客户（收藏数据）
@@ -190,79 +275,260 @@
   .page {
     position: relative;
     z-index: 1;
-    padding-left: 30rpx;
-    padding-right: 30rpx;
-    margin-top: 30rpx;
+    display: flex;
+    flex-direction: column;
+    padding: 30rpx 30rpx 0;
   }
   /* #endregion */
 
   /* #region 用户信息 */
-  .user-card {
-    background: #ffffff;
-    border-radius: 24rpx;
-    padding: 40rpx;
-    display: flex;
-    align-items: center;
-    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
+  .profile-card {
+    flex-shrink: 0;
+    background: linear-gradient(120deg, #0a2a5e 0%, #1350c2 100%);
+    border-radius: 32rpx;
+    color: #ffffff;
+    overflow: hidden;
+    box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.08);
   }
 
-  .avatar {
-    width: 120rpx;
-    height: 120rpx;
-    border-radius: 60rpx;
-    margin-right: 30rpx;
-    background: #f0f2f5;
+  .pc-top {
+    display: flex;
+    align-items: center;
+    gap: 28rpx;
+    padding: 36rpx 32rpx 32rpx;
+  }
+
+  .pc-ava-wrap {
+    position: relative;
     flex-shrink: 0;
   }
 
-  .user-detail {
+  .pc-ava {
+    width: 104rpx;
+    height: 104rpx;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    border: 4rpx solid rgba(255, 255, 255, 0.4);
+  }
+
+  .pc-ava-edit {
+    position: absolute;
+    right: -4rpx;
+    bottom: -4rpx;
+    width: 40rpx;
+    height: 40rpx;
+    border-radius: 50%;
+    background: #ffffff;
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.25);
+
+    // 编辑铅笔图标（纯 CSS 绘制）
+    .edit-ico {
+      position: relative;
+      width: 18rpx;
+      height: 4rpx;
+      background: #1e6fff;
+      border-radius: 2rpx;
+      transform: rotate(-45deg);
+
+      &::after {
+        content: '';
+        position: absolute;
+        right: -4rpx;
+        top: -2rpx;
+        width: 0;
+        height: 0;
+        border-top: 4rpx solid transparent;
+        border-bottom: 4rpx solid transparent;
+        border-left: 6rpx solid #1e6fff;
+      }
+    }
   }
 
-  .nickname {
-    font-size: 36rpx;
-    font-weight: bold;
-    color: #333333;
-    margin-bottom: 12rpx;
+  .pc-info {
+    flex: 1;
+    min-width: 0;
   }
 
-  .phone {
+  .pc-name {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+  }
+
+  .pc-name-text {
+    font-size: 34rpx;
+    font-weight: 600;
+    color: #ffffff;
+  }
+
+  .pc-tag {
+    font-size: 22rpx;
+    font-weight: 500;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4rpx 16rpx;
+    border-radius: 24rpx;
+  }
+
+  .pc-meta {
+    display: block;
+    margin-top: 10rpx;
+    font-size: 24rpx;
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  .pc-membership {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16rpx;
+    padding: 22rpx 32rpx;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .pcm-label {
+    font-size: 24rpx;
+    font-weight: 600;
+    color: #ffffff;
+  }
+
+  .pcm-expiry {
+    font-size: 22rpx;
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  .pcm-date {
+    color: #ffd666;
+  }
+  /* #endregion */
+
+  /* #region 功能入口 */
+  .menu-group {
+    flex-shrink: 0;
+    margin-top: 24rpx;
+    background: #ffffff;
+    border-radius: 28rpx;
+    overflow: hidden;
+    box-shadow: 0 2rpx 6rpx rgba(15, 23, 42, 0.06);
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 24rpx;
+    padding: 28rpx 32rpx;
+    border-bottom: 2rpx solid #f0f1f3;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:active {
+      background: #fafbfd;
+    }
+  }
+
+  // 微信分享按钮：清除默认样式
+  .menu-item-btn {
+    width: 100%;
+    background: transparent;
+    border-radius: 0;
+    border-bottom: 2rpx solid #f0f1f3;
+    line-height: normal;
+    text-align: left;
+    font-weight: 400;
+
+    &::after {
+      display: none;
+    }
+  }
+
+  .menu-ico {
+    width: 64rpx;
+    height: 64rpx;
+    border-radius: 18rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    &.ico-amber {
+      background: #fdf3e3;
+    }
+
+    &.ico-teal {
+      background: #e6f7f1;
+    }
+
+    &.ico-blue {
+      background: #ebf3ff;
+    }
+  }
+
+  .menu-ico-img {
+    width: 36rpx;
+    height: 36rpx;
+  }
+
+  .menu-label {
+    flex: 1;
     font-size: 28rpx;
-    color: #666666;
+    color: #1f2329;
+  }
+
+  .menu-arrow {
+    width: 16rpx;
+    height: 16rpx;
+    border-top: 3rpx solid #c6cbd4;
+    border-right: 3rpx solid #c6cbd4;
+    transform: rotate(45deg);
+    flex-shrink: 0;
   }
   /* #endregion */
 
   /* #region 我的客户 */
-  .section-title {
+  .sec-head {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
-    margin: 40rpx 0 24rpx;
+    justify-content: space-between;
+    margin: 32rpx 4rpx 16rpx;
+  }
+
+  .sec-title {
+    display: flex;
+    align-items: center;
+    font-size: 32rpx;
+    font-weight: 600;
+    color: #1f2329;
 
     &::before {
       content: '';
       width: 8rpx;
       height: 32rpx;
       border-radius: 4rpx;
-      background: #2b66ef;
+      background: #1e6fff;
       margin-right: 16rpx;
-    }
-
-    text {
-      font-size: 32rpx;
-      font-weight: bold;
-      color: #293959;
     }
   }
 
   .list-card {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
     background: #ffffff;
-    border-radius: 24rpx;
+    border-radius: 28rpx;
     padding: 20rpx;
-    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
+    box-shadow: 0 2rpx 6rpx rgba(15, 23, 42, 0.06);
+    margin-bottom: 10rpx;
   }
 
   .table-header {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     padding: 24rpx 0;
@@ -279,6 +545,8 @@
   }
 
   .scroll-view {
+    flex: 1;
+    height: 0;
     width: 100%;
   }
 

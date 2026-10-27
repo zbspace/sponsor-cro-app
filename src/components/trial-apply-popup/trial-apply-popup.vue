@@ -1,45 +1,68 @@
 <template>
   <bottom-sheet :visible="visible" @close="close">
     <view class="trial-popup-content">
-      <view class="popup-header">
-        <text class="popup-title">申请试用</text>
-        <view class="close-btn" @click="close">
-          <image class="close-icon" src="../../static/icons/close.png" mode="aspectFit" />
+      <view class="modal-head-row">
+        <view class="modal-title-wrap">
+          <text class="modal-title">申请试用</text>
+          <text class="modal-sub">填写信息，提交后工作人员将尽快与您联系</text>
+        </view>
+        <view class="modal-close" @click="close">
+          <text>×</text>
         </view>
       </view>
 
-      <view class="form-section">
-        <view class="input-item">
+      <view class="mform">
+        <view class="mform-item">
+          <text class="mform-label">
+            姓名
+            <text class="req">*</text>
+          </text>
           <input
+            class="mform-input"
             type="text"
             v-model="formData.name"
             placeholder="请输入姓名"
-            placeholder-style="color: #B2B2B2"
+            placeholder-style="color: #9CA3AF"
           />
         </view>
-        <view class="input-item">
+        <view class="mform-item">
+          <text class="mform-label">
+            电话
+            <text class="req">*</text>
+          </text>
           <input
+            class="mform-input"
             type="number"
+            maxlength="11"
             v-model="formData.phone"
             placeholder="请输入手机号"
-            placeholder-style="color: #B2B2B2"
-            maxlength="11"
+            placeholder-style="color: #9CA3AF"
           />
         </view>
-        <view class="input-item">
+        <view class="mform-item">
+          <text class="mform-label">
+            公司
+            <text class="req">*</text>
+          </text>
           <input
+            class="mform-input"
             type="text"
             v-model="formData.company"
-            placeholder="请输入公司"
-            placeholder-style="color: #B2B2B2"
+            placeholder="请输入公司名称"
+            placeholder-style="color: #9CA3AF"
           />
         </view>
-        <view class="input-item">
+        <view class="mform-item">
+          <text class="mform-label">
+            职位
+            <text class="req">*</text>
+          </text>
           <input
+            class="mform-input"
             type="text"
             v-model="formData.position"
             placeholder="请输入职位"
-            placeholder-style="color: #B2B2B2"
+            placeholder-style="color: #9CA3AF"
           />
         </view>
       </view>
@@ -158,92 +181,129 @@
     max-height: 80vh;
     background: #ffffff;
     border-radius: 40rpx 40rpx 0 0;
-    padding: 40rpx 40rpx calc(40rpx + env(safe-area-inset-bottom));
+    padding: 56rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
     position: relative;
     box-sizing: border-box;
+  }
 
-    .popup-header {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin-bottom: 50rpx;
-      position: relative;
+  /* #region 头部 */
+  .modal-head-row {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    padding-bottom: 20rpx;
 
-      .popup-title {
-        font-weight: bold;
-        font-size: 28rpx;
-        color: #293959;
-        line-height: 52rpx;
-      }
-
-      .close-btn {
-        position: absolute;
-        right: -10rpx;
-        top: -10rpx;
-        padding: 10rpx;
-      }
+    .modal-title-wrap {
+      flex: 1;
+      min-width: 0;
     }
 
-    .form-section {
-      margin-bottom: 60rpx;
-
-      .input-item {
-        background: #f7f8fa;
-        border-radius: 16rpx;
-        height: 88rpx;
-        padding: 0 30rpx;
-        display: flex;
-        align-items: center;
-        margin-bottom: 30rpx;
-
-        &:last-child {
-          margin-bottom: 0;
-        }
-
-        input {
-          flex: 1;
-          font-size: 28rpx;
-          color: #333333;
-        }
-      }
+    .modal-title {
+      display: block;
+      font-size: 32rpx;
+      font-weight: 600;
+      color: #1f2329;
     }
 
-    .submit-btn {
-      width: 100%;
-      height: 92rpx;
-      margin-top: 8rpx;
-      background: linear-gradient(135deg, #3d7bff 0%, #1e5fff 100%);
-      border-radius: 46rpx;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      box-shadow: 0 16rpx 36rpx rgba(30, 95, 255, 0.3);
+    .modal-sub {
+      display: block;
+      margin-top: 4rpx;
+      font-size: 22rpx;
+      color: #9ca3af;
+    }
 
-      text {
-        color: #ffffff;
-        font-size: 32rpx;
-        font-weight: 600;
-      }
+    .modal-close {
+      width: 60rpx;
+      height: 60rpx;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: #f7f8fa;
+      color: #6b7280;
+      font-size: 40rpx;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
       &:active {
-        background: linear-gradient(135deg, #2f6bef 0%, #1553ee 100%);
+        background: #eceef1;
+      }
+    }
+  }
+  /* #endregion */
+
+  /* #region 表单 */
+  .mform {
+    padding-top: 4rpx;
+    display: flex;
+    flex-direction: column;
+    gap: 24rpx;
+
+    .mform-item {
+      display: flex;
+      flex-direction: column;
+      gap: 12rpx;
+    }
+
+    .mform-label {
+      font-size: 26rpx;
+      color: #6b7280;
+      font-weight: 500;
+
+      .req {
+        color: #f0483e;
+        margin-left: 4rpx;
       }
     }
 
-    .pending-tip {
-      width: 280rpx;
-      min-height: 88rpx;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: 0 auto;
+    .mform-input {
+      height: 88rpx;
+      border: 2rpx solid #e3e7ec;
+      border-radius: 20rpx;
+      padding: 0 24rpx;
+      font-size: 28rpx;
+      color: #1f2329;
+      background: #ffffff;
+      box-sizing: border-box;
+    }
+  }
+  /* #endregion */
 
-      text {
-        font-size: 26rpx;
-        color: #999999;
-        line-height: 1.5;
-        text-align: center;
-      }
+  .submit-btn {
+    width: 100%;
+    height: 92rpx;
+    margin-top: 24rpx;
+    background: linear-gradient(135deg, #3d7bff 0%, #1e5fff 100%);
+    border-radius: 46rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 16rpx 36rpx rgba(30, 95, 255, 0.3);
+
+    text {
+      color: #ffffff;
+      font-size: 32rpx;
+      font-weight: 600;
+    }
+
+    &:active {
+      background: linear-gradient(135deg, #2f6bef 0%, #1553ee 100%);
+    }
+  }
+
+  .pending-tip {
+    width: 280rpx;
+    min-height: 88rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+
+    text {
+      font-size: 26rpx;
+      color: #999999;
+      line-height: 1.5;
+      text-align: center;
     }
   }
 </style>

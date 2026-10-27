@@ -1,10 +1,13 @@
 <template>
   <bottom-sheet :visible="visible" :z-index="10000" @close="close">
     <view class="popup-content">
-      <view class="popup-header">
-        <text class="popup-title">中心及研究者</text>
-        <view class="close-btn" @click="close">
-          <image class="close-icon" src="../../static/icons/close.png" mode="aspectFit" />
+      <view class="modal-head-row">
+        <view class="modal-title-wrap">
+          <text class="modal-title">中心及研究者</text>
+          <text class="modal-sub">滑动查看更多</text>
+        </view>
+        <view class="modal-close" @click="close">
+          <text>×</text>
         </view>
       </view>
 
@@ -131,7 +134,7 @@
     width: 100%;
     min-height: 70vh;
     max-height: 84vh;
-    padding-bottom: env(safe-area-inset-bottom);
+    padding: 56rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
     box-sizing: border-box;
     background-color: #fff;
     border-radius: 40rpx 40rpx 0 0;
@@ -141,34 +144,51 @@
     position: relative;
   }
 
-  .popup-header {
-    padding: 56rpx 40rpx 20rpx;
+  /* #region 头部 */
+  .modal-head-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 20rpx;
+    padding-bottom: 20rpx;
 
-    .popup-title {
-      font-weight: bold;
-      font-size: 28rpx;
-      color: #293959;
-      line-height: 52rpx;
+    .modal-title-wrap {
+      flex: 1;
+      min-width: 0;
     }
 
-    .close-btn {
-      width: 50rpx;
-      height: 50rpx;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+    .modal-title {
+      display: block;
+      font-size: 32rpx;
+      font-weight: 600;
+      color: #1f2329;
+    }
 
-      .close-icon {
-        font-size: 40rpx;
-        color: #999;
-        line-height: 1;
-        margin-top: -4rpx;
+    .modal-sub {
+      display: block;
+      margin-top: 4rpx;
+      font-size: 22rpx;
+      color: #9ca3af;
+    }
+
+    .modal-close {
+      width: 60rpx;
+      height: 60rpx;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: #f7f8fa;
+      color: #6b7280;
+      font-size: 40rpx;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:active {
+        background: #eceef1;
       }
     }
   }
+  /* #endregion */
 
   .table-container {
     padding: 20rpx 40rpx 40rpx;

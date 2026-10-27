@@ -151,24 +151,6 @@
       <view class="bd-assistant-section">
         <text class="bd-slogan">- 助力BD拿单 -</text>
       </view>
-
-      <!-- 底部 -->
-      <view class="footer">
-        <view class="footer-links">
-          <button class="footer-link-item share-btn" open-type="share">
-            <image class="footer-icon" src="/static/icons/分享.png" mode="aspectFit" />
-            <text>分享给朋友</text>
-          </button>
-          <view class="footer-link-item" @click="showDataStatement = true">
-            <image class="footer-icon" src="/static/icons/数据声明.png" mode="aspectFit" />
-            <text>数据声明</text>
-          </view>
-          <view class="footer-link-item" @click="goTo('contact/index')">
-            <image class="footer-icon" src="/static/icons/联系我们.png" mode="aspectFit" />
-            <text>联系我们</text>
-          </view>
-        </view>
-      </view>
     </view>
   </scroll-view>
 
@@ -191,9 +173,6 @@
   </view>
 
   <!-- #endregion -->
-
-  <!-- 数据声明弹窗 -->
-  <data-statement-popup v-model:visible="showDataStatement" />
 
   <!-- 手机号绑定弹窗 -->
   <phone-bind-popup />
@@ -232,7 +211,6 @@
   import { onLoad } from '@dcloudio/uni-app'
   import TabBar from '@/components/tab-bar/index.vue'
   import FreeVipBanner from '@/components/free-vip-banner/free-vip-banner.vue'
-  import DataStatementPopup from '../../components/data-statement-popup/data-statement-popup.vue'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
   import TrialApplyPopup from '@/components/trial-apply-popup/trial-apply-popup.vue'
   import FindCustomerPopup from '@/components/find-customer-popup/find-customer-popup.vue'
@@ -583,7 +561,6 @@
   // #endregion
 
   // #region 弹窗状态管理
-  const showDataStatement = ref(false)
   const showSearchPopup = ref(false)
   const showTrialPopup = ref(false)
   const showFindPopup = ref(false)
@@ -925,80 +902,6 @@
     }
   }
   /* #endregion */
-
-  /* #region 底部 */
-  .footer {
-    text-align: center;
-
-    .footer-text {
-      display: block;
-      font-weight: 400;
-      font-size: 24rpx;
-      color: #999999;
-      line-height: 52rpx;
-      text-align: left;
-      font-style: normal;
-      text-transform: none;
-      margin-bottom: 20rpx;
-      text-align: center;
-    }
-
-    .footer-sub {
-      display: block;
-      font-weight: 400;
-      font-size: 24rpx;
-      color: #999999;
-      line-height: 52rpx;
-      text-align: left;
-      font-style: normal;
-      text-transform: none;
-      margin-bottom: 60rpx;
-      text-align: center;
-    }
-
-    .footer-links {
-      display: flex;
-      justify-content: center;
-      gap: 60rpx;
-      font-size: 24rpx;
-      color: #666;
-
-      .footer-link-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-
-        font-weight: 400;
-        font-size: 24rpx;
-        color: #666666;
-        line-height: 52rpx;
-        text-align: left;
-        font-style: normal;
-        text-transform: none;
-
-        .footer-icon {
-          width: 66rpx;
-          height: 66rpx;
-          margin-bottom: 20rpx;
-        }
-      }
-
-      .share-btn {
-        background-color: transparent;
-        padding: 0;
-        margin: 0;
-        border: none;
-        border-radius: 0;
-        color: #666;
-        overflow: visible;
-        line-height: 52rpx;
-
-        &::after {
-          display: none;
-        }
-      }
-    }
-  }
 
   .collect-icon {
     position: absolute;

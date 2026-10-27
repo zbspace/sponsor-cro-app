@@ -1,10 +1,15 @@
 <template>
   <bottom-sheet :visible="visible" :z-index="9999" @close="close">
     <view class="vip-expired-content">
-      <view class="popup-body">
-        <text class="title">你的试用VIP名额已经用完</text>
-        <text class="sub-title">继续使用，需要开通会员</text>
+      <view class="modal-head-row">
+        <view class="modal-title-wrap">
+          <text class="modal-title">你的试用VIP名额已经用完</text>
+          <text class="modal-sub">继续使用，需要开通会员</text>
+        </view>
+        <view class="modal-close" @click="close"><text>×</text></view>
       </view>
+
+      <view class="popup-body"></view>
 
       <view class="submit-btn" @click="handleApply">
         <text>申请开通</text>
@@ -41,30 +46,58 @@
     max-height: 80vh;
     background: #ffffff;
     border-radius: 40rpx 40rpx 0 0;
-    padding: 60rpx 48rpx calc(60rpx + env(safe-area-inset-bottom));
+    padding: 56rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
     box-sizing: border-box;
     position: relative;
     display: flex;
     flex-direction: column;
-    align-items: center;
+
+    .modal-head-row {
+      display: flex;
+      align-items: center;
+      gap: 20rpx;
+      padding-bottom: 20rpx;
+
+      .modal-title-wrap {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .modal-title {
+        display: block;
+        font-size: 32rpx;
+        font-weight: 600;
+        color: #1f2329;
+      }
+
+      .modal-sub {
+        display: block;
+        margin-top: 4rpx;
+        font-size: 22rpx;
+        color: #9ca3af;
+      }
+
+      .modal-close {
+        width: 60rpx;
+        height: 60rpx;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: #f7f8fa;
+        color: #6b7280;
+        font-size: 40rpx;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:active {
+          background: #eceef1;
+        }
+      }
+    }
 
     .popup-body {
-      text-align: center;
-      margin-bottom: 50rpx;
-
-      .title {
-        display: block;
-        font-weight: bold;
-        font-size: 36rpx;
-        color: #333333;
-        margin-bottom: 20rpx;
-      }
-
-      .sub-title {
-        display: block;
-        font-size: 30rpx;
-        color: #666666;
-      }
+      flex: 1;
     }
 
     .submit-btn {

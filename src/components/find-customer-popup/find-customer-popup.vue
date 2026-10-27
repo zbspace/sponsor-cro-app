@@ -1,108 +1,113 @@
 <template>
   <bottom-sheet :visible="visible" @close="close">
     <view class="find-popup-content">
-      <view class="popup-header">
-        <text class="popup-title">找客户</text>
-        <view class="close-btn" @click="close">
-          <image class="close-icon" src="../../static/icons/close.png" mode="aspectFit" />
+      <!-- 头部：标题 + 副标题 + 关闭 -->
+      <view class="modal-head-row">
+        <view class="modal-title-wrap">
+          <text class="modal-title">找客户</text>
+          <text class="modal-sub">按适应症或药品反向匹配潜在客户</text>
+        </view>
+        <view class="modal-close" @click="close">
+          <text>×</text>
         </view>
       </view>
 
-      <!-- #region Tab 切换 -->
-      <view class="tab-switch">
+      <!-- #region 模式切换 -->
+      <view class="fc-mode">
         <view
-          class="tab-item"
+          class="fc-mode-tab"
           :class="{ active: activeTab === 'indication' }"
           @click="switchTab('indication')"
         >
-          <text>按照适应症</text>
+          <text>按适应症</text>
         </view>
-        <view class="tab-item" :class="{ active: activeTab === 'drug' }" @click="switchTab('drug')">
+        <view
+          class="fc-mode-tab"
+          :class="{ active: activeTab === 'drug' }"
+          @click="switchTab('drug')"
+        >
           <text>按药品</text>
         </view>
       </view>
       <!-- #endregion -->
 
       <!-- #region 搜索条件 -->
-      <view class="form-section">
-        <!-- 适应症：开放性输入 -->
-        <view class="search-input-section" v-if="activeTab === 'indication'">
-          <text class="field-label">适应症：</text>
-          <view class="input-wrapper">
-            <view class="search-icon"></view>
-            <input
-              type="text"
-              v-model="indicationKeyword"
-              placeholder="输入适应症名称"
-              placeholder-style="color: #B2B2B2"
-            />
+      <view class="search-wrap">
+        <view class="modal-search">
+          <view class="search-ico"></view>
+          <input
+            v-if="activeTab === 'indication'"
+            type="text"
+            v-model="indicationKeyword"
+            placeholder="输入适应症名称，如：非小细胞肺癌"
+            placeholder-style="color: #9CA3AF"
+          />
+          <input
+            v-else
+            type="text"
+            v-model="drugState.keyword"
+            placeholder="输入通用名或研发代号"
+            placeholder-style="color: #9CA3AF"
+            @input="onDrugInput"
+          />
+          <view class="modal-confirm" @click="handleSearch">
+            <text>查询</text>
           </view>
         </view>
 
-        <!-- 药品名：通用名或研发代号（搜索 + 选择） -->
-        <view class="search-input-section" v-else>
-          <text class="field-label">药品名：</text>
-          <view class="input-wrapper">
-            <view class="search-icon"></view>
-            <input
-              type="text"
-              v-model="drugState.keyword"
-              placeholder="输入通用名或研发代号"
-              placeholder-style="color: #B2B2B2"
-              @input="onDrugInput"
-            />
+        <!-- 药品 tab 的下拉联想 -->
+        <view class="search-dropdown" v-if="drugState.showDropdown">
+          <view class="dropdown-loading" v-if="drugState.loading">
+            <text>加载中...</text>
           </view>
-
-          <!-- 搜索下拉联想 -->
-          <view class="search-dropdown" v-if="drugState.showDropdown">
-            <view class="dropdown-loading" v-if="drugState.loading">
-              <text>加载中...</text>
-            </view>
-            <template v-else>
-              <scroll-view
-                scroll-y
-                class="dropdown-list"
-                :show-scrollbar="false"
-                :style="dropdownListStyle(drugState.results.length)"
-                v-if="drugState.results.length > 0"
+          <template v-else>
+            <scroll-view
+              scroll-y
+              class="dropdown-list"
+              :show-scrollbar="false"
+              :style="dropdownListStyle(drugState.results.length)"
+              v-if="drugState.results.length > 0"
+            >
+              <view
+                class="dropdown-item"
+                v-for="item in drugState.results"
+                :key="item.cleanedDrugName"
+                @click="selectDrug(item)"
               >
-                <view
-                  class="dropdown-item"
-                  v-for="item in drugState.results"
-                  :key="item.cleanedDrugName"
-                  @click="selectDrug(item)"
-                >
-                  <text class="dropdown-name">{{ item.cleanedDrugName }}</text>
-                </view>
-              </scroll-view>
-              <view class="dropdown-empty" v-if="drugState.results.length === 0">
-                <text>未找到相关药品</text>
+                <text class="dropdown-name">{{ item.cleanedDrugName }}</text>
               </view>
-            </template>
-          </view>
+            </scroll-view>
+            <view class="dropdown-empty" v-if="drugState.results.length === 0">
+              <text>未找到相关药品</text>
+            </view>
+          </template>
         </view>
       </view>
       <!-- #endregion -->
 
-      <!-- #region 最近搜索记录 -->
-      <view class="recent-section" v-if="recentList.length > 0">
-        <text class="recent-label">最近搜索记录：</text>
-        <view class="recent-list">
-          <view
-            class="recent-item"
-            v-for="name in recentList"
-            :key="name"
-            @click="selectRecent(name)"
-          >
+      <!-- #region 搜索历史 -->
+      <view class="modal-history">
+        <view class="mh-head">
+          <text class="mh-title">搜索历史</text>
+          <text class="mh-clear" v-if="recentList.length > 0" @click="clearRecentList">清空</text>
+        </view>
+
+        <view class="mh-chips" v-if="recentList.length > 0">
+          <view class="mh-chip" v-for="name in recentList" :key="name" @click="selectRecent(name)">
             <text>{{ name }}</text>
           </view>
         </view>
+
+        <view class="mh-empty" v-else>
+          <view class="mh-empty-ico">
+            <view class="search-ico"></view>
+          </view>
+          <text>暂无搜索记录</text>
+        </view>
+
+        <view class="modal-history-divider"></view>
       </view>
       <!-- #endregion -->
-
-      <view class="search-btn" @click="handleSearch">
-        <text>搜索</text>
-      </view>
     </view>
   </bottom-sheet>
 </template>
@@ -237,6 +242,16 @@
     uni.setStorageSync(RECENT_KEYS[activeTab.value], list)
   }
 
+  // 清空当前 tab 的搜索历史
+  function clearRecentList() {
+    if (activeTab.value === 'indication') {
+      recentIndicationList.value = []
+    } else {
+      recentDrugList.value = []
+    }
+    uni.removeStorageSync(RECENT_KEYS[activeTab.value])
+  }
+
   // 点击历史记录：回填关键字并直接搜索
   function selectRecent(name: string) {
     if (activeTab.value === 'indication') {
@@ -316,215 +331,281 @@
     max-height: 88vh;
     background: #ffffff;
     border-radius: 40rpx 40rpx 0 0;
-    padding: 40rpx 40rpx calc(40rpx + env(safe-area-inset-bottom));
+    padding: 56rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
     position: relative;
     box-sizing: border-box;
+    overflow-y: auto;
+  }
 
-    .popup-header {
+  /* #region 头部 */
+  .modal-head-row {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    padding-bottom: 20rpx;
+
+    .modal-title-wrap {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .modal-title {
+      display: block;
+      font-size: 32rpx;
+      font-weight: 600;
+      color: #1f2329;
+    }
+
+    .modal-sub {
+      display: block;
+      margin-top: 4rpx;
+      font-size: 22rpx;
+      color: #9ca3af;
+    }
+
+    .modal-close {
+      width: 60rpx;
+      height: 60rpx;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: #f7f8fa;
+      color: #6b7280;
+      font-size: 40rpx;
+      line-height: 1;
       display: flex;
-      justify-content: center;
       align-items: center;
-      margin-bottom: 40rpx;
-      position: relative;
+      justify-content: center;
 
-      .popup-title {
-        font-weight: bold;
-        font-size: 28rpx;
-        color: #293959;
-        line-height: 52rpx;
-      }
-
-      .close-btn {
-        position: absolute;
-        right: -10rpx;
-        top: -10rpx;
-        padding: 10rpx;
+      &:active {
+        background: #eceef1;
       }
     }
+  }
+  /* #endregion */
 
-    /* #region Tab 切换样式 */
-    .tab-switch {
-      display: flex;
-      background: #f2f3f5;
+  /* #region 模式切换 */
+  .fc-mode {
+    display: flex;
+    padding: 6rpx;
+    margin-bottom: 16rpx;
+    background: #f7f8fa;
+    border-radius: 20rpx;
+
+    .fc-mode-tab {
+      flex: 1;
+      padding: 14rpx 0;
+      text-align: center;
+      font-size: 26rpx;
+      color: #6b7280;
       border-radius: 16rpx;
-      padding: 6rpx;
-      margin-bottom: 40rpx;
 
-      .tab-item {
+      &.active {
+        background: #ffffff;
+        color: #1e6fff;
+        font-weight: 600;
+        box-shadow: 0 2rpx 8rpx rgba(15, 23, 42, 0.06);
+      }
+    }
+  }
+  /* #endregion */
+
+  /* #region 搜索框 */
+  .search-wrap {
+    position: relative;
+    margin-bottom: 16rpx;
+
+    .modal-search {
+      display: flex;
+      align-items: center;
+      gap: 16rpx;
+      height: 80rpx;
+      padding: 0 24rpx;
+      background: #f7f8fa;
+      border-radius: 20rpx;
+
+      input {
         flex: 1;
-        height: 68rpx;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border-radius: 12rpx;
-
-        text {
-          font-size: 28rpx;
-          color: #333333;
-        }
-
-        &.active {
-          background: #ffffff;
-          box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
-
-          text {
-            font-weight: bold;
-          }
-        }
-      }
-    }
-    /* #endregion */
-
-    /* #region 搜索条件样式 */
-    .form-section {
-      margin-bottom: 30rpx;
-    }
-
-    .search-input-section {
-      position: relative;
-
-      .field-label {
-        display: block;
+        min-width: 0;
         font-size: 28rpx;
-        color: #333333;
-        margin-bottom: 20rpx;
-      }
-
-      .input-wrapper {
-        background: #ffffff;
-        border: 1rpx solid #d9d9d9;
-        border-radius: 8rpx;
-        height: 88rpx;
-        padding: 0 24rpx;
-        display: flex;
-        align-items: center;
-
-        .search-icon {
-          width: 24rpx;
-          height: 24rpx;
-          border: 3rpx solid #333333;
-          border-radius: 50%;
-          position: relative;
-          margin-right: 18rpx;
-          flex-shrink: 0;
-
-          &::after {
-            content: '';
-            position: absolute;
-            right: -10rpx;
-            bottom: -8rpx;
-            width: 14rpx;
-            height: 3rpx;
-            background: #333333;
-            transform: rotate(45deg);
-          }
-        }
-
-        input {
-          flex: 1;
-          font-size: 28rpx;
-          color: #333333;
-        }
-      }
-
-      .search-dropdown {
-        position: absolute;
-        top: 140rpx;
-        left: 0;
-        right: 0;
-        background: #ffffff;
-        border-radius: 12rpx;
-        box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
-        z-index: 10;
-        max-height: 400rpx;
-        overflow-y: auto;
-
-        .dropdown-list {
-          width: 100%;
-        }
-
-        .dropdown-item {
-          padding: 24rpx 30rpx;
-          border-bottom: 1rpx solid #f5f5f5;
-
-          &:last-child {
-            border-bottom: none;
-          }
-
-          &:active {
-            background: #f7f8fa;
-          }
-
-          .dropdown-name {
-            font-size: 28rpx;
-            color: #333333;
-          }
-        }
-
-        .dropdown-loading,
-        .dropdown-empty {
-          padding: 30rpx 0;
-          text-align: center;
-          font-size: 26rpx;
-          color: #999999;
-        }
+        color: #1f2329;
       }
     }
-    /* #endregion */
 
-    /* #region 最近搜索记录样式 */
-    .recent-section {
-      margin-bottom: 30rpx;
+    .modal-confirm {
+      flex-shrink: 0;
+      height: 60rpx;
+      padding: 0 32rpx;
+      border-radius: 16rpx;
+      background: #1e6fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
-      .recent-label {
-        font-size: 28rpx;
-        color: #333333;
+      text {
+        color: #ffffff;
+        font-size: 26rpx;
       }
 
-      .recent-list {
-        display: flex;
-        flex-wrap: wrap;
-        margin-top: 20rpx;
+      &:active {
+        opacity: 0.85;
+      }
+    }
+
+    .search-dropdown {
+      position: absolute;
+      top: 92rpx;
+      left: 0;
+      right: 0;
+      padding: 8rpx 12rpx;
+      background: #ffffff;
+      border-radius: 20rpx;
+      box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.1);
+      z-index: 10;
+
+      .dropdown-list {
+        width: 100%;
       }
 
-      .recent-item {
-        padding: 12rpx 30rpx;
-        margin: 0 20rpx 20rpx 0;
-        border: 1rpx solid #d9d9d9;
-        border-radius: 4rpx;
-
-        text {
-          font-size: 26rpx;
-          color: #333333;
-        }
+      .dropdown-item {
+        padding: 22rpx 16rpx;
+        border-radius: 16rpx;
 
         &:active {
           background: #f7f8fa;
         }
-      }
-    }
-    /* #endregion */
 
-    .search-btn {
-      width: 100%;
-      height: 92rpx;
-      margin-top: 8rpx;
-      background: linear-gradient(135deg, #3d7bff 0%, #1e5fff 100%);
-      border-radius: 46rpx;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      box-shadow: 0 16rpx 36rpx rgba(30, 95, 255, 0.3);
-
-      text {
-        color: #ffffff;
-        font-size: 32rpx;
-        font-weight: 600;
+        .dropdown-name {
+          font-size: 28rpx;
+          color: #1f2329;
+        }
       }
 
-      &:active {
-        background: linear-gradient(135deg, #2f6bef 0%, #1553ee 100%);
+      .dropdown-loading,
+      .dropdown-empty {
+        padding: 30rpx 0;
+        text-align: center;
+        font-size: 26rpx;
+        color: #9ca3af;
       }
     }
   }
+
+  // 放大镜图标（纯 CSS 绘制）
+  .search-ico {
+    position: relative;
+    width: 34rpx;
+    height: 34rpx;
+    flex-shrink: 0;
+    border: 4rpx solid #9ca3af;
+    border-radius: 50%;
+    box-sizing: border-box;
+
+    &::after {
+      content: '';
+      position: absolute;
+      right: -10rpx;
+      bottom: -8rpx;
+      width: 14rpx;
+      height: 4rpx;
+      border-radius: 2rpx;
+      background: #9ca3af;
+      transform: rotate(45deg);
+    }
+  }
+  /* #endregion */
+
+  /* #region 搜索历史 */
+  .modal-history {
+    padding-top: 4rpx;
+
+    .mh-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 4rpx 0 16rpx;
+    }
+
+    .mh-title {
+      font-size: 24rpx;
+      color: #9ca3af;
+    }
+
+    .mh-clear {
+      font-size: 24rpx;
+      color: #9ca3af;
+
+      &:active {
+        color: #1e6fff;
+      }
+    }
+
+    .mh-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16rpx;
+    }
+
+    .mh-chip {
+      padding: 12rpx 26rpx;
+      background: #f7f8fa;
+      border-radius: 32rpx;
+
+      text {
+        font-size: 26rpx;
+        color: #1f2329;
+      }
+
+      &:active {
+        background: #e8edf3;
+
+        text {
+          color: #1e6fff;
+        }
+      }
+    }
+
+    .mh-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20rpx;
+      padding: 44rpx 0 20rpx;
+
+      .mh-empty-ico {
+        width: 104rpx;
+        height: 104rpx;
+        border-radius: 50%;
+        background: #f7f8fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .search-ico {
+          width: 44rpx;
+          height: 44rpx;
+          border-color: #c6cbd4;
+
+          &::after {
+            right: -12rpx;
+            bottom: -10rpx;
+            width: 18rpx;
+            height: 5rpx;
+            background: #c6cbd4;
+          }
+        }
+      }
+
+      text {
+        font-size: 24rpx;
+        color: #9ca3af;
+      }
+    }
+
+    .modal-history-divider {
+      height: 2rpx;
+      margin-top: 20rpx;
+      background: #f0f1f3;
+    }
+  }
+  /* #endregion */
 </style>

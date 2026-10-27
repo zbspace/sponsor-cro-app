@@ -85,9 +85,13 @@
     <!-- 协议弹窗 -->
     <bottom-sheet :visible="showAgreement" @close="showAgreement = false">
       <view class="modal-content">
-        <view class="modal-header">
-          <text class="modal-title">VIP 会员服务协议</text>
-          <text class="close-icon" @click="showAgreement = false">×</text>
+        <view class="modal-head-row">
+          <view class="modal-title-wrap">
+            <text class="modal-title">VIP 会员服务协议</text>
+          </view>
+          <view class="modal-close" @click="showAgreement = false">
+            <text>×</text>
+          </view>
         </view>
         <scroll-view scroll-y class="modal-body" :show-scrollbar="false">
           <text class="agreement-text">{{ agreementText }}</text>
@@ -494,6 +498,7 @@
     width: 100%;
     min-height: 70vh;
     max-height: 88vh;
+    padding-top: 56rpx;
     background-color: white;
     border-radius: 40rpx 40rpx 0 0;
     display: flex;
@@ -501,22 +506,37 @@
     overflow: hidden;
     position: relative;
   }
-  .modal-header {
-    padding: 56rpx 40rpx 40rpx;
+  .modal-head-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    border-bottom: 2rpx solid #eee;
+    gap: 20rpx;
+    padding: 0 32rpx 20rpx;
+  }
+  .modal-title-wrap {
+    flex: 1;
+    min-width: 0;
   }
   .modal-title {
-    font-size: 36rpx;
-    font-weight: bold;
-    color: #333;
+    display: block;
+    font-size: 32rpx;
+    font-weight: 600;
+    color: #1f2329;
   }
-  .close-icon {
-    font-size: 48rpx;
-    color: #999;
-    padding: 0 20rpx;
+  .modal-close {
+    width: 60rpx;
+    height: 60rpx;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #f7f8fa;
+    color: #6b7280;
+    font-size: 40rpx;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-close:active {
+    background: #eceef1;
   }
   .modal-body {
     flex: 1;

@@ -3,23 +3,25 @@
     <view class="search-popup-content">
       <!-- 药品搜索 -->
       <template v-if="!showCompanyList">
-        <view class="popup-header">
-          <text class="popup-title">查药品</text>
-          <view class="close-btn" @click="close">
-            <image class="close-icon" src="../../static/icons/close.png" mode="aspectFit" />
+        <view class="modal-head-row">
+          <view class="modal-title-wrap">
+            <text class="modal-title">查药品</text>
+            <text class="modal-sub">输入药品名称，查看研发企业</text>
           </view>
+          <view class="modal-close" @click="close"><text>×</text></view>
         </view>
 
-        <!-- 药品 -->
-        <view class="search-input-section">
-          <view class="input-wrapper">
+        <view class="search-wrap">
+          <view class="modal-search">
+            <view class="search-ico"></view>
             <input
               type="text"
               v-model="drugState.keyword"
-              placeholder="输入及选择药品"
-              placeholder-style="color: #B2B2B2"
+              placeholder="输入药品名称，如：信迪利单抗"
+              placeholder-style="color: #9CA3AF"
               @input="onSearchInput"
             />
+            <view class="modal-confirm" @click="handleSearch"><text>搜索</text></view>
           </view>
 
           <!-- 搜索下拉联想 -->
@@ -52,12 +54,14 @@
           </view>
         </view>
 
-        <!-- #region 最近搜索记录 -->
-        <view class="recent-section" v-if="recentList.length > 0">
-          <text class="recent-label">最近搜索记录：</text>
-          <view class="recent-list">
+        <view class="modal-history">
+          <view class="mh-head">
+            <text class="mh-title">搜索历史</text>
+            <text class="mh-clear" v-if="recentList.length > 0" @click="clearRecentList">清空</text>
+          </view>
+          <view class="mh-chips" v-if="recentList.length > 0">
             <view
-              class="recent-item"
+              class="mh-chip"
               v-for="item in recentList"
               :key="item.cleanedDrugName"
               @click="selectRecent(item)"
@@ -65,21 +69,23 @@
               <text>{{ item.cleanedDrugName }}</text>
             </view>
           </view>
-        </view>
-        <!-- #endregion -->
-
-        <view class="search-btn" @click="handleSearch">
-          <text>搜索</text>
+          <view class="mh-empty" v-else>
+            <view class="mh-empty-ico"><view class="search-ico"></view></view>
+            <text>暂无搜索记录</text>
+          </view>
+          <view class="modal-history-divider"></view>
         </view>
       </template>
 
       <!-- 相关企业列表 -->
       <template v-else>
-        <view class="popup-header company-header">
-          <view class="back-btn" @click="backToDrug">
-            <text>‹</text>
+        <view class="modal-head-row">
+          <view class="modal-back" @click="backToDrug"><text>‹</text></view>
+          <view class="modal-title-wrap">
+            <text class="modal-title">选择相关企业</text>
+            <text class="modal-sub">选择企业后查看药品统计</text>
           </view>
-          <text class="popup-title">选择相关企业</text>
+          <view class="modal-close" @click="close"><text>×</text></view>
         </view>
 
         <view class="company-loading" v-if="companyLoading">
@@ -296,6 +302,12 @@
     uni.setStorageSync(RECENT_STORAGE_KEY, list)
   }
 
+  // 清空搜索历史
+  function clearRecentList() {
+    recentList.value = []
+    uni.removeStorageSync(RECENT_STORAGE_KEY)
+  }
+
   // 点击历史记录：回填药品信息并直接查询相关企业
   function selectRecent(item: CleanedDrugItem) {
     drugState.keyword = item.cleanedDrugName
@@ -349,230 +361,337 @@
     max-height: 86vh;
     background: #ffffff;
     border-radius: 40rpx 40rpx 0 0;
-    padding: 40rpx 40rpx calc(40rpx + env(safe-area-inset-bottom));
+    padding: 56rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
     position: relative;
     box-sizing: border-box;
+    overflow-y: auto;
+  }
 
-    .popup-header {
+  /* #region 头部 */
+  .modal-head-row {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    padding-bottom: 20rpx;
+
+    .modal-title-wrap {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .modal-title {
+      display: block;
+      font-size: 32rpx;
+      font-weight: 600;
+      color: #1f2329;
+    }
+
+    .modal-sub {
+      display: block;
+      margin-top: 4rpx;
+      font-size: 22rpx;
+      color: #9ca3af;
+    }
+
+    .modal-close {
+      width: 60rpx;
+      height: 60rpx;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: #f7f8fa;
+      color: #6b7280;
+      font-size: 40rpx;
+      line-height: 1;
       display: flex;
-      justify-content: center;
       align-items: center;
-      margin-bottom: 40rpx;
-      position: relative;
+      justify-content: center;
 
-      .popup-title {
-        font-weight: bold;
+      &:active {
+        background: #eceef1;
+      }
+    }
+  }
+
+  .modal-back {
+    width: 60rpx;
+    height: 60rpx;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    text {
+      font-size: 48rpx;
+      line-height: 1;
+      color: #6b7280;
+    }
+  }
+  /* #endregion */
+
+  /* #region 搜索框 */
+  .search-wrap {
+    position: relative;
+    margin-bottom: 16rpx;
+
+    .modal-search {
+      display: flex;
+      align-items: center;
+      gap: 16rpx;
+      height: 80rpx;
+      padding: 0 24rpx;
+      background: #f7f8fa;
+      border-radius: 20rpx;
+
+      input {
+        flex: 1;
+        min-width: 0;
         font-size: 28rpx;
-        color: #293959;
-        line-height: 52rpx;
-      }
-
-      .close-btn {
-        position: absolute;
-        right: -10rpx;
-        top: -10rpx;
-        padding: 10rpx;
+        color: #1f2329;
       }
     }
 
-    // 相关企业列表头部返回按钮
-    .company-header {
-      .back-btn {
-        position: absolute;
-        left: -10rpx;
-        top: -14rpx;
-        padding: 10rpx;
+    .modal-confirm {
+      flex-shrink: 0;
+      height: 60rpx;
+      padding: 0 32rpx;
+      border-radius: 16rpx;
+      background: #1e6fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
-        text {
-          font-size: 52rpx;
-          line-height: 52rpx;
-          color: #293959;
-        }
-      }
-    }
-
-    .search-input-section {
-      position: relative;
-      margin-bottom: 30rpx;
-
-      .input-wrapper {
-        background: #f7f8fa;
-        border-radius: 16rpx;
-        height: 88rpx;
-        padding: 0 30rpx;
-        display: flex;
-        align-items: center;
-
-        input {
-          flex: 1;
-          font-size: 28rpx;
-          color: #333333;
-        }
-      }
-
-      .search-dropdown {
-        position: absolute;
-        top: 96rpx;
-        left: 0;
-        right: 0;
-        background: #ffffff;
-        border-radius: 12rpx;
-        box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
-        z-index: 10;
-        max-height: 400rpx;
-        overflow-y: auto;
-
-        // 滚动列表
-        .dropdown-list {
-          width: 100%;
-        }
-
-        .dropdown-item {
-          padding: 24rpx 30rpx;
-          border-bottom: 1rpx solid #f5f5f5;
-
-          &:last-child {
-            border-bottom: none;
-          }
-
-          &:active {
-            background: #f7f8fa;
-          }
-
-          .dropdown-name {
-            font-size: 28rpx;
-            color: #333333;
-          }
-        }
-
-        .dropdown-loading,
-        .dropdown-empty {
-          padding: 30rpx 0;
-          text-align: center;
-          font-size: 26rpx;
-          color: #999999;
-        }
-      }
-    }
-
-    // 最近搜索记录
-    .recent-section {
-      margin-bottom: 30rpx;
-
-      .recent-label {
+      text {
+        color: #ffffff;
         font-size: 26rpx;
-        color: #4096ee;
       }
 
-      .recent-list {
-        display: flex;
-        flex-wrap: wrap;
-        margin-top: 20rpx;
+      &:active {
+        opacity: 0.85;
+      }
+    }
+
+    .search-dropdown {
+      position: absolute;
+      top: 92rpx;
+      left: 0;
+      right: 0;
+      padding: 8rpx 12rpx;
+      background: #ffffff;
+      border-radius: 20rpx;
+      box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.1);
+      z-index: 10;
+
+      .dropdown-list {
+        width: 100%;
       }
 
-      .recent-item {
-        padding: 10rpx 24rpx;
-        margin: 0 20rpx 20rpx 0;
-        border: 1rpx solid #d9d9d9;
-        border-radius: 8rpx;
-
-        text {
-          font-size: 26rpx;
-          color: #333333;
-        }
+      .dropdown-item {
+        padding: 22rpx 16rpx;
+        border-radius: 16rpx;
 
         &:active {
           background: #f7f8fa;
         }
+
+        .dropdown-name {
+          font-size: 28rpx;
+          color: #1f2329;
+        }
+      }
+
+      .dropdown-loading,
+      .dropdown-empty {
+        padding: 30rpx 0;
+        text-align: center;
+        font-size: 26rpx;
+        color: #9ca3af;
+      }
+    }
+  }
+
+  // 放大镜图标（纯 CSS 绘制）
+  .search-ico {
+    position: relative;
+    width: 34rpx;
+    height: 34rpx;
+    flex-shrink: 0;
+    border: 4rpx solid #9ca3af;
+    border-radius: 50%;
+    box-sizing: border-box;
+
+    &::after {
+      content: '';
+      position: absolute;
+      right: -10rpx;
+      bottom: -8rpx;
+      width: 14rpx;
+      height: 4rpx;
+      border-radius: 2rpx;
+      background: #9ca3af;
+      transform: rotate(45deg);
+    }
+  }
+  /* #endregion */
+
+  /* #region 搜索历史 */
+  .modal-history {
+    padding-top: 4rpx;
+
+    .mh-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 4rpx 0 16rpx;
+    }
+
+    .mh-title {
+      font-size: 24rpx;
+      color: #9ca3af;
+    }
+
+    .mh-clear {
+      font-size: 24rpx;
+      color: #9ca3af;
+
+      &:active {
+        color: #1e6fff;
       }
     }
 
-    .search-btn {
-      width: 100%;
-      height: 92rpx;
-      margin-top: 8rpx;
-      background: linear-gradient(135deg, #3d7bff 0%, #1e5fff 100%);
-      border-radius: 46rpx;
+    .mh-chips {
       display: flex;
-      justify-content: center;
-      align-items: center;
-      box-shadow: 0 16rpx 36rpx rgba(30, 95, 255, 0.3);
+      flex-wrap: wrap;
+      gap: 16rpx;
+    }
+
+    .mh-chip {
+      padding: 12rpx 26rpx;
+      background: #f7f8fa;
+      border-radius: 32rpx;
 
       text {
-        color: #ffffff;
-        font-size: 32rpx;
-        font-weight: 600;
+        font-size: 26rpx;
+        color: #1f2329;
       }
 
       &:active {
-        background: linear-gradient(135deg, #2f6bef 0%, #1553ee 100%);
+        background: #e8edf3;
+
+        text {
+          color: #1e6fff;
+        }
       }
     }
 
-    // 相关企业列表
-    .company-list {
-      max-height: 640rpx;
+    .mh-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20rpx;
+      padding: 44rpx 0 20rpx;
 
-      .company-table {
-        border: 1rpx solid #4096ee;
-        border-bottom: none;
-      }
-
-      .table-row {
+      .mh-empty-ico {
+        width: 104rpx;
+        height: 104rpx;
+        border-radius: 50%;
+        background: #f7f8fa;
         display: flex;
         align-items: center;
-        height: 88rpx;
-        border-bottom: 1rpx solid #4096ee;
+        justify-content: center;
 
-        &.table-head {
-          background: #4096ee;
+        .search-ico {
+          width: 44rpx;
+          height: 44rpx;
+          border-color: #c6cbd4;
 
-          text {
-            color: #ffffff;
-            font-weight: bold;
-          }
-        }
-
-        .col-index {
-          width: 140rpx;
-          height: 100%;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          border-right: 1rpx solid #4096ee;
-
-          text {
-            font-size: 26rpx;
-            color: #333333;
-          }
-        }
-
-        .col-company {
-          flex: 1;
-          height: 100%;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          padding: 0 16rpx;
-          overflow: hidden;
-
-          text {
-            font-size: 26rpx;
-            color: #333333;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
+          &::after {
+            right: -12rpx;
+            bottom: -10rpx;
+            width: 18rpx;
+            height: 5rpx;
+            background: #c6cbd4;
           }
         }
       }
+
+      text {
+        font-size: 24rpx;
+        color: #9ca3af;
+      }
     }
 
-    .company-loading,
-    .company-empty {
-      padding: 60rpx 0;
-      text-align: center;
-      font-size: 26rpx;
-      color: #999999;
+    .modal-history-divider {
+      height: 2rpx;
+      margin-top: 20rpx;
+      background: #f0f1f3;
     }
   }
+  /* #endregion */
+
+  /* #region 相关企业列表 */
+  .company-list {
+    max-height: 640rpx;
+
+    .company-table {
+      border: 1rpx solid #4096ee;
+      border-bottom: none;
+    }
+
+    .table-row {
+      display: flex;
+      align-items: center;
+      height: 88rpx;
+      border-bottom: 1rpx solid #4096ee;
+
+      &.table-head {
+        background: #4096ee;
+
+        text {
+          color: #ffffff;
+          font-weight: bold;
+        }
+      }
+
+      .col-index {
+        width: 140rpx;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-right: 1rpx solid #4096ee;
+
+        text {
+          font-size: 26rpx;
+          color: #333333;
+        }
+      }
+
+      .col-company {
+        flex: 1;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0 16rpx;
+        overflow: hidden;
+
+        text {
+          font-size: 26rpx;
+          color: #333333;
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+        }
+      }
+    }
+  }
+
+  .company-loading,
+  .company-empty {
+    padding: 60rpx 0;
+    text-align: center;
+    font-size: 26rpx;
+    color: #999999;
+  }
+  /* #endregion */
 </style>
