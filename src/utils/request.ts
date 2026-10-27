@@ -115,22 +115,19 @@ function isLoginExpired(res: UniApp.RequestSuccessCallbackResult): boolean {
 }
 
 /**
- * 登录过期后重新登录（并发请求共用同一次登录）
+ * 登录过期后跳转登录页，由登录页统一重新发起登录
  */
-let reloginPromise: Promise<void> | null = null
-async function relogin() {
-  if (!reloginPromise) {
-    reloginPromise = (async () => {
-      uni.removeStorageSync('userInfo')
-      // 动态引入，避免与 api 模块循环依赖
-      const { ensureLogin, resetEnsureLogin } = await import('@/api')
-      resetEnsureLogin()
-      await ensureLogin()
-    })().finally(() => {
-      reloginPromise = null
-    })
-  }
-  return reloginPromise
+let redirectingToLogin = false
+function redirectToLogin() {
+  if (redirectingToLogin) return
+  redirectingToLogin = true
+  uni.removeStorageSync('userInfo')
+  uni.reLaunch({
+    url: '/pages/login/index',
+    complete: () => {
+      redirectingToLogin = false
+    }
+  })
 }
 
 // #endregion
@@ -149,8 +146,6 @@ export function request<T = any>(config: RequestConfig): Promise<ApiResponse<T>>
   logRequest(url, method, data)
 
   return new Promise((resolve, reject) => {
-    let retried = false
-
     const send = () => {
       const header: any = {
         'Content-Type': 'application/json'
@@ -174,21 +169,10 @@ export function request<T = any>(config: RequestConfig): Promise<ApiResponse<T>>
           // 打印接口响应日志（接口名 + 出参）
           logResponse(url, res.data)
 
-          // 登录过期：重新登录后重试一次
+          // 登录过期：清除登录态并跳转登录页重新登录
           if (needToken && isLoginExpired(res)) {
-            if (retried) {
-              handleResponse<T>(res).then(resolve).catch(reject)
-              return
-            }
-            retried = true
-            try {
-              await relogin()
-            } catch (err) {
-              logError(url, err)
-              reject(err)
-              return
-            }
-            send()
+            redirectToLogin()
+            reject(new Error('登录已过期，请重新登录'))
             return
           }
 

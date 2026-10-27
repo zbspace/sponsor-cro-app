@@ -243,7 +243,6 @@
   import { VIP_CODE, VIP_APPLICATION_STATUS } from '@/utils/enums'
   import {
     getVipApplication,
-    ensureLogin,
     getUserInfo,
     getParentShortNameList,
     queryPharmaShortName
@@ -261,7 +260,7 @@
   // 先用本地缓存渲染，登录完成后刷新为最新用户信息
   const userInfo = ref<UserInfo | null>(getUserInfo())
 
-  onLoad(async () => {
+  onLoad(() => {
     // 未登录用户先进入登录页
     if (!getUserInfo()?.token) {
       uni.reLaunch({ url: '/pages/login/index' })
@@ -272,13 +271,7 @@
     const info = uni.getMenuButtonBoundingClientRect()
     menu.value = info
 
-    // 确保登录成功后再获取数据
-    try {
-      await ensureLogin()
-    } catch {
-      // 登录失败时沿用本地缓存的用户信息，避免页面无 VIP 入口
-    }
-    // 登录接口会返回最新的 vipCode，重新读取以刷新左上角 VIP 状态
+    // 登录统一由登录页处理，这里直接使用本地登录信息
     userInfo.value = getUserInfo()
     // 查询申请状态
     fetchVipApplicationStatus()

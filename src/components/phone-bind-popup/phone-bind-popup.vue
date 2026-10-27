@@ -15,7 +15,7 @@
 <script setup lang="ts">
   // #region 导入
   import { ref, onMounted } from 'vue'
-  import { ensureLogin, getUserInfo, setUserInfo, bandPhone } from '@/api'
+  import { getUserInfo, setUserInfo, bandPhone } from '@/api'
   // #endregion
 
   // #region 状态
@@ -33,15 +33,10 @@
   /**
    * 检查用户手机号状态，未绑定则弹出弹窗
    */
-  async function checkAndShowBindModal() {
-    try {
-      await ensureLogin()
-      const userInfo = getUserInfo()
-      if (userInfo && !userInfo.phone) {
-        visible.value = true
-      }
-    } catch (err) {
-      console.error('Phone check error:', err)
+  function checkAndShowBindModal() {
+    const userInfo = getUserInfo()
+    if (userInfo && !userInfo.phone) {
+      visible.value = true
     }
   }
 
