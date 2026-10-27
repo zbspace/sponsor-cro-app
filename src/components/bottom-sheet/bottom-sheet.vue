@@ -2,7 +2,7 @@
   <view
     v-if="visible"
     class="sheet-mask"
-    :style="{ zIndex: zIndex }"
+    :style="{ zIndex: zIndex, paddingBottom: `${keyboardHeight}px` }"
     @click="handleMaskClick"
     @touchmove.stop.prevent
   >
@@ -14,6 +14,8 @@
 </template>
 
 <script setup lang="ts">
+  import { ref, watch } from 'vue'
+
   // #region 属性与事件
   const props = withDefaults(
     defineProps<{
@@ -31,6 +33,28 @@
   )
 
   const emit = defineEmits<{ (e: 'close'): void }>()
+  // #endregion
+
+  // #region 键盘避让
+  // 弹层为 fixed 定位，键盘弹起时会遮挡底部内容，这里整体上推键盘的高度。
+  // 键盘高度由子组件在 input 的 keyboardheightchange 事件里上报（见 setKeyboardHeight），
+  // 小程序真机上全局的 onKeyboardHeightChange 并不一定可用，input 组件级事件更可靠。
+  const keyboardHeight = ref(0)
+
+  /** 由子组件（input 的 keyboardheightchange）上报键盘高度，单位 px，收起时传 0 */
+  function setKeyboardHeight(height: number) {
+    keyboardHeight.value = height > 0 ? height : 0
+  }
+
+  // 关闭弹层时重置，避免下次打开时残留偏移
+  watch(
+    () => props.visible,
+    (val) => {
+      if (!val) keyboardHeight.value = 0
+    }
+  )
+
+  defineExpose({ setKeyboardHeight })
   // #endregion
 
   // #region 方法
@@ -54,6 +78,7 @@
     display: flex;
     align-items: flex-end;
     animation: sheet-fade-in 0.22s ease;
+    transition: padding-bottom 0.2s ease;
   }
 
   .sheet-panel {

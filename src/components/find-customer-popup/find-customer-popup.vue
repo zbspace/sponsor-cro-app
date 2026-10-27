@@ -1,5 +1,5 @@
 <template>
-  <bottom-sheet :visible="visible" @close="close">
+  <bottom-sheet ref="sheetRef" :visible="visible" @close="close">
     <view class="find-popup-content">
       <!-- 头部：标题 + 副标题 + 关闭 -->
       <view class="modal-head-row">
@@ -41,6 +41,7 @@
             v-model="indicationKeyword"
             placeholder="输入适应症名称，如：非小细胞肺癌"
             placeholder-style="color: #9CA3AF"
+            @keyboardheightchange="onKeyboardHeightChange"
           />
           <input
             v-else
@@ -49,6 +50,7 @@
             placeholder="输入通用名或研发代号"
             placeholder-style="color: #9CA3AF"
             @input="onDrugInput"
+            @keyboardheightchange="onKeyboardHeightChange"
           />
           <view class="modal-confirm" @click="handleSearch">
             <text>查询</text>
@@ -125,6 +127,15 @@
   }>()
 
   const emit = defineEmits(['update:visible'])
+  // #endregion
+
+  // #region 键盘避让
+  // 弹层容器引用：input 的 keyboardheightchange 事件拿到键盘高度后上报给 bottom-sheet
+  const sheetRef = ref<{ setKeyboardHeight: (height: number) => void } | null>(null)
+
+  function onKeyboardHeightChange(e: { detail: { height: number } }) {
+    sheetRef.value?.setKeyboardHeight(e.detail?.height || 0)
+  }
   // #endregion
 
   // #region 状态
@@ -327,7 +338,7 @@
 <style lang="scss" scoped>
   .find-popup-content {
     width: 100%;
-    min-height: 70vh;
+    min-height: 35vh;
     max-height: 88vh;
     background: #ffffff;
     border-radius: 40rpx 40rpx 0 0;

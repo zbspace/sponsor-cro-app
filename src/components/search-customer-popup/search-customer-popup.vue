@@ -1,5 +1,5 @@
 <template>
-  <bottom-sheet :visible="visible" @close="close">
+  <bottom-sheet ref="sheetRef" :visible="visible" @close="close">
     <view class="search-popup-content">
       <!-- 头部：标题 + 副标题 + 关闭 -->
       <view class="modal-head-row">
@@ -22,6 +22,7 @@
             placeholder="输入药企名称"
             placeholder-style="color: #9CA3AF"
             @input="onSearchInput(pharmaState)"
+            @keyboardheightchange="onKeyboardHeightChange"
           />
           <view class="modal-confirm" @click="handleSearch">
             <text>确定</text>
@@ -124,6 +125,15 @@
   }>()
 
   const emit = defineEmits(['update:visible'])
+  // #endregion
+
+  // #region 键盘避让
+  // 弹层容器引用：input 的 keyboardheightchange 事件拿到键盘高度后上报给 bottom-sheet
+  const sheetRef = ref<{ setKeyboardHeight: (height: number) => void } | null>(null)
+
+  function onKeyboardHeightChange(e: { detail: { height: number } }) {
+    sheetRef.value?.setKeyboardHeight(e.detail?.height || 0)
+  }
   // #endregion
 
   // #region 状态
@@ -311,7 +321,7 @@
 <style lang="scss" scoped>
   .search-popup-content {
     width: 100%;
-    min-height: 70vh;
+    min-height: 35vh;
     max-height: 86vh;
     background: #ffffff;
     border-radius: 40rpx 40rpx 0 0;

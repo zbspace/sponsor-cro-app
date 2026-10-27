@@ -132,7 +132,7 @@
 <style lang="scss" scoped>
   .popup-content {
     width: 100%;
-    min-height: 70vh;
+    min-height: 35vh;
     max-height: 84vh;
     padding: 56rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
     box-sizing: border-box;

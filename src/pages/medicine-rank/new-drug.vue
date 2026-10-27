@@ -612,7 +612,7 @@
   /* 获批记录弹窗 */
   .record-popup {
     width: 100%;
-    min-height: 70vh;
+    min-height: 35vh;
     max-height: 88vh;
     background: #ffffff;
     border-radius: 40rpx 40rpx 0 0;

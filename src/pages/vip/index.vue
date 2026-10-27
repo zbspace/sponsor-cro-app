@@ -496,7 +496,7 @@
   /* #region 弹窗样式 */
   .modal-content {
     width: 100%;
-    min-height: 70vh;
+    min-height: 35vh;
     max-height: 88vh;
     padding-top: 56rpx;
     background-color: white;

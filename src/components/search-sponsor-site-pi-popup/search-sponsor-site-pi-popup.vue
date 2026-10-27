@@ -1,5 +1,5 @@
 <template>
-  <bottom-sheet :visible="visible" @close="close">
+  <bottom-sheet ref="sheetRef" :visible="visible" @close="close">
     <view class="search-popup-content">
       <!-- 头部：标题 + 副标题 + 关闭 -->
       <view class="modal-head-row">
@@ -22,6 +22,7 @@
             placeholder="输入药企名称，如：百济神州"
             placeholder-style="color: #9CA3AF"
             @input="onSearchInput"
+            @keyboardheightchange="onKeyboardHeightChange"
           />
           <view class="modal-confirm" @click="handleSearch">
             <text>查询</text>
@@ -100,6 +101,8 @@
   // #endregion
 
   // #region 状态
+  // 弹层容器引用：用于把键盘高度上报给 bottom-sheet，让弹层整体上推
+  const sheetRef = ref<{ setKeyboardHeight: (height: number) => void } | null>(null)
   const keyword = ref('')
   const results = ref<ParentCompanyItem[]>([])
   const showDropdown = ref(false)
@@ -110,6 +113,11 @@
   // #endregion
 
   // #region 搜索联想
+  /** input 组件级事件：键盘弹起/收起时拿到高度，交给弹层做避让 */
+  function onKeyboardHeightChange(e: { detail: { height: number } }) {
+    sheetRef.value?.setKeyboardHeight(e.detail?.height || 0)
+  }
+
   function onSearchInput() {
     if (timer) clearTimeout(timer)
     selected.value = null // 输入时重置已选
@@ -263,7 +271,7 @@
 <style lang="scss" scoped>
   .search-popup-content {
     width: 100%;
-    min-height: 70vh;
+    min-height: 35vh;
     max-height: 86vh;
     background: #ffffff;
     border-radius: 40rpx 40rpx 0 0;

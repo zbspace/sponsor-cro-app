@@ -150,7 +150,7 @@
 <style lang="scss" scoped>
   .popup-content {
     width: 100%;
-    min-height: 70vh;
+    min-height: 35vh;
     max-height: 88vh;
     padding: 56rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
     background-color: #fff;
@@ -208,7 +208,7 @@
   /* #endregion */
 
   .popup-body {
-    height: 70vh; // 使用相对高度，确保在内容超出时可以滚动
+    height: 35vh; // 使用相对高度，确保在内容超出时可以滚动
     padding: 20rpx 30rpx;
     background-color: #f8fafc;
     box-sizing: border-box;

@@ -1,5 +1,5 @@
 <template>
-  <bottom-sheet :visible="visible" @close="close">
+  <bottom-sheet ref="sheetRef" :visible="visible" @close="close">
     <view class="trial-popup-content">
       <view class="modal-head-row">
         <view class="modal-title-wrap">
@@ -23,6 +23,7 @@
             v-model="formData.name"
             placeholder="请输入姓名"
             placeholder-style="color: #9CA3AF"
+            @keyboardheightchange="onKeyboardHeightChange"
           />
         </view>
         <view class="mform-item">
@@ -37,6 +38,7 @@
             v-model="formData.phone"
             placeholder="请输入手机号"
             placeholder-style="color: #9CA3AF"
+            @keyboardheightchange="onKeyboardHeightChange"
           />
         </view>
         <view class="mform-item">
@@ -50,6 +52,7 @@
             v-model="formData.company"
             placeholder="请输入公司名称"
             placeholder-style="color: #9CA3AF"
+            @keyboardheightchange="onKeyboardHeightChange"
           />
         </view>
         <view class="mform-item">
@@ -63,6 +66,7 @@
             v-model="formData.position"
             placeholder="请输入职位"
             placeholder-style="color: #9CA3AF"
+            @keyboardheightchange="onKeyboardHeightChange"
           />
         </view>
       </view>
@@ -92,6 +96,15 @@
   }>()
 
   const emit = defineEmits(['update:visible', 'success'])
+  // #endregion
+
+  // #region 键盘避让
+  // 弹层容器引用：input 的 keyboardheightchange 事件拿到键盘高度后上报给 bottom-sheet
+  const sheetRef = ref<{ setKeyboardHeight: (height: number) => void } | null>(null)
+
+  function onKeyboardHeightChange(e: { detail: { height: number } }) {
+    sheetRef.value?.setKeyboardHeight(e.detail?.height || 0)
+  }
   // #endregion
 
   // #region 状态
@@ -177,7 +190,7 @@
 <style lang="scss" scoped>
   .trial-popup-content {
     width: 100%;
-    min-height: 70vh;
+    min-height: 35vh;
     max-height: 80vh;
     background: #ffffff;
     border-radius: 40rpx 40rpx 0 0;
