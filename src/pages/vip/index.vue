@@ -492,7 +492,7 @@
   /* #region 弹窗样式 */
   .modal-content {
     width: 100%;
-    min-height: 520rpx;
+    min-height: 70vh;
     max-height: 88vh;
     background-color: white;
     border-radius: 40rpx 40rpx 0 0;

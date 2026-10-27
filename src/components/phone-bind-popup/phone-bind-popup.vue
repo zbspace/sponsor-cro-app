@@ -69,7 +69,7 @@
   /* #region 手机号绑定弹窗 */
   .phone-modal {
     width: 100%;
-    min-height: 520rpx;
+    min-height: 70vh;
     max-height: 80vh;
     background: #fff;
     border-radius: 40rpx 40rpx 0 0;
