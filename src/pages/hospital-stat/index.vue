@@ -251,7 +251,7 @@
                 :key="index"
                 hover-class="row-hover"
                 :class="{ zebra: index % 2 === 1 }"
-                @click="onResearcherClick"
+                @click="onResearcherClick(item)"
               >
                 <text class="col-rank">{{ index + 1 }}</text>
                 <text class="col-name">{{ item.researcherName }}</text>
@@ -598,7 +598,8 @@
   /**
    * 点击研究者行：切换到试验列表 tab，并携带年份（若已选）筛选
    */
-  function onResearcherClick() {
+  function onResearcherClick(item: ResearcherStatisticsItem) {
+    researcherId.value = item.researcherId || 0
     selectedDrugName.value = ''
     selectedListYear.value = researcherYearFilter.value
     activeTab.value = 'list'

@@ -360,6 +360,8 @@ export interface DrugStatisticsResponse {
  * 合作研究者统计条目
  */
 export interface ResearcherStatisticsItem {
+  /** 研究者ID */
+  researcherId?: number
   /** 中心 */
   hosStandardName: string
   /** 研究者 */
