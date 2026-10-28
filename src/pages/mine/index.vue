@@ -28,17 +28,37 @@
           <view class="pc-name">
             <text class="pc-name-text">{{ userInfo?.nickname || '微信用户' }}</text>
             <text class="pc-tag" v-if="vipTag">{{ vipTag }}</text>
+            <text class="pc-tag" v-else-if="!vipTag">普通用户</text>
           </view>
           <text class="pc-meta">手机 {{ maskedPhone }}</text>
         </view>
       </view>
 
-      <view class="pc-membership" v-if="vipExpiry">
-        <text class="pcm-label">尊享会员</text>
-        <text class="pcm-expiry">
-          到期
-          <text class="pcm-date">{{ vipExpiry }}</text>
-        </text>
+      <view class="pc-membership">
+        <!-- 尊享会员：皇冠 + 到期时间 -->
+        <template v-if="vipExpiry">
+          <view class="pcm-label">
+            <view class="pcm-crown"></view>
+            <text>尊享会员</text>
+          </view>
+          <text class="pcm-expiry">
+            到期
+            <text class="pcm-date">{{ vipExpiry }}</text>
+          </text>
+        </template>
+        <!-- 已提交试用申请：等待审核 -->
+        <template v-else-if="isApplying">
+          <view class="pcm-label">
+            <view class="pcm-clock"></view>
+            <text>试用申请已提交</text>
+          </view>
+          <text class="pcm-expiry">请耐心等待</text>
+        </template>
+        <!-- 普通用户：引导申请试用 -->
+        <template v-else>
+          <text class="pcm-label">可先申请试用，体验全部功能</text>
+          <view class="pcm-btn" @click="handleApplyTrial"><text>申请试用</text></view>
+        </template>
       </view>
     </view>
     <!-- #endregion -->
@@ -46,28 +66,22 @@
     <!-- #region 功能入口 -->
     <view class="menu-group">
       <view class="menu-item" @click="goTo('contact/index')">
-        <view class="menu-ico ico-amber">
-          <image class="menu-ico-img" src="/static/icons/联系我们.png" mode="aspectFit" />
-        </view>
+        <view class="menu-ico ico-amber"></view>
         <text class="menu-label">联系我们</text>
         <view class="menu-arrow"></view>
       </view>
 
       <button class="menu-item menu-item-btn" open-type="share">
-        <view class="menu-ico ico-teal">
-          <image class="menu-ico-img" src="/static/icons/分享.png" mode="aspectFit" />
-        </view>
+        <view class="menu-ico ico-teal"></view>
         <text class="menu-label">分享好友</text>
         <view class="menu-arrow"></view>
       </button>
 
-      <view class="menu-item" @click="showDataStatement = true">
-        <view class="menu-ico ico-blue">
-          <image class="menu-ico-img" src="/static/icons/数据声明.png" mode="aspectFit" />
-        </view>
-        <text class="menu-label">数据声明</text>
+      <button class="menu-item menu-item-btn" open-type="share">
+        <view class="menu-ico ico-gray"></view>
+        <text class="menu-label">账号与登录</text>
         <view class="menu-arrow"></view>
-      </view>
+      </button>
     </view>
     <!-- #endregion -->
 
@@ -76,13 +90,14 @@
       <text class="sec-title">我的客户</text>
     </view>
 
-    <view class="list-card">
-      <view class="table-header">
-        <text class="col-rank">序号</text>
-        <text class="col-name">客户</text>
-        <text class="col-source">来源</text>
-      </view>
+    <!-- 空数据：暂无收藏客户 -->
+    <view class="cust-empty" v-if="!loading && customers.length === 0">
+      <view class="ce-ico"></view>
+      <text class="ce-title">暂无我的客户</text>
+      <text class="ce-desc">收藏的企业、CRO 将显示在这里</text>
+    </view>
 
+    <view class="list-card" v-else>
       <scroll-view
         scroll-y
         class="scroll-view"
@@ -90,22 +105,21 @@
         :show-scrollbar="false"
       >
         <view
-          class="table-row"
-          v-for="(item, index) in customers"
+          class="cust-item"
+          v-for="item in customers"
           :key="item.id"
           hover-class="row-hover"
           @click="onRowClick(item)"
         >
-          <text class="col-rank">{{ index + 1 }}</text>
-          <text class="col-name highlight">{{ item.name }}</text>
-          <text class="col-source">{{ item.source }}</text>
+          <view class="cust-info">
+            <text class="cust-name">{{ item.name }}</text>
+            <text class="cust-src">{{ item.source }}</text>
+          </view>
+          <view class="cust-arrow"></view>
         </view>
 
         <view class="loading-status" v-if="loading || noMore">
           <text>{{ loading ? '加载中...' : '没有更多了' }}</text>
-        </view>
-        <view class="empty-tip" v-if="!loading && customers.length === 0">
-          <text>暂无客户</text>
         </view>
       </scroll-view>
     </view>
@@ -113,8 +127,8 @@
   </view>
   <!-- #endregion -->
 
-  <!-- 数据声明弹窗 -->
-  <data-statement-popup v-model:visible="showDataStatement" />
+  <!-- 申请试用弹窗 -->
+  <trial-apply-popup v-model:visible="showTrialPopup" @success="fetchUserDetail" />
 
   <!-- 底部导航 -->
   <tab-bar active="mine" />
@@ -125,9 +139,9 @@
   import { ref, computed, onMounted } from 'vue'
   import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
   import TabBar from '@/components/tab-bar/index.vue'
-  import DataStatementPopup from '@/components/data-statement-popup/data-statement-popup.vue'
-  import { getUserCollectList, getUserInfo } from '@/api'
-  import { VIP_CODE } from '@/utils/enums'
+  import TrialApplyPopup from '@/components/trial-apply-popup/trial-apply-popup.vue'
+  import { getUserCollectList, getUserInfo, refreshUserDetail } from '@/api'
+  import { VIP_CODE, APPLY_STATUS } from '@/utils/enums'
   import type { UserInfo } from '@/types/api'
   // #endregion
 
@@ -146,11 +160,20 @@
   const defaultAvatar = '../../static/icons/default-avatar-1.png'
   const userInfo = ref<UserInfo | null>(null)
   const showDataStatement = ref(false)
+  // 申请试用弹窗
+  const showTrialPopup = ref(false)
+
+  // 会员申请状态：0-未申请，1-申请试用中，2-试用中，3-申请开通中，4-开通中
+  const applyStatus = ref(0)
+
+  // 试用申请已提交，等待审核
+  const isApplying = computed(() => applyStatus.value === APPLY_STATUS.申请试用中)
 
   // 会员标签：仅 VIP 用户 / 试用中展示
   const vipTag = computed(() => {
     if (userInfo.value?.vipCode === VIP_CODE.VIP用户) return '尊享会员'
     if (userInfo.value?.vipCode === VIP_CODE.VIP试用) return '试用中'
+    if (isApplying.value) return '申请试用中'
     return ''
   })
 
@@ -175,7 +198,27 @@
   onMounted(() => {
     userInfo.value = getUserInfo()
     fetchCustomers(true)
+    fetchUserDetail()
   })
+  // #endregion
+
+  // #region 会员状态
+  // 同步用户详情：刷新本地用户信息与会员申请状态（进入页面、申请试用成功后各调一次）
+  async function fetchUserDetail() {
+    const detail = await refreshUserDetail()
+    if (!detail) return
+    userInfo.value = detail
+    applyStatus.value = detail.applyStatus || 0
+  }
+
+  // 申请试用：已提交过则提示，否则打开申请弹窗
+  function handleApplyTrial() {
+    if (isApplying.value) {
+      uni.showToast({ title: '您已提交试用申请，请耐心等待', icon: 'none' })
+      return
+    }
+    showTrialPopup.value = true
+  }
   // #endregion
 
   // #region 导航
@@ -324,26 +367,13 @@
     justify-content: center;
     box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.25);
 
-    // 编辑铅笔图标（纯 CSS 绘制）
+    // 编辑铅笔图标（内联 SVG）
     .edit-ico {
-      position: relative;
-      width: 18rpx;
-      height: 4rpx;
-      background: #1e6fff;
-      border-radius: 2rpx;
-      transform: rotate(-45deg);
-
-      &::after {
-        content: '';
-        position: absolute;
-        right: -4rpx;
-        top: -2rpx;
-        width: 0;
-        height: 0;
-        border-top: 4rpx solid transparent;
-        border-bottom: 4rpx solid transparent;
-        border-left: 6rpx solid #1e6fff;
-      }
+      width: 22rpx;
+      height: 22rpx;
+      background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+PHBhdGggZD0iTTQgMjBoNEwxOC41IDkuNWEyLjEgMi4xIDAgMCAwLTMtM0w1IDE3djN6IiBzdHJva2U9IiMxRTZGRkYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTEzLjUgNi41bDMgMyIgc3Ryb2tlPSIjMUU2RkZGIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=');
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
     }
   }
 
@@ -390,9 +420,32 @@
   }
 
   .pcm-label {
+    display: flex;
+    align-items: center;
+    gap: 14rpx;
     font-size: 24rpx;
     font-weight: 600;
     color: #ffffff;
+  }
+
+  // 尊享会员皇冠图标（内联 SVG）
+  .pcm-crown {
+    width: 28rpx;
+    height: 28rpx;
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+PHBhdGggZD0iTTMgOGw0IDMgNS02IDUgNiA0LTMtMiAxMUg1TDMgOHoiIHN0cm9rZT0iI0ZGRDY2NiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    flex-shrink: 0;
+  }
+
+  // 申请试用中时钟图标（内联 SVG）
+  .pcm-clock {
+    width: 28rpx;
+    height: 28rpx;
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOC41IiBzdHJva2U9IiNGRkQ2NjYiIHN0cm9rZS13aWR0aD0iMiIvPjxwYXRoIGQ9Ik0xMiA3LjZWMTJsMy4yIDIiIHN0cm9rZT0iI0ZGRDY2NiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4=');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    flex-shrink: 0;
   }
 
   .pcm-expiry {
@@ -402,6 +455,17 @@
 
   .pcm-date {
     color: #ffd666;
+  }
+
+  // 普通用户：申请试用按钮
+  .pcm-btn {
+    flex-shrink: 0;
+    background: #ffd666;
+    color: #7a4d00;
+    font-size: 24rpx;
+    font-weight: 700;
+    padding: 14rpx 28rpx;
+    border-radius: 32rpx;
   }
   /* #endregion */
 
@@ -419,7 +483,7 @@
     display: flex;
     align-items: center;
     gap: 24rpx;
-    padding: 28rpx 32rpx;
+    padding: 30rpx 32rpx;
     border-bottom: 2rpx solid #f0f1f3;
 
     &:last-child {
@@ -454,13 +518,24 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    // 入口图标统一 36rpx 居中（内联 SVG）
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 36rpx 36rpx;
 
     &.ico-amber {
-      background: #fdf3e3;
+      background-color: #fdf3e3;
+      background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+PHBhdGggZD0iTTIyIDE2LjkydjNhMiAyIDAgMCAxLTIuMTggMiAxOS43OSAxOS43OSAwIDAgMS04LjYzLTMuMDcgMTkuNSAxOS41IDAgMCAxLTYtNiAxOS43OSAxOS43OSAwIDAgMS0zLjA3LTguNjdBMiAyIDAgMCAxIDQuMTEgMmgzYTIgMiAwIDAgMSAyIDEuNzIgMTIuODQgMTIuODQgMCAwIDAgLjcgMi44MSAyIDIgMCAwIDEtLjQ1IDIuMTFMOC4wOSA5LjkxYTE2IDE2IDAgMCAwIDYgNmwxLjI3LTEuMjdhMiAyIDAgMCAxIDIuMTEtLjQ1IDEyLjg0IDEyLjg0IDAgMCAwIDIuODEuN0EyIDIgMCAwIDEgMjIgMTYuOTJ6IiBzdHJva2U9IiNGNTlFMEIiIHN0cm9rZS13aWR0aD0iMS45IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=');
     }
 
     &.ico-teal {
-      background: #e6f7f1;
+      background-color: #e6f7f1;
+      background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+PGNpcmNsZSBjeD0iMTgiIGN5PSI1IiByPSIzIiBzdHJva2U9IiMxMEI5ODEiIHN0cm9rZS13aWR0aD0iMS45Ii8+PGNpcmNsZSBjeD0iNiIgY3k9IjEyIiByPSIzIiBzdHJva2U9IiMxMEI5ODEiIHN0cm9rZS13aWR0aD0iMS45Ii8+PGNpcmNsZSBjeD0iMTgiIGN5PSIxOSIgcj0iMyIgc3Ryb2tlPSIjMTBCOTgxIiBzdHJva2Utd2lkdGg9IjEuOSIvPjxwYXRoIGQ9Ik04LjYgMTMuNGw2LjggMy45TTE1LjQgNi42bC02LjggMy45IiBzdHJva2U9IiMxMEI5ODEiIHN0cm9rZS13aWR0aD0iMS45Ii8+PC9zdmc+');
+    }
+
+    &.ico-gray {
+      background-color: #f2f5f9;
+      background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+PGNpcmNsZSBjeD0iMTIiIGN5PSI4IiByPSI0IiBzdHJva2U9IiM2QjcyODAiIHN0cm9rZS13aWR0aD0iMS45Ii8+PHBhdGggZD0iTTQgMjFjMC00IDMuNi02IDgtNnM4IDIgOCA2IiBzdHJva2U9IiM2QjcyODAiIHN0cm9rZS13aWR0aD0iMS45IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4=');
     }
 
     &.ico-blue {
@@ -522,26 +597,9 @@
     flex-direction: column;
     background: #ffffff;
     border-radius: 28rpx;
-    padding: 20rpx;
+    overflow: hidden;
     box-shadow: 0 2rpx 6rpx rgba(15, 23, 42, 0.06);
     margin-bottom: 10rpx;
-  }
-
-  .table-header {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    padding: 24rpx 0;
-    margin-bottom: 12rpx;
-    background: #f6f9fc;
-    border-radius: 16rpx;
-    font-size: 26rpx;
-    color: #8a94a6;
-    font-weight: 500;
-
-    text {
-      text-align: center;
-    }
   }
 
   .scroll-view {
@@ -550,13 +608,11 @@
     width: 100%;
   }
 
-  .table-row {
+  .cust-item {
     display: flex;
     align-items: center;
-    padding: 30rpx 0;
-    border-bottom: 2rpx solid #f8f8f8;
-    font-size: 28rpx;
-    color: #333333;
+    padding: 26rpx 32rpx;
+    border-bottom: 2rpx solid #f0f1f3;
 
     &:last-child {
       border-bottom: none;
@@ -564,33 +620,76 @@
 
     // 点击反馈
     &.row-hover {
-      background-color: #f2f7fc;
-    }
-
-    text {
-      text-align: center;
-      word-break: break-all;
+      background-color: #fafbfd;
     }
   }
 
-  .col-rank {
-    width: 100rpx;
+  .cust-info {
+    flex: 1;
+    min-width: 0;
   }
 
-  .col-name {
-    flex: 2;
+  .cust-name {
+    display: block;
+    font-size: 30rpx;
+    font-weight: 500;
+    color: #1f2329;
   }
 
-  .col-source {
-    flex: 2;
+  .cust-src {
+    display: block;
+    margin-top: 6rpx;
+    font-size: 24rpx;
+    color: #9ca3af;
   }
 
-  .highlight {
-    color: #2b66ef;
+  .cust-arrow {
+    flex-shrink: 0;
+    width: 16rpx;
+    height: 16rpx;
+    border-top: 3rpx solid #c6cbd4;
+    border-right: 3rpx solid #c6cbd4;
+    transform: rotate(45deg);
   }
 
-  .loading-status,
-  .empty-tip {
+  // 空态：暂无我的客户
+  .cust-empty {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16rpx;
+    padding: 68rpx 32rpx 60rpx;
+    background: #ffffff;
+    border-radius: 28rpx;
+    box-shadow: 0 2rpx 6rpx rgba(15, 23, 42, 0.06);
+  }
+
+  // 空态圆形图标（文件夹，内联 SVG）
+  .ce-ico {
+    width: 132rpx;
+    height: 132rpx;
+    margin-bottom: 8rpx;
+    border-radius: 50%;
+    background-color: #f7f8fa;
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+PHBhdGggZD0iTTMgN2EyIDIgMCAwIDEgMi0yaDRsMiAyaDhhMiAyIDAgMCAxIDIgMnY4YTIgMiAwIDAgMS0yIDJINWEyIDIgMCAwIDEtMi0yVjd6IiBzdHJva2U9IiNDNkNCRDQiIHN0cm9rZS13aWR0aD0iMS43IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTMgMTBoMTgiIHN0cm9rZT0iI0M2Q0JENCIgc3Ryb2tlLXdpZHRoPSIxLjciLz48L3N2Zz4=');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 60rpx 60rpx;
+  }
+
+  .ce-title {
+    font-size: 28rpx;
+    font-weight: 500;
+    color: #6b7280;
+  }
+
+  .ce-desc {
+    font-size: 24rpx;
+    color: #9ca3af;
+  }
+
+  .loading-status {
     padding: 40rpx 0;
     text-align: center;
 

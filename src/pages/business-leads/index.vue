@@ -494,7 +494,7 @@
       vipCode === 0
     ) {
       uni.showToast({
-        title: '您的申请正在审核中，请稍后再试，或者直接联系我们',
+        title: '您已经提交申请，请您耐心等待',
         icon: 'none',
         duration: 3000
       })

@@ -1,4 +1,5 @@
 import { get, post } from '@/utils/request'
+import { VIP_CODE } from '@/utils/enums'
 import type {
   UserInfo,
   LoginResponse,
@@ -80,7 +81,8 @@ import type {
   ConditionalApprovalDrugListResponse,
   DrugShortListResponse,
   CleanedDrugNameListResponse,
-  CompanyShortListResponse
+  CompanyShortListResponse,
+  UserDetailResponse
 } from '@/types/api'
 
 // #region 登录模块
@@ -168,6 +170,50 @@ export async function updateWxUserInfo(params: {
     params,
     true
   )
+}
+
+// #endregion
+
+// #region 用户模块
+
+/**
+ * 获取用户详情（含会员状态与申请状态）
+ * @returns Promise<UserDetailResponse>
+ */
+export async function getUserDetail() {
+  return get<UserDetailResponse>('/api/v1/wechat/searchComCRO/user/detail', {}, true)
+}
+
+/**
+ * 拉取用户详情并同步到本地用户信息（会员状态、头像昵称、申请状态等）
+ * @returns Promise<UserInfo | null> 更新后的用户信息，未登录或请求失败时返回 null
+ */
+export async function refreshUserDetail(): Promise<UserInfo | null> {
+  const userInfo = getUserInfo()
+  if (!userInfo?.token) return null
+
+  try {
+    const res = await getUserDetail()
+    const detail = res.data
+    if (!detail) return null
+
+    const updated: UserInfo = {
+      ...userInfo,
+      vip: detail.vipCode === VIP_CODE.VIP用户 || detail.vipCode === VIP_CODE.VIP试用,
+      vipCode: detail.vipCode ?? userInfo.vipCode,
+      applyStatus: detail.applyStatus ?? userInfo.applyStatus,
+      avatarUrl: detail.avatarUrl || userInfo.avatarUrl,
+      nickname: detail.nickname || userInfo.nickname,
+      wxNickname: detail.wxNickname || userInfo.wxNickname,
+      phone: detail.phone || userInfo.phone,
+      vipExpirationTime: detail.vipEndTime || userInfo.vipExpirationTime
+    }
+    setUserInfo(updated)
+    return updated
+  } catch {
+    // 静默处理，保留本地缓存的用户信息
+    return null
+  }
 }
 
 // #endregion

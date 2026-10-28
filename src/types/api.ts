@@ -507,6 +507,27 @@ export interface UserInfo {
   wxNickname?: string
   phone?: string
   vipExpirationTime?: string
+  /** 申请状态：0-未申请，1-申请试用中，2-试用中，3-申请开通中，4-开通中 */
+  applyStatus?: number
+}
+
+/**
+ * 用户详情响应接口（/user/detail）
+ */
+export interface UserDetailResponse {
+  /** 申请状态：0-未申请，1-申请试用中，2-试用中，3-申请开通中，4-开通中 */
+  applyStatus?: number
+  /** 会员编码：0-普通用户 1-VIP试用 100-VIP用户 */
+  vipCode?: number
+  /** 会员开始时间 */
+  vipBeginTime?: string
+  /** 会员结束时间 */
+  vipEndTime?: string
+  avatarUrl?: string
+  nickname?: string
+  /** 微信昵称 */
+  wxNickname?: string
+  phone?: string
 }
 
 /**

@@ -1,6 +1,15 @@
 <template></template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+  import { onShow } from '@dcloudio/uni-app'
+  import { refreshUserDetail } from '@/api'
+
+  // 每次进入小程序（冷启动 / 从后台切回）同步一次用户信息，
+  // 保证会员状态等可能已在服务端变更的数据及时更新
+  onShow(() => {
+    refreshUserDetail()
+  })
+</script>
 
 <style lang="scss">
   /* #region 全局样式 */

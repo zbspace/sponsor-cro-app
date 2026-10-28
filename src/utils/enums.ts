@@ -33,6 +33,15 @@ export enum VIP_APPLICATION_STATUS {
   '审批不通过' = 3
 }
 
+// 会员申请状态 0-未申请，1-申请试用中，2-试用中，3-申请开通中，4-开通中
+export enum APPLY_STATUS {
+  '未申请' = 0,
+  '申请试用中' = 1,
+  '试用中' = 2,
+  '申请开通中' = 3,
+  '开通中' = 4
+}
+
 // 注册类型
 export enum REGISTER_TYPE {
   '1类' = '1类',
