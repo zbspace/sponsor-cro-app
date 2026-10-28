@@ -227,7 +227,6 @@
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
   import NdaList from '@/components/nda-list/nda-list.vue'
-
   import {
     queryDrugTypeStatistics,
     queryNdaLastYearApplyAndApprove,
@@ -241,6 +240,7 @@
     NdaProductRankVo,
     NdaProjectSumVo
   } from '@/types/api'
+  import { DRUG_TYPE_VALUES_INT, createEnumsToOptions } from '@/utils/enums'
   // #endregion
 
   // #region 基础状态与生命周期
@@ -341,35 +341,25 @@
   // #endregion
 
   // #region 注册分类统计
-  const DRUG_TYPE_OPTIONS = [
-    { value: 1, text: '化药' },
-    { value: 2, text: '疫苗' },
-    { value: 3, text: '治疗生物药' },
-    { value: 4, text: '中药' }
-  ]
-  const drugTypeOptions = computed(() => DRUG_TYPE_OPTIONS)
-  const drugTypeCode = ref(DRUG_TYPE_OPTIONS[0].value)
+  const drugTypeOptions = computed(() => createEnumsToOptions(DRUG_TYPE_VALUES_INT))
+  const drugTypeCode = ref(drugTypeOptions.value[0].value)
   const drugTypeText = computed(
-    () => DRUG_TYPE_OPTIONS.find((o) => o.value === drugTypeCode.value)?.text || '药品类型'
+    () => drugTypeOptions.value.find((o) => o.value === drugTypeCode.value)?.text || '药品类型'
   )
   const registerCategoryList = ref<{ label: string; count: number }[]>([])
 
   async function fetchRegisterCategory() {
-    try {
-      const res = await queryNdaLastYearRegisterCategory({
-        parentCompanyId: companyParentId.value || undefined,
-        drugTypeCode: drugTypeCode.value
-      })
-      registerCategoryList.value = buildRegisterCategoryList(res.data)
-      drawBarChart()
-    } catch {
-      // 静默处理
-    }
+    const res = await queryNdaLastYearRegisterCategory({
+      parentCompanyId: companyParentId.value || undefined,
+      drugTypeCode: drugTypeCode.value
+    })
+    registerCategoryList.value = buildRegisterCategoryList(res.data)
+    drawBarChart()
   }
 
   function onDrugTypeChange(e: any) {
     const idx = Number(e.detail.value)
-    const option = DRUG_TYPE_OPTIONS[idx]
+    const option = drugTypeOptions.value[idx]
     if (!option) return
     drugTypeCode.value = option.value
     fetchRegisterCategory()

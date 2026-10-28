@@ -33,10 +33,45 @@ export enum VIP_APPLICATION_STATUS {
   '审批不通过' = 3
 }
 
+// 注册类型
+export enum REGISTER_TYPE {
+  '1类' = '1类',
+  '2类' = '2类',
+  '3类' = '3类',
+  '4类' = '4类',
+  '5类' = '5类'
+}
+
+// 注册类型 int
+export enum REGISTER_TYPE_VALUES_INT {
+  '1类' = 1,
+  '2类' = 2,
+  '3类' = 3,
+  '4类' = 4,
+  '5类' = 5
+}
+
+// 药品类型
+export enum DRUG_TYPE_VALUES {
+  '化药' = '化药',
+  '疫苗' = '疫苗',
+  '治疗生物药' = '治疗生物药',
+  '中药' = '中药'
+}
+
+// 药品类型 int
+export enum DRUG_TYPE_VALUES_INT {
+  '化药' = 1,
+  '疫苗' = 2,
+  '治疗生物药' = 3,
+  '中药' = 4
+}
+
 // 将枚举转换为选项数组（{ value: 编码, text: 文案 }）
-export function createEnumsToOptions<T extends Record<string, string>>(
+// value 支持字符串与数字编码（如 DRUG_TYPE_VALUES_INT）
+export function createEnumsToOptions<T extends Record<string, string | number>>(
   enumObj: T
-): { value: string; text: string }[] {
+): { value: T[keyof T]; text: string }[] {
   return (Object.keys(enumObj) as Array<keyof T>).map((key) => ({
     value: enumObj[key],
     text: key as string

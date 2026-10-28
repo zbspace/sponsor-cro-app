@@ -188,6 +188,7 @@
     StandardCompanyItem
   } from '@/types/api'
   import { onLoad } from '@dcloudio/uni-app'
+  import { DRUG_TYPE_VALUES, createEnumsToOptions } from '@/utils/enums'
 
   // #region 企业查询选择（参考商机线索页搜索联想）
   const searchKeyword = ref('')
@@ -252,15 +253,6 @@
   // #endregion
 
   // #region 筛选状态
-  // 药品类型取值与 NDA/IND 接口保持一致
-  const DRUG_TYPE_VALUES = [
-    '化药',
-    '预防用生物制品',
-    '治疗用生物制品',
-    '中药/天然药物',
-    '体外诊断试剂',
-    '其他'
-  ]
 
   const currentYearFilter = ref<number | ''>('')
   const drugTypeFilter = ref('')
@@ -275,7 +267,7 @@
 
   const drugTypeOptions = computed(() => [
     { value: '', text: '药品类型' },
-    ...DRUG_TYPE_VALUES.map((text) => ({ value: text, text }))
+    ...createEnumsToOptions(DRUG_TYPE_VALUES)
   ])
   // #endregion
 

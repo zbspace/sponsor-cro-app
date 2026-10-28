@@ -112,6 +112,7 @@
   import { ref, computed, onMounted, watch } from 'vue'
   import { queryNdaProductList, queryStandardDrug } from '@/api'
   import type { NdaDataStatisticsParam, NdaProductDataVo, DrugShortItem } from '@/types/api'
+  import { REGISTER_TYPE, DRUG_TYPE_VALUES, createEnumsToOptions } from '@/utils/enums'
 
   const props = defineProps<{
     /** 母公司ID */
@@ -125,16 +126,6 @@
   }>()
 
   // #region 筛选状态
-  // 药品类型取值与 IND 接口保持一致
-  const DRUG_TYPE_VALUES = [
-    '化药',
-    '预防用生物制品',
-    '治疗用生物制品',
-    '中药/天然药物',
-    '体外诊断试剂',
-    '其他'
-  ]
-
   const yearOptions = computed(() => [
     { value: '', text: '年份' },
     ...Array.from({ length: 5 }, (_, i) => {
@@ -145,17 +136,13 @@
 
   const drugTypeOptions = [
     { value: '', text: '药品类型' },
-    ...DRUG_TYPE_VALUES.map((text) => ({ value: text, text }))
+    ...createEnumsToOptions(DRUG_TYPE_VALUES)
   ]
 
-  // 注册分类
-  const DRUG_TYPE_OPTIONS = [
-    { value: 1, text: '化药' },
-    { value: 2, text: '预防用生物制品' },
-    { value: 3, text: '治疗用生物制品' },
-    { value: 4, text: '中药/天然药物' }
+  const classificationOptions = [
+    { value: '', text: '注册分类' },
+    ...createEnumsToOptions(REGISTER_TYPE)
   ]
-  const classificationOptions = [{ value: '', text: '注册分类' }, ...DRUG_TYPE_OPTIONS]
 
   // #region 产品下拉（数据来源于 queryStandardDrug 接口）
   const productList = ref<DrugShortItem[]>([])

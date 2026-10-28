@@ -161,6 +161,7 @@
   import { ref, computed, onMounted, watch } from 'vue'
   import { getIndApplicationList, queryCleanedDrug } from '@/api'
   import type { IndApplicationItem, IndApplicationListReq, CleanedDrugItem } from '@/types/api'
+  import { REGISTER_TYPE, DRUG_TYPE_VALUES, createEnumsToOptions } from '@/utils/enums'
   // #endregion
 
   // #region 组件属性
@@ -177,16 +178,6 @@
   // #endregion
 
   // #region 筛选状态
-  // 药品类型取值与 IND 接口保持一致
-  const DRUG_TYPE_VALUES = [
-    '化药',
-    '预防用生物制品',
-    '治疗用生物制品',
-    '中药/天然药物',
-    '体外诊断试剂',
-    '其他'
-  ]
-
   const yearOptions = computed(() => [
     { value: '', text: '年份' },
     ...Array.from({ length: 5 }, (_, i) => {
@@ -197,17 +188,13 @@
 
   const drugTypeOptions = [
     { value: '', text: '药品类型' },
-    ...DRUG_TYPE_VALUES.map((text) => ({ value: text, text }))
+    ...createEnumsToOptions(DRUG_TYPE_VALUES)
   ]
 
-  // 注册分类
-  const DRUG_TYPE_OPTIONS = [
-    { value: 1, text: '化药' },
-    { value: 2, text: '疫苗' },
-    { value: 3, text: '治疗生物药' },
-    { value: 4, text: '中药' }
+  const classificationOptions = [
+    { value: '', text: '注册分类' },
+    ...createEnumsToOptions(REGISTER_TYPE)
   ]
-  const classificationOptions = [{ value: '', text: '注册分类' }, ...DRUG_TYPE_OPTIONS]
 
   const currentYearFilter = ref('')
   const drugTypeFilter = ref('')
