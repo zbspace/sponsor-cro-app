@@ -30,10 +30,13 @@
       <input
         type="text"
         v-model="searchKeyword"
-        placeholder="请输入及选择企业名称"
+        placeholder="搜索企业名称"
         placeholder-style="color: #B2B2B2"
         @input="onSearchInput"
       />
+      <view class="search-go" @click="handleSearchClick">
+        <text>搜索</text>
+      </view>
     </view>
 
     <!-- 搜索下拉联想 -->
@@ -67,20 +70,18 @@
   </view>
 
   <!-- 线索类型 -->
-  <view class="type-filter-section">
-    <text class="filter-label">线索类型：</text>
-    <view class="radio-group">
-      <view
-        class="radio-item"
-        v-for="item in typeOptions"
-        :key="item.value"
-        @click="handleTypeChange(item.value)"
-      >
-        <view class="radio-circle" :class="{ active: type === item.value }">
-          <view class="radio-dot" v-if="type === item.value"></view>
-        </view>
-        <text class="radio-text" :class="{ active: type === item.value }">{{ item.label }}</text>
-      </view>
+  <view class="seg-tabs">
+    <view
+      class="seg-tab"
+      v-for="item in typeOptions"
+      :key="item.value"
+      :class="{ active: type === item.value }"
+      @click="handleTypeChange(item.value)"
+    >
+      <text>{{ item.label }}</text>
+      <text class="seg-n" v-if="typeCounts[item.value] > 0">
+        {{ formatCount(typeCounts[item.value]) }}
+      </text>
     </view>
   </view>
 
@@ -97,56 +98,38 @@
     <view class="container">
       <!-- 列表内容 -->
       <view class="list-container">
-        <view class="clue-card" v-for="(item, index) in list" :key="index">
-          <!-- 药品基本信息 -->
-          <view class="card-header">
-            <view class="drug-info">
-              <view class="drug-icon">
-                <image src="../../static/icons/sponsor.png" mode="aspectFit" />
-              </view>
-              <text class="drug-name">{{ item.drugStandardName }}</text>
-            </view>
-            <text class="date">{{ item.undertakeDate || item.approvalTime }}</text>
-          </view>
-
-          <view class="tags">
-            <text class="tag type-tag" v-if="item.cleanedDrugType">{{ item.cleanedDrugType }}</text>
-            <text class="tag class-tag" v-if="item.cleanedClassificationOrStages">
+        <view class="lead-card" v-for="(item, index) in list" :key="index">
+          <!-- 药品名称 + 分类/分期 -->
+          <view class="lead-head">
+            <text class="lead-drug">{{ item.drugStandardName }}</text>
+            <text class="tag tag-lead" v-if="item.cleanedClassificationOrStages">
               {{ item.cleanedClassificationOrStages }}
             </text>
-            <text class="tag priority-tag" v-if="item.ndaPriorityApproval">
+          </view>
+
+          <view class="lead-tags">
+            <text class="tag" :class="getDrugTypeClass(item)" v-if="item.cleanedDrugType">
+              {{ item.cleanedDrugType }}
+            </text>
+            <text class="tag tag-amber" v-if="item.ndaPriorityApproval">
               {{ item.ndaPriorityApproval }}
             </text>
           </view>
 
-          <view class="info-grid">
-            <view class="info-row">
-              <text class="label">申请人</text>
-              <text class="value">{{ item.applicationCompany }}</text>
-            </view>
-            <view class="info-row" v-if="item.approvalTime">
-              <text class="label">批准日期</text>
-              <text class="value">{{ item.approvalTime }}</text>
-            </view>
-            <view class="info-row">
-              <text class="label">适应症</text>
-              <text class="value">{{ item.indication }}</text>
-            </view>
-            <view class="info-row" v-for="row in getStatusRows(item)" :key="row.label">
-              <text class="label">{{ row.label }}</text>
-              <text class="value">{{ row.value || '--' }}</text>
+          <!-- 字段信息 -->
+          <view class="lead-fields">
+            <view class="lf" v-for="row in getFieldRows(item)" :key="row.label">
+              <text class="lf-label">{{ row.label }}：</text>
+              <text class="lf-value">{{ row.value || '—' }}</text>
+              <text class="tag tag-fresh" v-if="row.fresh">6个月以内</text>
+              <text class="lf-note" v-if="row.note">{{ row.note }}</text>
             </view>
           </view>
 
-          <!-- 商机线索部分 -->
-          <view class="clue-section" :class="getClueClass(item)">
-            <view class="clue-header">
-              <image src="../../static/icons/time.png" mode="aspectFit" class="clue-icon" />
-              <text class="clue-title">商机线索</text>
-            </view>
-            <view class="clue-content">
-              <text>{{ item.businessClueText }}</text>
-            </view>
+          <!-- 商机线索 -->
+          <view class="lead-tip">
+            <text class="tip-label">商机线索：</text>
+            <text>{{ item.businessClueText }}</text>
           </view>
         </view>
 
@@ -206,26 +189,47 @@
       companyId.value = Number(options.companyId)
     }
     if (options?.type) {
-      type.value = options.type as any
+      type.value = options.type as ClueType
     }
 
     fetchList()
+    fetchTypeCount(otherType())
     fetchVipApplicationStatus()
   })
   // #endregion
 
   // #region 线索列表加载逻辑
-  const type = ref<'before' | 'after'>('before')
+  type ClueType = 'before' | 'after'
+
+  const type = ref<ClueType>('before')
   const typeOptions = [
-    { label: '上市前', value: 'before' },
-    { label: '上市后', value: 'after' }
+    { label: 'I期/II期/III期', value: 'before' },
+    { label: 'IV期/IIT', value: 'after' }
   ] as const
+  /** 各类型线索条数（用于 Tab 角标） */
+  const typeCounts = ref<Record<ClueType, number>>({ before: 0, after: 0 })
 
   const list = ref<OpportunityVo[]>([])
   const pageNum = ref(1)
   const pageSize = 10
   const loading = ref(false)
   const finished = ref(false)
+
+  function otherType() {
+    return type.value === 'before' ? 'after' : 'before'
+  }
+
+  // 注意：后端接口命名与线索类型相反
+  // 上市前 -> getBeforeListingBusinessClueList，上市后 -> getAfterListingBusinessClueList
+  function getListApi(target: ClueType) {
+    return target === 'before' ? getBeforeListingBusinessClueList : getAfterListingBusinessClueList
+  }
+
+  function resetList() {
+    list.value = []
+    pageNum.value = 1
+    finished.value = false
+  }
 
   async function fetchList() {
     if (loading.value || finished.value) return
@@ -238,16 +242,13 @@
         parentCompanyId: companyId.value
       }
 
-      // 注意：后端接口命名与线索类型相反
-      // 上市前 -> getAfterListingBusinessClueList，上市后 -> getBeforeListingBusinessClueList
-      const fetchApi =
-        type.value === 'before' ? getBeforeListingBusinessClueList : getAfterListingBusinessClueList
-      const res = await fetchApi(params)
+      const res = await getListApi(type.value)(params)
       const resData = res.data
 
       if (resData) {
         const newList = resData.list || []
         list.value = [...list.value, ...newList]
+        typeCounts.value[type.value] = resData.total || 0
         if (newList.length < pageSize || pageNum.value >= resData.pages) {
           finished.value = true
         }
@@ -259,12 +260,25 @@
     }
   }
 
-  function handleTypeChange(val: 'before' | 'after') {
+  /** 未加载过的类型也需要展示线索条数，这里轻量拉取一次总数 */
+  async function fetchTypeCount(target: ClueType) {
+    if (typeCounts.value[target]) return
+    try {
+      const res = await getListApi(target)({
+        pageNum: 1,
+        pageSize: 1,
+        parentCompanyId: companyId.value
+      })
+      typeCounts.value[target] = res.data?.total || 0
+    } catch {
+      typeCounts.value[target] = 0
+    }
+  }
+
+  function handleTypeChange(val: ClueType) {
     if (type.value === val) return
     type.value = val
-    list.value = []
-    pageNum.value = 1
-    finished.value = false
+    resetList()
     fetchList()
   }
 
@@ -275,44 +289,86 @@
     }
   }
 
-  function getClueClass(item: OpportunityVo) {
-    if (type.value === 'before') return 'before-clue'
-    if (type.value === 'after') return 'after-clue'
-    return item.dataType === 'nda' ? 'after-clue' : 'before-clue'
+  /** 按企业筛选线索列表 */
+  function applyCompany(item: StandardCompanyItem) {
+    companyName.value = item.companyStandardName
+    companyId.value = item.parentCompanyId
+    typeCounts.value = { before: 0, after: 0 }
+    resetList()
+    fetchList()
+    fetchTypeCount(otherType())
+  }
+
+  /** 药品类型标签配色：生物制品用紫色，化药用青色 */
+  function getDrugTypeClass(item: OpportunityVo) {
+    return item.cleanedDrugType?.includes('生物') ? 'tag-bio' : 'tag-chem'
+  }
+
+  interface FieldRow {
+    label: string
+    value: string
+    /** 是否展示「6个月以内」标签 */
+    fresh?: boolean
+    /** 值后的补充说明 */
+    note?: string
+  }
+
+  const DATE_LABEL: Record<string, string> = {
+    ind: '受理日期',
+    cde: '登记日期',
+    nda: '受理日期'
+  }
+
+  /** 日期是否在 6 个月以内 */
+  function isFreshDate(date: string) {
+    if (!date) return false
+    const [year, month, day] = date.split('-').map(Number)
+    if (!year || !month || !day) return false
+    const limit = new Date()
+    limit.setMonth(limit.getMonth() - 6)
+    return new Date(year, month - 1, day).getTime() >= limit.getTime()
   }
 
   /**
-   * 根据数据类型动态展示「状态/编号」信息行
-   * ind: 受理状态 + 受理号
-   * cde: 试验状态 + 登记号 + 备案号
-   * nda: 申请状态 + 受理号
+   * 根据数据类型组装卡片字段行
+   * ind: 受理日期 + 受理状态 + 获批日期 + 受理号 + 适应症
+   * cde: 登记日期 + 试验分期 + 登记号 + 适应症
+   * nda: 受理日期 + 申请状态 + 获批日期 + 受理号 + 适应症
    */
-  function getStatusRows(item: OpportunityVo) {
-    switch (item.dataType) {
-      case 'ind':
-        return [
-          { label: '受理状态', value: item.applicationStatus },
-          { label: '受理号', value: item.acceptanceNo }
-        ]
-      case 'cde':
-        return [
-          { label: '试验状态', value: item.applicationStatus },
-          // { label: '登记号', value: item.acceptanceNo },
-          { label: '备案号', value: item.acceptanceNo }
-        ]
-      case 'nda':
-        return [
-          { label: '申请状态', value: item.applicationStatus },
-          { label: '受理号', value: item.acceptanceNo }
-        ]
-      default:
-        return []
+  function getFieldRows(item: OpportunityVo): FieldRow[] {
+    const rows: FieldRow[] = [
+      { label: '申请人', value: item.applicationCompany },
+      {
+        label: DATE_LABEL[item.dataType] || '受理日期',
+        value: item.undertakeDate,
+        fresh: isFreshDate(item.undertakeDate)
+      }
+    ]
+
+    if (item.dataType === 'cde') {
+      rows.push({ label: '试验分期', value: item.cleanedClassificationOrStages })
+      rows.push({ label: '登记号', value: item.acceptanceNo })
+    } else {
+      rows.push({
+        label: item.dataType === 'nda' ? '申请状态' : '受理状态',
+        value: item.applicationStatus
+      })
+      rows.push({ label: '获批日期', value: item.approvalTime })
+      rows.push({ label: '受理号', value: item.acceptanceNo })
     }
+
+    rows.push({
+      label: '适应症',
+      value: item.indication,
+      note: item.dataType === 'ind' && !item.indication ? '（获批后适应症才会公示）' : ''
+    })
+
+    return rows
   }
 
-  function isSuccessStatus(status: string) {
-    if (!status) return false
-    return status.includes('通过') || status.includes('获批')
+  /** Tab 角标数字千分位展示 */
+  function formatCount(count: number) {
+    return String(count).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
   }
   // #endregion
 
@@ -372,10 +428,24 @@
     }
   }
 
+  /** 点击「搜索」：立即查询企业联想列表 */
+  function handleSearchClick() {
+    if (!checkPermission()) {
+      return
+    }
+    if (!searchKeyword.value.trim()) {
+      uni.showToast({ title: '请输入企业名称', icon: 'none' })
+      return
+    }
+    if (searchTimer) clearTimeout(searchTimer)
+    fetchSearchResults()
+  }
+
   function selectCompany(item: StandardCompanyItem) {
     searchKeyword.value = item.companyStandardName
     selectedCompany.value = item
     showDropdown.value = false
+    applyCompany(item)
   }
   // #endregion
 
@@ -461,247 +531,7 @@
     }
   }
 
-  .clue-card {
-    background: #ffffff;
-    border-radius: 24rpx;
-    padding: 30rpx;
-    margin-bottom: 30rpx;
-    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 24rpx;
-
-      .drug-info {
-        display: flex;
-        align-items: center;
-        gap: 16rpx;
-        flex: 1;
-
-        .drug-icon {
-          width: 48rpx;
-          height: 48rpx;
-          background: #499ae6;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-
-          image {
-            width: 28rpx;
-            height: 28rpx;
-            filter: brightness(0) invert(1);
-          }
-        }
-
-        .drug-name {
-          font-size: 32rpx;
-          font-weight: bold;
-          color: #333;
-        }
-      }
-
-      .date {
-        font-size: 24rpx;
-        color: #999;
-        flex-shrink: 0;
-      }
-    }
-
-    .tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12rpx;
-      margin-bottom: 30rpx;
-
-      .tag {
-        font-size: 22rpx;
-        padding: 4rpx 16rpx;
-        border-radius: 8rpx;
-      }
-
-      .type-tag {
-        background: #f0f5ff;
-        color: #2f54eb;
-      }
-
-      .class-tag {
-        background: #e6f7ff;
-        color: #1890ff;
-      }
-
-      .priority-tag {
-        background: #fff7e6;
-        color: #fa8c16;
-      }
-    }
-
-    .info-grid {
-      background: #f7f8fa;
-      border-radius: 16rpx;
-      padding: 24rpx;
-      display: flex;
-      flex-direction: column;
-      gap: 20rpx;
-      margin-bottom: 30rpx;
-
-      .info-row {
-        display: flex;
-        font-size: 26rpx;
-
-        .label {
-          width: 140rpx;
-          color: #999;
-          flex-shrink: 0;
-        }
-
-        .value {
-          flex: 1;
-          color: #333;
-
-          &.status {
-            color: #fa8c16;
-          }
-          &.success {
-            color: #52c41a;
-          }
-        }
-      }
-    }
-
-    .clue-section {
-      border-radius: 16rpx;
-      padding: 24rpx;
-      position: relative;
-      overflow: hidden;
-
-      &.before-clue {
-        background: #fff7e6;
-        &::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 0;
-          bottom: 0;
-          width: 8rpx;
-          background: #fa8c16;
-        }
-      }
-
-      &.after-clue {
-        background: #e6f7ff;
-        &::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 0;
-          bottom: 0;
-          width: 8rpx;
-          background: #1890ff;
-        }
-      }
-
-      .clue-header {
-        display: flex;
-        align-items: center;
-        gap: 12rpx;
-        margin-bottom: 12rpx;
-
-        .clue-icon {
-          width: 28rpx;
-          height: 28rpx;
-        }
-
-        .clue-title {
-          font-size: 26rpx;
-          font-weight: bold;
-          color: #fa8c16;
-        }
-      }
-
-      &.after-clue .clue-title {
-        color: #1890ff;
-      }
-
-      .clue-content {
-        font-size: 26rpx;
-        color: #fa8c16;
-        line-height: 1.5;
-      }
-
-      &.after-clue .clue-content {
-        color: #1890ff;
-      }
-    }
-  }
-
-  .load-more {
-    padding: 30rpx 0;
-    text-align: center;
-    font-size: 24rpx;
-    color: #999;
-  }
-
-  .type-filter-section {
-    display: flex;
-    align-items: center;
-    padding: 0 30rpx;
-    margin-bottom: 40rpx;
-
-    .filter-label {
-      font-size: 28rpx;
-      color: #333;
-      margin-right: 20rpx;
-    }
-
-    .radio-group {
-      display: flex;
-      align-items: center;
-      gap: 40rpx;
-
-      .radio-item {
-        display: flex;
-        align-items: center;
-        gap: 12rpx;
-
-        .radio-circle {
-          width: 32rpx;
-          height: 32rpx;
-          border: 2rpx solid #cccccc;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s;
-
-          &.active {
-            border-color: #499ae6;
-          }
-
-          .radio-dot {
-            width: 18rpx;
-            height: 18rpx;
-            background: #499ae6;
-            border-radius: 50%;
-          }
-        }
-
-        .radio-text {
-          font-size: 28rpx;
-          color: #666;
-
-          &.active {
-            color: #333;
-            font-weight: 500;
-          }
-        }
-      }
-    }
-  }
-
+  /* #region 查询公司 */
   .search-input-section {
     position: relative;
     margin: 40rpx 0;
@@ -711,7 +541,7 @@
       background: #ffffff;
       border-radius: 44rpx;
       height: 88rpx;
-      padding: 0 40rpx;
+      padding: 0 12rpx 0 32rpx;
       display: flex;
       align-items: center;
       box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
@@ -724,6 +554,26 @@
         flex: 1;
         font-size: 28rpx;
         color: #333333;
+      }
+
+      .search-go {
+        flex-shrink: 0;
+        height: 64rpx;
+        padding: 0 28rpx;
+        border-radius: 32rpx;
+        background: #1e6fff;
+        display: flex;
+        align-items: center;
+
+        text {
+          color: #ffffff;
+          font-size: 26rpx;
+          font-weight: 600;
+        }
+
+        &:active {
+          background: #0a57eb;
+        }
       }
     }
 
@@ -771,4 +621,171 @@
       }
     }
   }
+  /* #endregion */
+
+  /* #region 线索类型切换 */
+  .seg-tabs {
+    display: flex;
+    background: #ffffff;
+    border-radius: 24rpx;
+    padding: 6rpx;
+    margin: 0 30rpx 24rpx;
+    box-shadow: 0 2rpx 6rpx rgba(15, 23, 42, 0.06);
+
+    .seg-tab {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10rpx;
+      padding: 16rpx 0;
+      border-radius: 18rpx;
+      font-size: 26rpx;
+      color: #6b7280;
+      transition: all 0.15s;
+
+      &.active {
+        background: #1e6fff;
+        color: #ffffff;
+        font-weight: 600;
+      }
+
+      .seg-n {
+        padding: 2rpx 12rpx;
+        border-radius: 18rpx;
+        background: rgba(30, 111, 255, 0.09);
+        color: #1e6fff;
+        font-size: 22rpx;
+        font-weight: 600;
+      }
+
+      &.active .seg-n {
+        background: rgba(255, 255, 255, 0.24);
+        color: #ffffff;
+      }
+    }
+  }
+  /* #endregion */
+
+  /* #region 线索卡片 */
+  .tag {
+    font-size: 20rpx;
+    padding: 4rpx 14rpx;
+    border-radius: 10rpx;
+    font-weight: 500;
+  }
+
+  .tag-lead {
+    background: #1e6fff;
+    color: #ffffff;
+  }
+
+  .tag-bio {
+    background: #eef0fe;
+    color: #6d28d9;
+  }
+
+  .tag-chem {
+    background: #e6f7f1;
+    color: #0b7b5b;
+  }
+
+  .tag-amber {
+    background: #fdf3e3;
+    color: #b45309;
+  }
+
+  .tag-fresh {
+    background: #e6f7f1;
+    color: #0b7b5b;
+  }
+
+  .lead-card {
+    background: #ffffff;
+    border-radius: 28rpx;
+    padding: 28rpx 32rpx;
+    margin-bottom: 20rpx;
+    box-shadow: 0 2rpx 6rpx rgba(15, 23, 42, 0.06);
+
+    .lead-head {
+      display: flex;
+      align-items: center;
+      gap: 12rpx;
+
+      .lead-drug {
+        font-size: 30rpx;
+        font-weight: 600;
+        color: #1f2329;
+      }
+
+      .tag-lead {
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+    }
+
+    .lead-tags {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12rpx;
+      margin-top: 12rpx;
+    }
+
+    .lead-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 12rpx;
+      margin-top: 24rpx;
+
+      .lf {
+        display: flex;
+        font-size: 24rpx;
+        line-height: 1.5;
+
+        .lf-label {
+          color: #9ca3af;
+          flex-shrink: 0;
+        }
+
+        .lf-value {
+          color: #6b7280;
+          word-break: break-all;
+        }
+
+        .lf-note {
+          color: #9ca3af;
+          font-size: 22rpx;
+        }
+
+        .tag-fresh {
+          margin-left: 12rpx;
+          flex-shrink: 0;
+        }
+      }
+    }
+
+    .lead-tip {
+      margin-top: 24rpx;
+      padding: 20rpx 24rpx;
+      background: #ebf3ff;
+      border-radius: 18rpx;
+      font-size: 24rpx;
+      color: #0a57eb;
+      line-height: 1.6;
+
+      .tip-label {
+        color: #1e6fff;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .load-more {
+    padding: 30rpx 0;
+    text-align: center;
+    font-size: 24rpx;
+    color: #999;
+  }
+  /* #endregion */
 </style>
