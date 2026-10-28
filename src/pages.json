@@ -196,6 +196,13 @@
       }
     },
     {
+      "path": "pages/drug-company-list/index",
+      "style": {
+        "navigationBarTitleText": "相关企业",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/conditional-drug-list/index",
       "style": {
         "navigationBarTitleText": "中国附条件获批上市药品清单",

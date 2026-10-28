@@ -2,128 +2,79 @@
   <bottom-sheet ref="sheetRef" :visible="visible" @close="close">
     <view class="search-popup-content">
       <!-- 药品搜索 -->
-      <template v-if="!showCompanyList">
-        <view class="modal-head-row">
-          <view class="modal-title-wrap">
-            <text class="modal-title">查药品</text>
-            <text class="modal-sub">输入药品名称，查看研发企业</text>
-          </view>
-          <view class="modal-close" @click="close"><text>×</text></view>
+      <view class="modal-head-row">
+        <view class="modal-title-wrap">
+          <text class="modal-title">查药品</text>
+          <text class="modal-sub">输入药品名称，查看研发企业</text>
+        </view>
+        <view class="modal-close" @click="close"><text>×</text></view>
+      </view>
+
+      <view class="search-wrap">
+        <view class="modal-search">
+          <view class="search-ico"></view>
+          <input
+            type="text"
+            :adjust-position="false"
+            v-model="drugState.keyword"
+            placeholder="输入药品名称，如：信迪利单抗"
+            placeholder-style="color: #9CA3AF"
+            @input="onSearchInput"
+            @keyboardheightchange="onKeyboardHeightChange"
+          />
+          <view class="modal-confirm" @click="handleSearch"><text>搜索</text></view>
         </view>
 
-        <view class="search-wrap">
-          <view class="modal-search">
-            <view class="search-ico"></view>
-            <input
-              type="text"
-              :adjust-position="false"
-              v-model="drugState.keyword"
-              placeholder="输入药品名称，如：信迪利单抗"
-              placeholder-style="color: #9CA3AF"
-              @input="onSearchInput"
-              @keyboardheightchange="onKeyboardHeightChange"
-            />
-            <view class="modal-confirm" @click="handleSearch"><text>搜索</text></view>
+        <!-- 搜索下拉联想 -->
+        <view class="search-dropdown" v-if="drugState.showDropdown">
+          <view class="dropdown-loading" v-if="drugState.loading">
+            <text>加载中...</text>
           </view>
-
-          <!-- 搜索下拉联想 -->
-          <view class="search-dropdown" v-if="drugState.showDropdown">
-            <view class="dropdown-loading" v-if="drugState.loading">
-              <text>加载中...</text>
-            </view>
-            <template v-else>
-              <!-- 结果较多时可上下滚动 -->
-              <scroll-view
-                scroll-y
-                class="dropdown-list"
-                :show-scrollbar="false"
-                :style="dropdownListStyle(drugState.results.length)"
-                v-if="drugState.results.length > 0"
-              >
-                <view
-                  class="dropdown-item"
-                  v-for="item in drugState.results"
-                  :key="item.cleanedDrugName"
-                  @click="selectDrug(item)"
-                >
-                  <text class="dropdown-name">{{ item.cleanedDrugName }}</text>
-                </view>
-              </scroll-view>
-              <view class="dropdown-empty" v-if="drugState.results.length === 0">
-                <text>未找到相关药品</text>
-              </view>
-            </template>
-          </view>
-        </view>
-
-        <view class="modal-history">
-          <view class="mh-head">
-            <text class="mh-title">搜索历史</text>
-            <text class="mh-clear" v-if="recentList.length > 0" @click="clearRecentList">清空</text>
-          </view>
-          <view class="mh-chips" v-if="recentList.length > 0">
-            <view
-              class="mh-chip"
-              v-for="item in recentList"
-              :key="item.cleanedDrugName"
-              @click="selectRecent(item)"
+          <template v-else>
+            <!-- 结果较多时可上下滚动 -->
+            <scroll-view
+              scroll-y
+              class="dropdown-list"
+              :show-scrollbar="false"
+              :style="dropdownListStyle(drugState.results.length)"
+              v-if="drugState.results.length > 0"
             >
-              <text>{{ item.cleanedDrugName }}</text>
-            </view>
-          </view>
-          <view class="mh-empty" v-else>
-            <view class="mh-empty-ico"><view class="search-ico"></view></view>
-            <text>暂无搜索记录</text>
-          </view>
-        </view>
-      </template>
-
-      <!-- 相关企业列表 -->
-      <template v-else>
-        <view class="modal-head-row">
-          <view class="modal-back" @click="backToDrug"><text>‹</text></view>
-          <view class="modal-title-wrap">
-            <text class="modal-title">选择相关企业</text>
-            <text class="modal-sub">选择企业后查看药品统计</text>
-          </view>
-          <view class="modal-close" @click="close"><text>×</text></view>
-        </view>
-
-        <view class="company-loading" v-if="companyLoading">
-          <text>加载中...</text>
-        </view>
-        <template v-else>
-          <scroll-view
-            scroll-y
-            class="company-list"
-            :show-scrollbar="false"
-            v-if="companyList.length > 0"
-          >
-            <view class="company-table">
-              <view class="table-row table-head">
-                <view class="col-index"><text>序号</text></view>
-                <view class="col-company"><text>企业</text></view>
-              </view>
               <view
-                class="table-row"
-                v-for="(item, index) in companyList"
-                :key="item.parentCompanyId"
-                @click="selectCompany(item)"
+                class="dropdown-item"
+                v-for="item in drugState.results"
+                :key="item.cleanedDrugName"
+                @click="selectDrug(item)"
               >
-                <view class="col-index">
-                  <text>{{ index + 1 }}</text>
-                </view>
-                <view class="col-company">
-                  <text>{{ item.parentCompanyShortName || item.companyStandardName }}</text>
-                </view>
+                <text class="dropdown-name">{{ item.cleanedDrugName }}</text>
               </view>
+            </scroll-view>
+            <view class="dropdown-empty" v-if="drugState.results.length === 0">
+              <text>未找到相关药品</text>
             </view>
-          </scroll-view>
-          <view class="company-empty" v-if="companyList.length === 0">
-            <text>未找到相关企业</text>
+          </template>
+        </view>
+      </view>
+
+      <view class="modal-history">
+        <view class="mh-head">
+          <text class="mh-title">搜索历史</text>
+          <text class="mh-clear" v-if="recentList.length > 0" @click="clearRecentList">清空</text>
+        </view>
+        <view class="mh-chips" v-if="recentList.length > 0">
+          <view
+            class="mh-chip"
+            v-for="item in recentList"
+            :key="item.cleanedDrugName"
+            @click="selectRecent(item)"
+          >
+            <text>{{ item.cleanedDrugName }}</text>
           </view>
-        </template>
-      </template>
+        </view>
+        <view class="mh-empty" v-else>
+          <view class="mh-empty-ico"><view class="search-ico"></view></view>
+          <text>暂无搜索记录</text>
+        </view>
+      </view>
     </view>
   </bottom-sheet>
 </template>
@@ -131,8 +82,8 @@
 <script setup lang="ts">
   // #region 导入
   import { shallowReactive, ref, watch } from 'vue'
-  import { queryCleanedDrugName, queryParentCompanyByDrugName } from '@/api'
-  import type { CleanedDrugItem, CompanyShortItem } from '@/types/api'
+  import { queryCleanedDrugName } from '@/api'
+  import type { CleanedDrugItem } from '@/types/api'
   // #endregion
 
   // #region 类型定义
@@ -217,16 +168,11 @@
   }
   // #endregion
 
-  // #region 相关企业列表
-  const showCompanyList = ref(false)
-  const companyLoading = ref(false)
-  const companyList = ref<CompanyShortItem[]>([])
-  // 当前搜索的药品名，用于企业查询与跳转
-  const currentDrugName = ref('')
-
-  // 第一步：按药品名查询相关企业
-  async function handleSearch() {
-    const drugName = (drugState.selected?.cleanedDrugName || drugState.keyword).trim()
+  // #region 进入相关企业页
+  // 第一步：按药品名跳转到独立的「相关企业」页面
+  function handleSearch() {
+    const drug = drugState.selected
+    const drugName = (drug?.cleanedDrugName || drugState.keyword).trim()
     if (!drugName) {
       uni.showToast({
         title: '请选择药品',
@@ -237,47 +183,16 @@
 
     if (drugState.timer) clearTimeout(drugState.timer)
     drugState.showDropdown = false
-    currentDrugName.value = drugName
-    saveRecent(drugState.selected || { cleanedDrugName: drugName })
+    saveRecent(drug || { cleanedDrugName: drugName })
 
-    // 第二步：展示相关企业列表
-    showCompanyList.value = true
-    companyList.value = []
-    companyLoading.value = true
-
-    try {
-      const res = await queryParentCompanyByDrugName({
-        pageNum: 1,
-        pageSize: 50,
-        searchKey: drugName
-      })
-      companyList.value = res.data?.list || []
-    } catch {
-      companyList.value = []
-    } finally {
-      companyLoading.value = false
-    }
-  }
-
-  function backToDrug() {
-    showCompanyList.value = false
-    companyList.value = []
-    companyLoading.value = false
-  }
-
-  // 第三步：选择企业后进入药品统计主页
-  function selectCompany(company: CompanyShortItem) {
-    const drug = drugState.selected
     const query = [
-      `drugStandardName=${encodeURIComponent(currentDrugName.value)}`,
-      `parentCompanyId=${company.parentCompanyId ?? ''}`,
-      `standardCompanyName=${encodeURIComponent(company.parentCompanyShortName || '')}`,
-      `cleanedDrugType=${encodeURIComponent(drug?.drugType || '')}`,
+      `drugName=${encodeURIComponent(drugName)}`,
+      `drugType=${encodeURIComponent(drug?.drugType || '')}`,
       `cleanedClassification=${encodeURIComponent((drug?.registrationCategoryList || []).join('、'))}`
     ]
 
     uni.navigateTo({
-      url: `/pages/drug-stat/index?${query.join('&')}`
+      url: `/pages/drug-company-list/index?${query.join('&')}`
     })
 
     close()
@@ -350,15 +265,13 @@
         loadRecentList()
         return
       }
-      // 关闭时重置药品与企业列表状态
+      // 关闭时重置药品搜索状态
       if (drugState.timer) clearTimeout(drugState.timer)
       drugState.timer = null
       drugState.keyword = ''
       drugState.results = []
       drugState.showDropdown = false
       drugState.selected = null
-      backToDrug()
-      currentDrugName.value = ''
     }
   )
   // #endregion
@@ -424,20 +337,6 @@
     }
   }
 
-  .modal-back {
-    width: 60rpx;
-    height: 60rpx;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    text {
-      font-size: 48rpx;
-      line-height: 1;
-      color: #6b7280;
-    }
-  }
   /* #endregion */
 
   /* #region 搜索框 */
@@ -636,73 +535,6 @@
         color: #9ca3af;
       }
     }
-  }
-  /* #endregion */
-
-  /* #region 相关企业列表 */
-  .company-list {
-    max-height: 640rpx;
-
-    .company-table {
-      border: 1rpx solid #4096ee;
-      border-bottom: none;
-    }
-
-    .table-row {
-      display: flex;
-      align-items: center;
-      height: 88rpx;
-      border-bottom: 1rpx solid #4096ee;
-
-      &.table-head {
-        background: #4096ee;
-
-        text {
-          color: #ffffff;
-          font-weight: bold;
-        }
-      }
-
-      .col-index {
-        width: 140rpx;
-        height: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border-right: 1rpx solid #4096ee;
-
-        text {
-          font-size: 26rpx;
-          color: #333333;
-        }
-      }
-
-      .col-company {
-        flex: 1;
-        height: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 0 16rpx;
-        overflow: hidden;
-
-        text {
-          font-size: 26rpx;
-          color: #333333;
-          overflow: hidden;
-          white-space: nowrap;
-          text-overflow: ellipsis;
-        }
-      }
-    }
-  }
-
-  .company-loading,
-  .company-empty {
-    padding: 60rpx 0;
-    text-align: center;
-    font-size: 26rpx;
-    color: #999999;
   }
   /* #endregion */
 </style>
