@@ -99,8 +99,6 @@
           </view>
           <text>暂无搜索记录</text>
         </view>
-
-        <view class="modal-history-divider"></view>
       </view>
       <!-- #endregion -->
     </view>
@@ -582,12 +580,6 @@
         font-size: 24rpx;
         color: #9ca3af;
       }
-    }
-
-    .modal-history-divider {
-      height: 2rpx;
-      margin-top: 20rpx;
-      background: #f0f1f3;
     }
   }
   /* #endregion */
