@@ -16,6 +16,7 @@
             <view class="search-ico"></view>
             <input
               type="text"
+              :adjust-position="false"
               v-model="drugState.keyword"
               placeholder="输入药品名称，如：信迪利单抗"
               placeholder-style="color: #9CA3AF"

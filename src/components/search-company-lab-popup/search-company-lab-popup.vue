@@ -36,6 +36,7 @@
           <view class="search-ico"></view>
           <input
             type="text"
+            :adjust-position="false"
             v-model="searchKeyword"
             :placeholder="
               currentTab === 'sponsor' ? '输入药企名称，如：百济神州' : '输入实验室名称'

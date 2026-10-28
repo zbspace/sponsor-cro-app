@@ -20,6 +20,7 @@
           <input
             class="mform-input"
             type="text"
+            :adjust-position="false"
             v-model="formData.name"
             placeholder="请输入姓名"
             placeholder-style="color: #9CA3AF"
@@ -35,6 +36,7 @@
             class="mform-input"
             type="number"
             maxlength="11"
+            :adjust-position="false"
             v-model="formData.phone"
             placeholder="请输入手机号"
             placeholder-style="color: #9CA3AF"
@@ -49,6 +51,7 @@
           <input
             class="mform-input"
             type="text"
+            :adjust-position="false"
             v-model="formData.company"
             placeholder="请输入公司名称"
             placeholder-style="color: #9CA3AF"
@@ -63,6 +66,7 @@
           <input
             class="mform-input"
             type="text"
+            :adjust-position="false"
             v-model="formData.position"
             placeholder="请输入职位"
             placeholder-style="color: #9CA3AF"

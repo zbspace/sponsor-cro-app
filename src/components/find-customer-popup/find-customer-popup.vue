@@ -38,6 +38,7 @@
           <input
             v-if="activeTab === 'indication'"
             type="text"
+            :adjust-position="false"
             v-model="indicationKeyword"
             placeholder="输入适应症名称，如：非小细胞肺癌"
             placeholder-style="color: #9CA3AF"
@@ -46,6 +47,7 @@
           <input
             v-else
             type="text"
+            :adjust-position="false"
             v-model="drugState.keyword"
             placeholder="输入通用名或研发代号"
             placeholder-style="color: #9CA3AF"

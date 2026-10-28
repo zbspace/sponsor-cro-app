@@ -18,6 +18,7 @@
           <view class="search-ico"></view>
           <input
             type="text"
+            :adjust-position="false"
             v-model="keyword"
             placeholder="输入药企名称，如：百济神州"
             placeholder-style="color: #9CA3AF"
