@@ -340,7 +340,7 @@
 <style lang="scss" scoped>
   .find-popup-content {
     width: 100%;
-    min-height: 35vh;
+    min-height: 65vh;
     max-height: 88vh;
     background: #ffffff;
     border-radius: 40rpx 40rpx 0 0;
