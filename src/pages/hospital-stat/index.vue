@@ -315,7 +315,7 @@
   const companyName = ref('')
   const companyParentId = ref(0)
   const hospitalId = ref(0)
-  const researcherId = ref(0)
+  const researcherId = ref<number>()
   const researcherName = ref('')
 
   function goBack() {
@@ -361,6 +361,9 @@
 
   // 切换到统计 tab 时 canvas 会被重新创建，需要重新绘制
   watch(activeTab, (val) => {
+    researcherId.value = undefined
+    selectedDrugName.value = ''
+    researcherName.value = ''
     if (val === 'stat') {
       // 延迟绘制，给 v-if 重建留出时间
       setTimeout(() => drawCharts(), 100)
