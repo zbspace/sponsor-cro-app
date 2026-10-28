@@ -194,7 +194,7 @@
 <style lang="scss" scoped>
   .trial-popup-content {
     width: 100%;
-    min-height: 65vh;
+    min-height: 80vh;
     max-height: 80vh;
     background: #ffffff;
     border-radius: 40rpx 40rpx 0 0;

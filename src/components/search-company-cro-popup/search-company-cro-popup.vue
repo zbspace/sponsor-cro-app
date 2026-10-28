@@ -308,7 +308,7 @@
 <style lang="scss" scoped>
   .search-popup-content {
     width: 100%;
-    min-height: 65vh;
+    min-height: 80vh;
     max-height: 86vh;
     background: #ffffff;
     border-radius: 40rpx 40rpx 0 0;
@@ -316,6 +316,8 @@
     position: relative;
     box-sizing: border-box;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
   }
 
   /* #region 头部 */
@@ -498,6 +500,9 @@
   /* #region 搜索历史 */
   .modal-history {
     padding-top: 4rpx;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 
     .mh-head {
       display: flex;
@@ -546,9 +551,11 @@
     }
 
     .mh-empty {
+      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       gap: 20rpx;
       padding: 44rpx 0 20rpx;
 

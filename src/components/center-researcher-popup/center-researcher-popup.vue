@@ -19,6 +19,7 @@
         </view>
 
         <scroll-view
+          v-if="list.length > 0 || loading"
           scroll-y
           class="table-body-scroll"
           @scrolltolower="loadMore"
@@ -38,10 +39,10 @@
           <view class="loading-status" v-if="list.length > 0">
             <text>{{ hasMore ? '正在加载...' : '没有更多了' }}</text>
           </view>
-          <view class="empty-status" v-if="list.length === 0 && !loading">
-            <text>暂无中心及研究者信息</text>
-          </view>
         </scroll-view>
+        <view class="empty-status" v-else>
+          <text>暂无中心及研究者信息</text>
+        </view>
       </view>
 
       <!-- 虽然用户要求滑动加载，但为了还原设计稿的视觉效果，保留按钮区域，但功能改为翻页或隐藏 -->
@@ -132,7 +133,7 @@
 <style lang="scss" scoped>
   .popup-content {
     width: 100%;
-    min-height: 65vh;
+    min-height: 80vh;
     max-height: 84vh;
     padding: 56rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
     box-sizing: border-box;
@@ -253,10 +254,18 @@
     }
   }
 
-  .loading-status,
-  .empty-status {
+  .loading-status {
     padding: 30rpx 0;
     text-align: center;
+    font-size: 24rpx;
+    color: #999;
+  }
+
+  .empty-status {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 24rpx;
     color: #999;
   }
