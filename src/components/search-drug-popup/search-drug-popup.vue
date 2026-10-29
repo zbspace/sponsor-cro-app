@@ -22,6 +22,7 @@
             @input="onSearchInput"
             @keyboardheightchange="onKeyboardHeightChange"
           />
+          <text class="clear-icon" v-if="drugState.keyword" @click="clearKeyword">×</text>
           <view class="modal-confirm" @click="handleSearch"><text>搜索</text></view>
         </view>
 
@@ -138,6 +139,16 @@
     drugState.timer = setTimeout(() => {
       fetchDrugNames()
     }, 300)
+  }
+
+  // 清空搜索关键字并复位联想下拉状态
+  function clearKeyword() {
+    if (drugState.timer) clearTimeout(drugState.timer)
+    drugState.timer = null
+    drugState.keyword = ''
+    drugState.results = []
+    drugState.showDropdown = false
+    drugState.selected = null
   }
 
   async function fetchDrugNames() {
@@ -358,6 +369,14 @@
         min-width: 0;
         font-size: 28rpx;
         color: #1f2329;
+      }
+
+      .clear-icon {
+        flex-shrink: 0;
+        padding-left: 10rpx;
+        font-size: 32rpx;
+        line-height: 1;
+        color: #cccccc;
       }
     }
 

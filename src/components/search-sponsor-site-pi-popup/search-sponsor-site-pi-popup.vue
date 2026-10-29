@@ -25,6 +25,7 @@
             @input="onSearchInput"
             @keyboardheightchange="onKeyboardHeightChange"
           />
+          <text class="clear-icon" v-if="keyword" @click="clearKeyword">×</text>
           <view class="modal-confirm" @click="handleSearch">
             <text>查询</text>
           </view>
@@ -132,6 +133,16 @@
     timer = setTimeout(() => {
       fetchCompanies()
     }, 300)
+  }
+
+  // 清空搜索关键字并复位联想下拉状态
+  function clearKeyword() {
+    if (timer) clearTimeout(timer)
+    timer = null
+    keyword.value = ''
+    results.value = []
+    showDropdown.value = false
+    selected.value = null
   }
 
   async function fetchCompanies() {
@@ -348,6 +359,14 @@
         min-width: 0;
         font-size: 28rpx;
         color: #1f2329;
+      }
+
+      .clear-icon {
+        flex-shrink: 0;
+        padding-left: 10rpx;
+        font-size: 32rpx;
+        line-height: 1;
+        color: #cccccc;
       }
     }
 

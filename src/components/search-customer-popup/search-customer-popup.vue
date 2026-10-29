@@ -25,6 +25,7 @@
             @input="onSearchInput(pharmaState)"
             @keyboardheightchange="onKeyboardHeightChange"
           />
+          <text class="clear-icon" v-if="pharmaState.keyword" @click="clearKeyword">×</text>
           <view class="modal-confirm" @click="handleSearch">
             <text>确定</text>
           </view>
@@ -266,6 +267,17 @@
     }, 300)
   }
 
+  // 清空搜索关键字并复位联想下拉状态
+  function clearKeyword() {
+    const state = pharmaState
+    if (state.timer) clearTimeout(state.timer)
+    state.timer = null
+    state.keyword = ''
+    state.results = []
+    state.showDropdown = false
+    state.selected = null
+  }
+
   async function fetchSearchResults<T extends AnyItem>(state: SearchSectionState<T>) {
     const keyword = state.keyword.trim()
     if (!keyword) return
@@ -423,6 +435,14 @@
         min-width: 0;
         font-size: 28rpx;
         color: #1f2329;
+      }
+
+      .clear-icon {
+        flex-shrink: 0;
+        padding-left: 10rpx;
+        font-size: 32rpx;
+        line-height: 1;
+        color: #cccccc;
       }
     }
 

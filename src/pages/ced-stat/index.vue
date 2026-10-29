@@ -6,7 +6,7 @@
         <view class="arrow"></view>
       </view>
     </view>
-    <text class="title">{{ '合作情况统计' }}</text>
+    <text class="title">{{ companyName || '合作情况统计' }}</text>
     <view class="nav-right"></view>
   </view>
 
@@ -190,12 +190,17 @@
                   v-for="(item, index) in productList"
                   :key="index"
                   hover-class="row-hover"
-                  :class="{ zebra: index % 2 === 1 }"
+                  :class="[index % 2 === 1 ? 'zebra' : '', index < 3 ? 'top' + (index + 1) : '']"
                   @click="onProductClick(item)"
                 >
                   <text class="col-rank">{{ item.rankNo || index + 1 }}</text>
                   <text class="col-name">{{ item.drugStandardName }}</text>
-                  <text class="col-count">{{ item.cdeTrialNum }}</text>
+                  <view class="col-count">
+                    <view class="count-go">
+                      <text>{{ item.cdeTrialNum }}</text>
+                      <view class="go-arrow"></view>
+                    </view>
+                  </view>
                 </view>
                 <view class="empty-tip" v-if="!productList.length && !productLoading">
                   暂无数据
@@ -928,6 +933,13 @@
 </script>
 
 <style lang="scss" scoped>
+  // 标题展示企业名称，过长时单行省略
+  .header .title {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
   .container-scroll-view {
     display: flex;
     flex-direction: column;
@@ -985,34 +997,34 @@
 
   .section-card {
     background: #ffffff;
-    border-radius: 24rpx;
-    padding: 30rpx;
-    margin-bottom: 30rpx;
-    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.02);
+    border-radius: 28rpx;
+    padding: 28rpx 28rpx 24rpx;
+    margin-bottom: 24rpx;
+    box-shadow:
+      0 2rpx 6rpx rgba(15, 23, 42, 0.06),
+      0 2rpx 4rpx rgba(15, 23, 42, 0.04);
 
     .section-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 30rpx;
+      margin-bottom: 20rpx;
     }
 
     .section-title {
-      font-size: 30rpx;
-      font-weight: bold;
-      color: #333;
-      position: relative;
-      padding-left: 20rpx;
+      display: flex;
+      align-items: center;
+      gap: 14rpx;
+      font-size: 28rpx;
+      font-weight: 600;
+      color: #1f2329;
 
       &::before {
         content: '';
-        position: absolute;
-        left: 0;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 8rpx;
-        height: 24rpx;
-        background: #499ae6;
+        flex-shrink: 0;
+        width: 6rpx;
+        height: 26rpx;
+        background: #3d8bff;
         border-radius: 4rpx;
       }
     }
@@ -1021,7 +1033,7 @@
       display: flex;
       align-items: center;
       font-size: 24rpx;
-      color: #999;
+      color: #9ca3af;
 
       .filter-picker {
         display: flex;
@@ -1037,8 +1049,8 @@
         height: 0;
         border-left: 8rpx solid transparent;
         border-right: 8rpx solid transparent;
-        border-top: 10rpx solid #999;
-        margin-left: 10rpx;
+        border-top: 8rpx solid #a9b4c4;
+        margin-left: 8rpx;
       }
     }
   }
@@ -1145,12 +1157,20 @@
   }
 
   .data-table {
+    border: 2rpx solid #edf0f5;
+    border-radius: 20rpx;
+    overflow: hidden;
+    background: #ffffff;
+
     .table-header {
       display: flex;
-      padding: 20rpx 0;
-      font-size: 26rpx;
-      color: #999;
-      border-bottom: 1rpx solid #f8f8f8;
+      align-items: center;
+      height: 64rpx;
+      background: #f7f8fa;
+      border-bottom: 2rpx solid #f1f4f8;
+      font-size: 22rpx;
+      font-weight: 500;
+      color: #98a2b1;
     }
 
     /* #region 产品榜单滚动区域 */
@@ -1162,30 +1182,81 @@
 
     .table-row {
       display: flex;
-      padding: 24rpx 0;
-      font-size: 28rpx;
-      color: #333;
+      align-items: center;
+      height: 84rpx;
+      font-size: 26rpx;
+      color: #1f2329;
+
+      & + .table-row {
+        border-top: 2rpx solid #f1f4f8;
+      }
 
       &.zebra {
-        background: #fafbfc;
+        background: #fbfcfd;
       }
 
       &.row-hover {
         background: #f0f7ff;
       }
+
+      &.top1 .col-rank {
+        color: #f59e0b;
+      }
+      &.top2 .col-rank {
+        color: #94a3b8;
+      }
+      &.top3 .col-rank {
+        color: #c0834b;
+      }
     }
 
     .col-rank {
       width: 100rpx;
+      flex-shrink: 0;
       text-align: center;
+      font-size: 24rpx;
+      font-weight: 600;
+      color: #98a2b1;
     }
+
     .col-name {
       flex: 1;
-      text-align: center;
+      min-width: 0;
+      padding-right: 12rpx;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
+
     .col-count {
       width: 200rpx;
-      text-align: center;
+      flex-shrink: 0;
+      box-sizing: border-box;
+      padding-right: 16rpx;
+      text-align: right;
+    }
+
+    // 条数：浅蓝胶囊入口样式
+    .count-go {
+      display: inline-flex;
+      align-items: center;
+      gap: 2rpx;
+      height: 48rpx;
+      padding: 0 8rpx 0 16rpx;
+      border-radius: 14rpx;
+      background: #eff4ff;
+      color: #2c6fdb;
+      font-size: 26rpx;
+      font-weight: 600;
+    }
+
+    .go-arrow {
+      width: 12rpx;
+      height: 12rpx;
+      flex-shrink: 0;
+      border-top: 4rpx solid rgba(44, 111, 219, 0.7);
+      border-right: 4rpx solid rgba(44, 111, 219, 0.7);
+      transform: rotate(45deg);
     }
 
     .empty-tip {

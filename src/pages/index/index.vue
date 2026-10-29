@@ -68,6 +68,7 @@
             @input="onSearchInput"
             @focus="typeMenuOpen = false"
           />
+          <text class="clear-icon" v-if="searchKeyword" @click="clearSearchKeyword">×</text>
           <view class="search-go" @click="handleHomeSearch">
             <text>搜索</text>
           </view>
@@ -192,7 +193,7 @@
   <!-- 找客户弹窗 -->
   <find-customer-popup v-model:visible="showFindPopup" />
 
-  <!-- 查客户弹窗 -->
+  <!-- 查药企弹窗 -->
   <search-customer-popup v-model:visible="showCustomerCustomerPopup" />
 
   <!-- 查产品弹窗 -->
@@ -265,13 +266,13 @@
   type HomeSearchType = 'co' | 'cro' | 'lab'
 
   const HOME_SEARCH_META: Record<HomeSearchType, { label: string; placeholder: string }> = {
-    co: { label: '查客户', placeholder: '请输入企业简称' },
+    co: { label: '查药企', placeholder: '请输入企业简称' },
     cro: { label: '查CRO', placeholder: '请输入CRO名称' },
     lab: { label: '查LAB', placeholder: '请输入实验室名称' }
   }
 
   const SEARCH_TYPE_OPTIONS: { value: HomeSearchType; label: string }[] = [
-    { value: 'co', label: '查客户' },
+    { value: 'co', label: '查药企' },
     { value: 'cro', label: '查CRO' },
     { value: 'lab', label: '查LAB' }
   ]
@@ -324,6 +325,16 @@
     searchTimer = setTimeout(() => {
       fetchSearchResults()
     }, 300)
+  }
+
+  // 清空搜索关键字并复位联想相关状态
+  function clearSearchKeyword() {
+    if (searchTimer) clearTimeout(searchTimer)
+    searchTimer = null
+    searchKeyword.value = ''
+    searchResults.value = []
+    showDropdown.value = false
+    selectedCompany.value = null
   }
 
   async function fetchSearchResults() {
@@ -399,7 +410,7 @@
   // #region 功能网格与导航逻辑
   const gridItems = [
     {
-      title: '查客户',
+      title: '查药企',
       desc: '立即前往',
       icon: '/static/home/1.png',
       path: 'customer/company-detail'
@@ -450,7 +461,7 @@
       showCompanyLabPopup.value = true
     } else if (item.title === '查药企&医院') {
       showSponsorSitePiPopup.value = true
-    } else if (item.title === '查客户') {
+    } else if (item.title === '查药企') {
       showCustomerCustomerPopup.value = true
     } else if (item.title === '查产品') {
       showDrugPopup.value = true
@@ -689,6 +700,14 @@
       padding: 0 20rpx;
       font-size: 28rpx;
       color: #293959;
+    }
+
+    .clear-icon {
+      flex-shrink: 0;
+      font-size: 42rpx;
+      line-height: 1;
+      color: #cccccc;
+      margin-right: 20rpx;
     }
 
     .search-go {

@@ -170,10 +170,13 @@
     companyParentId?: number
     /** 药品名称（榜单点击带入，支持 v-model:product-name） */
     productName?: string
+    /** 注册分类（榜单点击带入，支持 v-model:classification） */
+    classification?: string
   }>()
 
   const emit = defineEmits<{
     (e: 'update:productName', value: string): void
+    (e: 'update:classification', value: string): void
   }>()
   // #endregion
 
@@ -198,7 +201,12 @@
 
   const currentYearFilter = ref('')
   const drugTypeFilter = ref('')
-  const cleanedClassification = ref('')
+
+  /** 注册分类与 classification 属性双向绑定，保证榜单带入与下拉选择共用同一数据源 */
+  const cleanedClassification = computed({
+    get: () => props.classification || '',
+    set: (value: string) => emit('update:classification', value)
+  })
 
   // #region 产品筛选（queryCleanedDrug 模糊搜索）
   interface ProductOption {

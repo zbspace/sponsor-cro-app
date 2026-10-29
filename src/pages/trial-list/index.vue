@@ -25,6 +25,7 @@
           @confirm="onSearch"
           @input="onInput"
         />
+        <text class="clear-icon" v-if="searchKeyword" @click="clearSearchKeyword">×</text>
         <text class="search-btn" @click="onSearch">搜索</text>
       </view>
 
@@ -210,6 +211,16 @@
     }, 500)
   }
 
+  /** 清空搜索关键字并刷新列表 */
+  function clearSearchKeyword() {
+    searchKeyword.value = ''
+    if (timer) {
+      clearTimeout(timer)
+      timer = null
+    }
+    fetchList(true)
+  }
+
   function onFilterChange() {
     fetchList(true)
   }
@@ -300,6 +311,14 @@
       flex: 1;
       font-size: 28rpx;
       color: #333;
+    }
+
+    .clear-icon {
+      flex-shrink: 0;
+      padding-left: 10rpx;
+      font-size: 32rpx;
+      line-height: 1;
+      color: #cccccc;
     }
 
     .search-btn {

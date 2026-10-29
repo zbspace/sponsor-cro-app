@@ -24,6 +24,7 @@
           placeholder-style="color: #CCCCCC"
           @input="onSearchInput"
         />
+        <text class="clear-icon" v-if="searchKeyword" @click="clearSearchKeyword">×</text>
         <view class="arrow-down-icon"></view>
       </view>
 
@@ -286,6 +287,20 @@
     }, 300)
   }
 
+  /** 清空搜索关键字并复位联想状态，之前有已选公司时恢复完整匹配列表 */
+  function clearSearchKeyword() {
+    searchKeyword.value = ''
+    const hadSelected = selectedCompany.value !== null
+    selectedCompany.value = null
+    searchResults.value = []
+    showDropdown.value = false
+    if (searchTimer) {
+      clearTimeout(searchTimer)
+      searchTimer = null
+    }
+    if (hadSelected) fetchMatchingList(true)
+  }
+
   async function fetchSearchResults() {
     const keyword = searchKeyword.value.trim()
     if (!keyword) return
@@ -461,6 +476,14 @@
         flex: 1;
         font-size: 28rpx;
         color: #333333;
+      }
+
+      .clear-icon {
+        flex-shrink: 0;
+        padding-left: 10rpx;
+        font-size: 32rpx;
+        line-height: 1;
+        color: #cccccc;
       }
     }
 

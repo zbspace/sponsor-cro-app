@@ -23,6 +23,7 @@
             placeholder-style="color: #B2B2B2"
             @input="onSearchInput"
           />
+          <text class="clear-icon" v-if="searchKeyword" @click="clearSearchKeyword">×</text>
         </view>
 
         <!-- 搜索下拉联想 -->
@@ -303,6 +304,18 @@
     }, 300)
   }
 
+  // 清空搜索关键字并复位联想相关状态
+  function clearSearchKeyword() {
+    if (searchTimer) clearTimeout(searchTimer)
+    searchTimer = null
+    searchKeyword.value = ''
+    searchResults.value = []
+    showDropdown.value = false
+    selectedCompany.value = null
+    // 清空企业搜索后恢复全量榜单
+    fetchRankData(true)
+  }
+
   async function fetchSearchResults() {
     const keyword = searchKeyword.value.trim()
     if (!keyword) return
@@ -539,6 +552,14 @@
 
       .search-icon {
         margin-right: 16rpx;
+      }
+
+      .clear-icon {
+        flex-shrink: 0;
+        padding-left: 10rpx;
+        font-size: 32rpx;
+        line-height: 1;
+        color: #cccccc;
       }
 
       input {

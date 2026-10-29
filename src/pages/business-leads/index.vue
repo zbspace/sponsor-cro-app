@@ -34,6 +34,7 @@
         placeholder-style="color: #B2B2B2"
         @input="onSearchInput"
       />
+      <text class="clear-icon" v-if="searchKeyword" @click="clearSearchKeyword">×</text>
       <view class="search-go" @click="handleSearchClick">
         <text>搜索</text>
       </view>
@@ -407,6 +408,18 @@
     }, 300)
   }
 
+  /** 清空搜索关键字并复位联想状态 */
+  function clearSearchKeyword() {
+    searchKeyword.value = ''
+    selectedCompany.value = null
+    searchResults.value = []
+    showDropdown.value = false
+    if (searchTimer) {
+      clearTimeout(searchTimer)
+      searchTimer = null
+    }
+  }
+
   async function fetchSearchResults() {
     const keyword = searchKeyword.value.trim()
     if (!keyword) return
@@ -548,6 +561,14 @@
         flex: 1;
         font-size: 28rpx;
         color: #333333;
+      }
+
+      .clear-icon {
+        flex-shrink: 0;
+        padding-left: 10rpx;
+        font-size: 32rpx;
+        line-height: 1;
+        color: #cccccc;
       }
 
       .search-go {

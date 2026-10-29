@@ -58,7 +58,7 @@
       <view class="container">
         <!-- 研发管线 -->
         <view class="section-card">
-          <view class="section-title">研发管线</view>
+          <view class="section-title">研发动态</view>
           <view class="grid-container">
             <view class="grid-item" @click="goTo('ind-stat')">
               <view class="item-icon">
@@ -521,7 +521,8 @@
     height: calc(100vh);
     display: flex;
     flex-direction: column;
-    .header,.top-filter-bar {
+    .header,
+    .top-filter-bar {
       flex: 0;
     }
     .container-scroll-view {

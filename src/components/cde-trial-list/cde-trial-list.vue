@@ -288,9 +288,14 @@
   const loading = ref(false)
   const isRefreshing = ref(false)
   const hasMore = computed(() => list.value.length < total.value)
+  // 加载中又收到刷新请求时先标记，待当前请求结束后补发一次，避免外部参数变化的请求被丢弃
+  let pendingRefresh = false
 
   async function fetchList(refresh = false) {
-    if (loading.value) return
+    if (loading.value) {
+      if (refresh) pendingRefresh = true
+      return
+    }
     if (refresh) {
       pageNum.value = 1
     }
@@ -321,6 +326,11 @@
     } finally {
       loading.value = false
       isRefreshing.value = false
+      // 补发加载期间被合并掉的刷新请求
+      if (pendingRefresh) {
+        pendingRefresh = false
+        fetchList(true)
+      }
     }
   }
 
@@ -348,9 +358,17 @@
   watch(statusFilter, () => {
     fetchList(true)
   })
-  watch(productFilter, () => {
-    fetchList(true)
-  })
+  // #endregion
+
+  // #region 外部筛选条件同步
+  /** 外部（父页面/榜单）传入的年份、产品名同步到筛选条件 */
+  function syncExternalFilters() {
+    const year = props.year || ''
+    if (currentTimeFilter.value !== year) {
+      currentTimeFilter.value = year
+    }
+    productKeyword.value = props.drugName || ''
+  }
   // #endregion
 
   // #region 辅助函数
@@ -361,7 +379,8 @@
   // #endregion
 
   onMounted(() => {
-    // 外部传入年份时，同步到年份下拉框（由年份 watch 触发首次加载，避免重复请求）
+    // 外部传入年份时同步到年份下拉框（由 currentTimeFilter 的 watch 触发首次加载）
+    // 未传入年份时立即发起首次请求，此时 props 已就绪，请求会携带产品名等外部参数
     if (props.year) {
       currentTimeFilter.value = props.year
     } else {
@@ -370,27 +389,12 @@
     fetchProductOptions()
   })
 
-  // 母公司变化时重新加载
+  // 外部参数（母公司/产品名/年份）变化时同步筛选条件并重新加载
   watch(
-    () => props.companyParentId,
+    () => [props.companyParentId, props.drugName, props.year],
     () => {
+      syncExternalFilters()
       fetchList(true)
-    }
-  )
-
-  // 外部年份变化时同步到年份下拉框（同步后由 currentTimeFilter 的 watch 触发重新加载）
-  watch(
-    () => props.year,
-    (val) => {
-      currentTimeFilter.value = val || ''
-    }
-  )
-
-  // 榜单带入的药品名同步到产品输入框
-  watch(
-    () => props.drugName,
-    (val) => {
-      productKeyword.value = val || ''
     }
   )
 </script>

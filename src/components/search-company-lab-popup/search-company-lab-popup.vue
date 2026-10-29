@@ -45,6 +45,7 @@
             @input="onSearchInput"
             @keyboardheightchange="onKeyboardHeightChange"
           />
+          <text class="clear-icon" v-if="searchKeyword" @click="clearSearchKeyword">×</text>
           <view class="modal-confirm" @click="handleSearch">
             <text>确定</text>
           </view>
@@ -243,6 +244,16 @@
     }, 300)
   }
 
+  // 清空搜索框：同步复位关键字、联想下拉、已选公司并清理防抖
+  function clearSearchKeyword() {
+    if (searchTimer) clearTimeout(searchTimer)
+    searchTimer = null
+    searchKeyword.value = ''
+    searchResults.value = []
+    showDropdown.value = false
+    selectedCompany.value = null
+  }
+
   async function fetchSearchResults() {
     const keyword = searchKeyword.value.trim()
     if (!keyword) return
@@ -412,6 +423,14 @@
         min-width: 0;
         font-size: 28rpx;
         color: #1f2329;
+      }
+
+      .clear-icon {
+        flex-shrink: 0;
+        padding-left: 10rpx;
+        font-size: 32rpx;
+        line-height: 1;
+        color: #cccccc;
       }
     }
 

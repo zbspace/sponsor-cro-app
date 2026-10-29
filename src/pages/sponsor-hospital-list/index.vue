@@ -66,6 +66,7 @@
           placeholder="搜索医院名称"
           placeholder-style="color: #9ca3af"
         />
+        <text class="clear-icon" v-if="hospitalKeyword" @click="clearHospitalKeyword">×</text>
       </view>
     </view>
 
@@ -195,6 +196,11 @@
   const noteCount = computed(() =>
     hospitalKeyword.value.trim() ? displayList.value.length : total.value
   )
+
+  /** 清空医院名称搜索关键字（列表由前端 computed 过滤，无需刷新） */
+  function clearHospitalKeyword() {
+    hospitalKeyword.value = ''
+  }
 
   async function fetchList(refresh = false) {
     if (loading.value) return
@@ -434,6 +440,14 @@
       min-width: 0;
       font-size: 26rpx;
       color: #1f2329;
+    }
+
+    .clear-icon {
+      flex-shrink: 0;
+      padding-left: 10rpx;
+      font-size: 32rpx;
+      line-height: 1;
+      color: #cccccc;
     }
   }
 

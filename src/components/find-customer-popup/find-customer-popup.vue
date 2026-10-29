@@ -35,25 +35,31 @@
       <view class="search-wrap">
         <view class="modal-search">
           <view class="search-ico"></view>
-          <input
-            v-if="activeTab === 'indication'"
-            type="text"
-            :adjust-position="false"
-            v-model="indicationKeyword"
-            placeholder="输入适应症名称，如：非小细胞肺癌"
-            placeholder-style="color: #9CA3AF"
-            @keyboardheightchange="onKeyboardHeightChange"
-          />
-          <input
-            v-else
-            type="text"
-            :adjust-position="false"
-            v-model="drugState.keyword"
-            placeholder="输入通用名或研发代号"
-            placeholder-style="color: #9CA3AF"
-            @input="onDrugInput"
-            @keyboardheightchange="onKeyboardHeightChange"
-          />
+          <template v-if="activeTab === 'indication'">
+            <input
+              type="text"
+              :adjust-position="false"
+              v-model="indicationKeyword"
+              placeholder="输入适应症名称，如：非小细胞肺癌"
+              placeholder-style="color: #9CA3AF"
+              @keyboardheightchange="onKeyboardHeightChange"
+            />
+            <text class="clear-icon" v-if="indicationKeyword" @click="clearIndicationKeyword">
+              ×
+            </text>
+          </template>
+          <template v-else>
+            <input
+              type="text"
+              :adjust-position="false"
+              v-model="drugState.keyword"
+              placeholder="输入通用名或研发代号"
+              placeholder-style="color: #9CA3AF"
+              @input="onDrugInput"
+              @keyboardheightchange="onKeyboardHeightChange"
+            />
+            <text class="clear-icon" v-if="drugState.keyword" @click="clearDrugKeyword">×</text>
+          </template>
           <view class="modal-confirm" @click="handleSearch">
             <text>查询</text>
           </view>
@@ -183,6 +189,21 @@
     drugState.timer = setTimeout(() => {
       fetchDrugNames()
     }, 300)
+  }
+
+  // 清空适应症搜索框：适应症仅有开放输入，复位关键字即可
+  function clearIndicationKeyword() {
+    indicationKeyword.value = ''
+  }
+
+  // 清空药品搜索框：复位关键字、联想下拉、已选药品并清理防抖
+  function clearDrugKeyword() {
+    if (drugState.timer) clearTimeout(drugState.timer)
+    drugState.timer = null
+    drugState.keyword = ''
+    drugState.results = []
+    drugState.showDropdown = false
+    drugState.selected = null
   }
 
   async function fetchDrugNames() {
@@ -443,6 +464,14 @@
         min-width: 0;
         font-size: 28rpx;
         color: #1f2329;
+      }
+
+      .clear-icon {
+        flex-shrink: 0;
+        padding-left: 10rpx;
+        font-size: 32rpx;
+        line-height: 1;
+        color: #cccccc;
       }
     }
 
