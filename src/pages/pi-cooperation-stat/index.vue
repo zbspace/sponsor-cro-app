@@ -192,15 +192,18 @@
   })
 
   // #region 辅助函数
-  /** 点击研究者行，跳转到合作情况统计页的「试验列表」tab */
+  /** 点击研究者行，跳转到合作情况统计页的「试验列表」tab（带上当前筛选条件） */
   function onResearcherClick(item: ResearcherTrialStatisticItem) {
-    uni.navigateTo({
-      url: `/pages/hospital-stat/index?companyParentId=${
-        companyParentId.value || ''
-      }&hosStandardId=${item.hosStandardId}&researcherName=${encodeURIComponent(
-        item.researcherName || ''
-      )}&tab=list`
-    })
+    const query = [
+      `companyParentId=${companyParentId.value || ''}`,
+      `hosStandardId=${item.hosStandardId}`,
+      `researcherName=${encodeURIComponent(item.researcherName || '')}`,
+      `year=${encodeURIComponent(currentTimeFilter.value || '')}`,
+      `trialStage=${encodeURIComponent(stageFilter.value || '')}`,
+      `trialStatus=${encodeURIComponent(statusFilter.value || '')}`,
+      'tab=list'
+    ].join('&')
+    uni.navigateTo({ url: `/pages/hospital-stat/index?${query}` })
   }
 
   function goBack() {

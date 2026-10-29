@@ -270,8 +270,11 @@
           :company-parent-id="companyParentId"
           :hospital-id="hospitalId"
           :researcher-id="researcherId"
+          :researcher-name="routeListResearcherName"
           :drug-name="selectedDrugName"
-          :year="selectedListYear"
+          :year="selectedListYear || routeListYear"
+          :trial-stage="routeListStage"
+          :trial-status="routeListStatus"
         />
       </view>
     </view>
@@ -341,6 +344,18 @@
     }
     if (options?.researcherName) {
       researcherName.value = decodeURIComponent(options.researcherName)
+      // 同步作为试验列表的研究者筛选条件
+      routeListResearcherName.value = researcherName.value
+    }
+    // 试验列表筛选参数（来源：研究者合作记录页跳转）
+    if (options?.year) {
+      routeListYear.value = decodeURIComponent(options.year)
+    }
+    if (options?.trialStage) {
+      routeListStage.value = decodeURIComponent(options.trialStage)
+    }
+    if (options?.trialStatus) {
+      routeListStatus.value = decodeURIComponent(options.trialStatus)
     }
     // 支持从其它页面直接跳转到「试验列表」tab
     if (options?.tab === 'list') {
@@ -622,6 +637,14 @@
   const selectedDrugName = ref('')
   // 点击产品/研究者行进入试验列表时携带的年份筛选
   const selectedListYear = ref('')
+
+  // #region 路由跳转带入的试验列表筛选条件
+  // 来源：研究者/医院合作记录页点击行跳转到「试验列表」tab
+  const routeListResearcherName = ref('')
+  const routeListYear = ref('')
+  const routeListStage = ref('')
+  const routeListStatus = ref('')
+  // #endregion
   // #endregion
 
   // #region 图表绘制逻辑

@@ -123,7 +123,10 @@
     companyParentId?: number
     hospitalId?: number
     researcherId?: number
+    researcherName?: string
     year?: string
+    trialStage?: string
+    trialStatus?: string
   }>()
 
   // #region 弹窗状态
@@ -182,7 +185,8 @@
       companyParentId: props.companyParentId || undefined,
       hosStandardId: props.hospitalId || undefined,
       researcherId: props.researcherId || undefined,
-      year: currentTimeFilter.value || props.year || undefined,
+      researcherName: props.researcherName || undefined,
+      year: currentTimeFilter.value || undefined,
       trialStage: stageFilter.value || undefined,
       trialStatus: statusFilter.value || undefined,
       pageNum: pageNum.value,
@@ -240,22 +244,40 @@
   }
   // #endregion
 
-  onMounted(() => {
-    // 外部传入年份时，同步到年份下拉框
+  // #region 外部筛选条件同步
+  /** 外部（父组件/路由）传入的筛选条件同步到下拉框 */
+  function syncExternalFilters() {
     if (props.year) {
       currentTimeFilter.value = props.year
     }
+    if (props.trialStage) {
+      stageFilter.value = props.trialStage
+    }
+    if (props.trialStatus) {
+      statusFilter.value = props.trialStatus
+    }
+  }
+  // #endregion
+
+  onMounted(() => {
+    // 外部传入筛选条件时，同步到下拉框
+    syncExternalFilters()
     fetchList(true)
   })
 
   // 监听 props 变化重新加载
   watch(
-    () => [props.companyParentId, props.hospitalId, props.researcherId, props.year],
+    () => [
+      props.companyParentId,
+      props.hospitalId,
+      props.researcherId,
+      props.researcherName,
+      props.year,
+      props.trialStage,
+      props.trialStatus
+    ],
     () => {
-      // 外部年份变化时同步到年份下拉框
-      if (props.year) {
-        currentTimeFilter.value = props.year
-      }
+      syncExternalFilters()
       fetchList(true)
     }
   )
