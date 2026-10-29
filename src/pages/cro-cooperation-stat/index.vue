@@ -37,6 +37,36 @@
       lower-threshold="100"
       @scrolltolower="onScrollToLower"
     >
+      <!-- #region 顶部相关公司筛选（多选） -->
+      <view class="top-filter-bar">
+        <view class="filter-input-card">
+          <text class="label">相关公司</text>
+          <view class="divider"></view>
+          <view class="value-wrapper">
+            <uni-data-select
+              v-model="currentCompany"
+              :localdata="companyOptions"
+              multiple
+              :clear="true"
+              placeholder="全部"
+            >
+              <template #selected="{ selectedItems }">
+                <view class="selected-companies">
+                  <text v-if="selectedItems.length === 0" class="placeholder-text">全部</text>
+                  <template v-else>
+                    <text class="selected-text">{{ selectedItems[0].text }}</text>
+                    <text v-if="selectedItems.length > 1" class="selected-more">
+                      +{{ selectedItems.length - 1 }}
+                    </text>
+                  </template>
+                </view>
+              </template>
+            </uni-data-select>
+          </view>
+        </view>
+      </view>
+      <!-- #endregion -->
+
       <view class="container">
         <!-- #region 统计内容 -->
         <view v-if="activeTab === 'stat'" class="stat-content p-16px">
@@ -214,9 +244,14 @@
 
 <script setup lang="ts">
   // #region 导入
-  import { ref, computed, reactive } from 'vue'
+  import { ref, computed, reactive, watch } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
-  import { getOutsourcingRatio, selectClinicalCroRankList, getSponsorProjectList } from '@/api'
+  import {
+    getOutsourcingRatio,
+    selectClinicalCroRankList,
+    getSponsorProjectList,
+    getRelatedCompanyList
+  } from '@/api'
   // #endregion
 
   // #region 基础状态
@@ -248,6 +283,7 @@
     }
     const sysInfo = uni.getSystemInfoSync()
     statusBarHeight.value = sysInfo.statusBarHeight || 0
+    fetchRelatedCompanyList()
     fetchOutsourcingRatio()
     fetchCroRankList()
     fetchProjectList()
@@ -285,6 +321,37 @@
     fetchCroRankList()
   }
 
+  // #region 相关公司筛选（多选）
+  const companyOptions = ref<{ value: string; text: string }[]>([])
+  const currentCompany = ref<string[]>([])
+  // 相关公司筛选值（标准公司ID集合），未选择时返回 undefined 表示全部
+  const sponsorStandardCompanyIdList = computed(() =>
+    currentCompany.value.length > 0 ? currentCompany.value.map(Number) : undefined
+  )
+
+  /** 获取相关公司下拉选项 */
+  async function fetchRelatedCompanyList() {
+    const parentId = sponsorParentCompanyId.value
+    if (!parentId) return
+    try {
+      const res = await getRelatedCompanyList({
+        companyType: 'sponsor',
+        pageNum: 1,
+        pageSize: 50,
+        parentCompanyId: parentId
+      })
+      if (res.data?.list) {
+        companyOptions.value = res.data.list.map((item) => ({
+          value: String(item.standardCompanyId),
+          text: item.companyStandardName
+        }))
+      }
+    } catch {
+      // 静默处理
+    }
+  }
+  // #endregion
+
   // #region 外包CRO统计
   const outsourceRate = reactive({
     cro: 0,
@@ -305,6 +372,7 @@
       const res = await getOutsourcingRatio({
         companyType: 'cro',
         sponsorParentCompanyId: sponsorParentCompanyId.value,
+        sponsorStandardCompanyIdList: sponsorStandardCompanyIdList.value,
         lastYear: productYearFilter.value ? Number(productYearFilter.value) : undefined
       })
       if (res.data) {
@@ -340,6 +408,7 @@
         sponsorParentCompanyId: sponsorParentCompanyId.value,
         pageNum: croPage.value,
         pageSize: croPageSize.value,
+        sponsorStandardCompanyIdList: sponsorStandardCompanyIdList.value,
         lastYear: croYearFilter.value ? Number(croYearFilter.value) : undefined
       })
       if (res.data?.list) {
@@ -400,7 +469,9 @@
         pageNum: projectPage.value,
         pageSize: projectPageSize.value,
         // 有申办方母公司ID时按申办方过滤
-        sponsorParentCompanyId: sponsorParentCompanyId.value || undefined
+        sponsorParentCompanyId: sponsorParentCompanyId.value || undefined,
+        // 相关公司筛选（多选）
+        sponsorStandardCompanyIdList: sponsorStandardCompanyIdList.value
       })
       if (res.data?.list) {
         const newList = res.data.list.map((item) => ({
@@ -441,6 +512,28 @@
     }
   }
   // #endregion
+
+  // #region 筛选联动
+  // 相关公司变化时，重置分页并刷新全部数据
+  watch(currentCompany, () => {
+    croPage.value = 1
+    croNoMore.value = false
+    projectPage.value = 1
+    noMore.value = false
+    fetchOutsourcingRatio()
+    fetchCroRankList()
+    fetchProjectList()
+  })
+  // #endregion
+</script>
+
+<script lang="ts">
+  export default {
+    options: {
+      // 微信小程序默认样式隔离，需设为 shared 才能让 :deep() 样式穿透到 uni-data-select 等子组件内部
+      styleIsolation: 'shared'
+    }
+  }
 </script>
 
 <style lang="scss" scoped>
@@ -449,6 +542,95 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
+  }
+  /* #endregion */
+
+  /* #region 顶部相关公司筛选（多选） */
+  .top-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    padding: 30rpx 30rpx 0;
+    margin-bottom: 30rpx;
+
+    // 下拉面板加宽，避免多选内容换行错位
+    :deep(.uni-select__selector) {
+      width: 700rpx;
+      left: -180rpx;
+    }
+
+    .filter-input-card {
+      flex: 1;
+      background: #ffffff;
+      height: 100rpx;
+      border-radius: 20rpx;
+      display: flex;
+      align-items: center;
+      padding: 0 30rpx;
+      box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.02);
+      border: 2rpx solid #eeeeee;
+
+      .label {
+        font-size: 28rpx;
+        color: #999;
+      }
+
+      .divider {
+        width: 2rpx;
+        height: 30rpx;
+        background-color: #eee;
+        margin: 0 20rpx;
+      }
+
+      .value-wrapper {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        :deep(.uni-select) {
+          border: none;
+          padding: 0;
+
+          .uni-select__input-text {
+            font-weight: 400;
+            font-size: 28rpx;
+            color: #999999;
+            line-height: 52rpx;
+          }
+        }
+
+        :deep(.slot-content) {
+          display: flex;
+          align-items: center;
+        }
+
+        .selected-companies {
+          display: flex;
+          align-items: center;
+          font-size: 28rpx;
+
+          .placeholder-text {
+            color: #c0c4cc;
+          }
+
+          .selected-text {
+            color: #333;
+            max-width: 240rpx;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          .selected-more {
+            margin-left: 8rpx;
+            color: #499ae6;
+            font-size: 24rpx;
+            flex-shrink: 0;
+          }
+        }
+      }
+    }
   }
   /* #endregion */
 
