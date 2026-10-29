@@ -120,22 +120,23 @@
     selectClinicalCroRankList,
     getUserInfo,
     queryStandardCompany,
-    getVipApplication
+    refreshUserDetail
   } from '@/api'
   import type { OpportunityVo, OpportunityParam, StandardCompanyItem } from '@/types/api'
+  import { APPLY_STATUS } from '@/utils/enums'
   // #endregion
 
   // #region 页面基础状态与生命周期
   const menu = ref({ top: 44, height: 32 })
-  const applicationStatus = ref(0)
-  const applicationInfo = ref<{
-    haveFirstApplication: boolean
-    havePendingApplication: boolean
-  }>({
-    haveFirstApplication: true,
-    havePendingApplication: false
-  })
+  // 申请状态：0-未申请，1-申请试用中，2-试用中，3-申请开通中，4-开通中
+  const applyStatus = ref<number>(APPLY_STATUS.未申请)
   const showVipExpiredPopup = ref(false)
+
+  // 是否存在待处理的申请（申请试用中 / 申请开通中）
+  const hasPendingApply = computed(
+    () =>
+      applyStatus.value === APPLY_STATUS.申请试用中 || applyStatus.value === APPLY_STATUS.申请开通中
+  )
 
   const goBack = () => {
     uni.navigateBack()
@@ -159,40 +160,28 @@
   })
 
   async function fetchVipApplicationStatus() {
-    try {
-      const res = await getVipApplication()
-      if (res.data) {
-        applicationStatus.value = res.data.approvalStatus || 0
-        applicationInfo.value.haveFirstApplication = res.data.haveFirstApplication ?? true
-        applicationInfo.value.havePendingApplication = res.data.havePendingApplication ?? false
-      }
-    } catch {
-      // 静默处理
-    }
+    const detail = await refreshUserDetail()
+    applyStatus.value = detail?.applyStatus ?? APPLY_STATUS.未申请
   }
 
   function checkPermission() {
     const userInfo = getUserInfo()
     const vipCode = userInfo?.vipCode ?? 0
 
-    if (
-      applicationInfo.value.haveFirstApplication &&
-      !applicationInfo.value.havePendingApplication &&
-      vipCode === 0
-    ) {
-      showVipExpiredPopup.value = true
-      return false
-    }
-    if (
-      applicationInfo.value.haveFirstApplication &&
-      applicationInfo.value.havePendingApplication &&
-      vipCode === 0
-    ) {
+    if (vipCode !== 0) return true
+
+    // 已提交申请，等待处理
+    if (hasPendingApply.value) {
       uni.showToast({
         title: '您已经提交申请，请您耐心等待',
         icon: 'none',
         duration: 3000
       })
+      return false
+    }
+    // 申请过但当前不是会员 → 会员已过期，引导重新申请
+    if (applyStatus.value !== APPLY_STATUS.未申请) {
+      showVipExpiredPopup.value = true
       return false
     }
     return true

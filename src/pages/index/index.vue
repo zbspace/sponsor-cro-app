@@ -218,9 +218,9 @@
   import SearchSponsorSitePiPopup from '@/components/search-sponsor-site-pi-popup/search-sponsor-site-pi-popup.vue'
   import SearchCustomerPopup from '@/components/search-customer-popup/search-customer-popup.vue'
   import VipExpiredPopup from '@/components/vip-expired-popup/vip-expired-popup.vue'
-  import { VIP_CODE, VIP_APPLICATION_STATUS } from '@/utils/enums'
+  import { VIP_CODE, APPLY_STATUS } from '@/utils/enums'
   import {
-    getVipApplication,
+    refreshUserDetail,
     getUserInfo,
     getParentShortNameList,
     queryPharmaShortName
@@ -491,49 +491,38 @@
   // #endregion
 
   // #region VIP 状态与权限控制
-  const applicationStatus = ref(0)
-  const applicationInfo = ref<{
-    haveFirstApplication: boolean
-    havePendingApplication: boolean
-  }>({
-    haveFirstApplication: true,
-    havePendingApplication: false
-  })
+  // 申请状态：0-未申请，1-申请试用中，2-试用中，3-申请开通中，4-开通中
+  const applyStatus = ref<number>(APPLY_STATUS.未申请)
   const showFreeVipBanner = ref(false)
   const showVipExpiredPopup = ref(false)
 
+  // 是否存在待处理的申请（申请试用中 / 申请开通中）
+  const hasPendingApply = computed(
+    () =>
+      applyStatus.value === APPLY_STATUS.申请试用中 || applyStatus.value === APPLY_STATUS.申请开通中
+  )
+
   async function fetchVipApplicationStatus() {
-    try {
-      const res = await getVipApplication()
-      if (res.data) {
-        applicationStatus.value = res.data.approvalStatus || 0
-        applicationInfo.value.haveFirstApplication = res.data.haveFirstApplication ?? true
-        applicationInfo.value.havePendingApplication = res.data.havePendingApplication ?? false
-        showFreeVipBanner.value = !applicationInfo.value.haveFirstApplication
-      }
-    } catch {
-      applicationStatus.value = 0
+    const detail = await refreshUserDetail()
+    if (!detail) {
+      applyStatus.value = APPLY_STATUS.未申请
       showFreeVipBanner.value = false
+      return
     }
+    userInfo.value = detail
+    applyStatus.value = detail.applyStatus ?? APPLY_STATUS.未申请
+    // 从未申请过 → 展示「免费试用」横幅
+    showFreeVipBanner.value = applyStatus.value === APPLY_STATUS.未申请
   }
 
   function checkPermission() {
     const userInfo = getUserInfo()
     const vipCode = userInfo?.vipCode ?? 0
 
-    if (
-      applicationInfo.value.haveFirstApplication &&
-      !applicationInfo.value.havePendingApplication &&
-      vipCode === 0
-    ) {
-      showVipExpiredPopup.value = true
-      return false
-    }
-    if (
-      applicationInfo.value.haveFirstApplication &&
-      applicationInfo.value.havePendingApplication &&
-      vipCode === 0
-    ) {
+    if (vipCode !== 0) return true
+
+    // 已提交申请，等待处理
+    if (hasPendingApply.value) {
       uni.showToast({
         title: '您已经提交申请，请您耐心等待',
         icon: 'none',
@@ -541,11 +530,16 @@
       })
       return false
     }
+    // 申请过但当前不是会员 → 会员已过期，引导重新申请
+    if (applyStatus.value !== APPLY_STATUS.未申请) {
+      showVipExpiredPopup.value = true
+      return false
+    }
     return true
   }
 
   function handleApplyTrialClick() {
-    if (applicationStatus.value === VIP_APPLICATION_STATUS.待审批) {
+    if (hasPendingApply.value) {
       uni.showToast({ title: '您已提交试用申请，等待电话联系', icon: 'none' })
       return
     }
@@ -553,7 +547,7 @@
   }
 
   function handleBannerApply() {
-    if (applicationStatus.value === VIP_APPLICATION_STATUS.待审批) {
+    if (hasPendingApply.value) {
       uni.showToast({ title: '您已提交试用申请，等待电话联系', icon: 'none' })
       return
     }

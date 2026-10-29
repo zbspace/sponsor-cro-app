@@ -291,22 +291,6 @@ export async function applyVip(data: {
   return post('/api/vip/applicate', data, true)
 }
 
-/**
- * 查询VIP申请记录（是否存在待审批记录）
- * @returns Promise<ApiResponse<VipApplication | null>> approvalStatus：1-待审批，2-审批通过，3-审批不通过
- */
-export async function getVipApplication() {
-  return get<{
-    approvalStatus?: number
-    approvalRemark?: string
-    applicateDate?: string
-    userName?: string
-    userPhone?: string
-    haveFirstApplication?: boolean
-    havePendingApplication?: boolean
-  } | null>('/api/vip/getVipApplication', {}, true)
-}
-
 // #endregion
 
 // #region 首页模块
