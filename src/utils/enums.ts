@@ -9,6 +9,14 @@ export enum TRIAL_STATUS {
   '责令暂停/终止' = '7'
 }
 
+// 试验状态 value
+export enum TRIAL_STATUS_VALUES {
+  '进行中' = '进行中',
+  '已完成' = '已完成',
+  '主动暂停' = '主动暂停',
+  '被叫停' = '被叫中'
+}
+
 // 试验分期（文案 -> 编码）
 export enum TRIAL_PHASE {
   'Ⅰ期' = '1',
@@ -17,6 +25,16 @@ export enum TRIAL_PHASE {
   'Ⅳ期' = '4',
   'BE' = '5',
   '其他' = '6'
+}
+
+// 试验分期 value
+export enum TRIAL_PHASE_VALUES {
+  'Ⅰ期' = 'Ⅰ期',
+  'Ⅱ期' = 'Ⅱ期',
+  'Ⅲ期' = 'Ⅲ期',
+  'Ⅳ期' = 'Ⅳ期',
+  'BE' = 'BE',
+  '其他' = '其他'
 }
 
 // vip等级0-普通用户 1-VIP试用,100-VIP用户

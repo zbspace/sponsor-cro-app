@@ -32,12 +32,12 @@
         <view class="hd-filter-wrap" v-for="f in filterDefs" :key="f.key">
           <view
             class="hd-filter"
-            :class="{ on: filters[f.key] !== ALL }"
+            :class="{ on: filters[f.key] !== '' }"
             @click.stop="toggleDropdown(f.key)"
           >
             <text class="hd-filter-label">{{ f.label }}</text>
-            <text class="hd-filter-val" :class="{ on: filters[f.key] !== ALL }">
-              {{ filters[f.key] }}
+            <text class="hd-filter-val" :class="{ on: filters[f.key] !== '' }">
+              {{ filterText(f.key) }}
             </text>
             <view class="hd-caret"></view>
           </view>
@@ -46,12 +46,12 @@
           <view class="hd-dropdown" v-if="activeField === f.key">
             <view
               class="hd-opt"
-              :class="{ active: opt === filters[f.key] }"
+              :class="{ active: opt.value === filters[f.key] }"
               v-for="opt in filterOptions[f.key]"
-              :key="opt"
-              @click.stop="selectFilter(f.key, opt)"
+              :key="opt.value"
+              @click.stop="selectFilter(f.key, opt.value)"
             >
-              <text>{{ opt }}</text>
+              <text>{{ opt.text }}</text>
             </view>
           </view>
         </view>
@@ -117,6 +117,7 @@
   import { hospitalTrialStatistic } from '@/api'
   import type { HospitalTrialStatisticItem, HospitalTrialStatisticParam } from '@/types/api'
   import { onLoad } from '@dcloudio/uni-app'
+  import { TRIAL_STATUS_VALUES, TRIAL_PHASE_VALUES, createEnumsToOptions } from '@/utils/enums'
 
   // #region 路由参数
   const menu = ref({ top: 0, left: 0, height: 0 })
@@ -127,10 +128,7 @@
   // #region 筛选配置
   const ALL = '全部'
   type FilterKey = 'year' | 'status' | 'phase'
-
-  // 试验分期/试验状态取值与 CDE 接口文档保持一致
-  const CDE_TRIAL_STAGES = ['Ⅰ期', 'Ⅱ期', 'Ⅲ期', 'Ⅳ期', 'BE', '其他']
-  const CDE_TRIAL_STATUS = ['进行中', '已完成', '主动暂停', '被叫停']
+  type FilterOption = { value: string; text: string }
 
   const filterDefs: { key: FilterKey; label: string }[] = [
     { key: 'year', label: '年份' },
@@ -138,17 +136,31 @@
     { key: 'phase', label: '试验分期' }
   ]
 
+  // 选中值（空字符串表示「全部」）
   const filters = reactive<Record<FilterKey, string>>({
-    year: ALL,
-    status: ALL,
-    phase: ALL
+    year: '',
+    status: '',
+    phase: ''
   })
 
-  const filterOptions = computed<Record<FilterKey, string[]>>(() => ({
-    year: [ALL, ...Array.from({ length: 5 }, (_, i) => String(new Date().getFullYear() - i))],
-    status: [ALL, ...CDE_TRIAL_STATUS],
-    phase: [ALL, ...CDE_TRIAL_STAGES]
+  // 试验分期/试验状态取值与 CDE 接口文档保持一致
+  const filterOptions = computed<Record<FilterKey, FilterOption[]>>(() => ({
+    year: [
+      { value: '', text: ALL },
+      ...Array.from({ length: 5 }, (_, i) => {
+        const year = String(new Date().getFullYear() - i)
+        return { value: year, text: year }
+      })
+    ],
+    status: [{ value: '', text: ALL }, ...createEnumsToOptions(TRIAL_STATUS_VALUES)],
+    phase: [{ value: '', text: ALL }, ...createEnumsToOptions(TRIAL_PHASE_VALUES)]
   }))
+
+  /** 当前筛选项展示文案（未选择时显示「全部」） */
+  function filterText(key: FilterKey) {
+    const opt = filterOptions.value[key].find((o) => o.value === filters[key])
+    return opt?.text ?? ALL
+  }
 
   // 当前展开的下拉字段，空字符串表示未展开
   const activeField = ref<FilterKey | ''>('')
@@ -193,9 +205,9 @@
 
     const params: HospitalTrialStatisticParam = {
       parentCompanyId: companyParentId.value || undefined,
-      year: filters.year === ALL ? undefined : filters.year,
-      trialStatus: filters.status === ALL ? undefined : filters.status,
-      trialStage: filters.phase === ALL ? undefined : filters.phase,
+      year: filters.year || undefined,
+      trialStatus: filters.status || undefined,
+      trialStage: filters.phase || undefined,
       pageNum: pageNum.value,
       pageSize
     }

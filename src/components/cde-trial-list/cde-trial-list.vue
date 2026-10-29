@@ -157,6 +157,7 @@
   import { getCdeTrailList, queryCleanedDrug } from '@/api'
   import type { CdeTrialItem, CdeTrailListReq, CleanedDrugItem } from '@/types/api'
   import CdeCenterResearcherPopup from '../cde-center-researcher-popup/cde-center-researcher-popup.vue'
+  import { TRIAL_STATUS_VALUES, TRIAL_PHASE_VALUES, createEnumsToOptions } from '@/utils/enums'
 
   const props = defineProps<{
     /** 母公司ID */
@@ -183,9 +184,6 @@
 
   // #region 筛选状态
   // 试验分期/试验状态取值与 CDE 接口文档保持一致
-  const CDE_TRIAL_STAGES = ['Ⅰ期', 'Ⅱ期', 'Ⅲ期', 'Ⅳ期', 'BE', '其他']
-  const CDE_TRIAL_STATUS = ['进行中', '已完成', '主动暂停', '被叫停']
-
   const stageFilter = ref('')
   const statusFilter = ref('')
   const currentTimeFilter = ref('')
@@ -199,12 +197,12 @@
 
   const stageOptions = computed(() => [
     { value: '', text: '试验分期' },
-    ...CDE_TRIAL_STAGES.map((text) => ({ value: text, text }))
+    ...createEnumsToOptions(TRIAL_PHASE_VALUES)
   ])
 
   const statusOptions = computed(() => [
     { value: '', text: '试验状态' },
-    ...CDE_TRIAL_STATUS.map((text) => ({ value: text, text }))
+    ...createEnumsToOptions(TRIAL_STATUS_VALUES)
   ])
 
   // #region 产品筛选（queryCleanedDrug 模糊搜索）

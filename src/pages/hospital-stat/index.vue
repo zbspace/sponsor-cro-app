@@ -302,7 +302,7 @@
     ResearcherStatisticsItem,
     TrialStatusResponse
   } from '@/types/api'
-  import { TRIAL_STATUS, TRIAL_PHASE, createEnumsToOptions } from '@/utils/enums'
+  import { TRIAL_PHASE_VALUES, createEnumsToOptions } from '@/utils/enums'
 
   // #endregion
 
@@ -407,7 +407,7 @@
   const changeStageFilter = ref('')
   const changeStageOptions = computed(() => [
     { value: '', text: '试验分期' },
-    ...createEnumsToOptions(TRIAL_PHASE)
+    ...createEnumsToOptions(TRIAL_PHASE_VALUES)
   ])
   const changeStageText = computed(
     () => changeStageOptions.value.find((o) => o.value === changeStageFilter.value)?.text || '全部'

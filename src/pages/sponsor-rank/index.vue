@@ -145,7 +145,7 @@
     StandardCompanyItem
   } from '@/types/api'
   import { onLoad } from '@dcloudio/uni-app'
-  import { DRUG_TYPE_VALUES, createEnumsToOptions } from '@/utils/enums'
+  import { DRUG_TYPE_VALUES, TRIAL_PHASE_VALUES, createEnumsToOptions } from '@/utils/enums'
 
   // #region 企业查询选择（参考商机线索页搜索联想）
   const searchKeyword = ref('')
@@ -211,7 +211,6 @@
 
   // #region 筛选状态
   // 试验分期/药品类型取值与 CDE 接口文档保持一致
-  const CDE_TRIAL_STAGES = ['Ⅰ期', 'Ⅱ期', 'Ⅲ期', 'Ⅳ期', 'BE', '其他']
   const currentYearFilter = ref<number | ''>('')
   const stageFilter = ref('')
   const drugTypeFilter = ref('')
@@ -226,7 +225,7 @@
 
   const stageOptions = computed(() => [
     { value: '', text: '试验分期' },
-    ...CDE_TRIAL_STAGES.map((text) => ({ value: text, text }))
+    ...createEnumsToOptions(TRIAL_PHASE_VALUES)
   ])
 
   const drugTypeOptions = computed(() => [

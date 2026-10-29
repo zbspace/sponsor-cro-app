@@ -115,7 +115,7 @@
 <script setup lang="ts">
   import { ref, computed, onMounted, watch } from 'vue'
   import { queryHospitalTrialList } from '@/api'
-  import { TRIAL_STATUS, TRIAL_PHASE, createEnumsToOptions } from '@/utils/enums'
+  import { TRIAL_STATUS_VALUES, TRIAL_PHASE_VALUES, createEnumsToOptions } from '@/utils/enums'
   import type { TrialItem, HospitalStatisticsQuery } from '@/types/api'
   import CenterResearcherPopup from '../center-researcher-popup/center-researcher-popup.vue'
 
@@ -152,12 +152,12 @@
 
   const stageOptions = computed(() => [
     { value: '', text: '试验分期' },
-    ...createEnumsToOptions(TRIAL_PHASE)
+    ...createEnumsToOptions(TRIAL_PHASE_VALUES)
   ])
 
   const statusOptions = computed(() => [
     { value: '', text: '试验状态' },
-    ...createEnumsToOptions(TRIAL_STATUS)
+    ...createEnumsToOptions(TRIAL_STATUS_VALUES)
   ])
 
   // #endregion
