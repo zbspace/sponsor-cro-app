@@ -67,132 +67,151 @@
       </view>
       <!-- #endregion -->
 
-      <view class="container">
-        <!-- #region 统计内容 -->
-        <view v-if="activeTab === 'stat'" class="stat-content p-16px">
-          <!-- 外包比例卡片 -->
-          <view class="card ratio-card">
-            <!-- <view class="card-title">外包比例</view> -->
-            <view class="card-header">
-              <view class="flex items-center">
-                <view class="title-indicator"></view>
-                <view class="card-title">外包比例</view>
-              </view>
-              <view class="filter-dropdown">
-                <picker
-                  class="filter-picker"
-                  mode="selector"
-                  :range="yearOptions"
-                  range-key="text"
-                  @change="onProductYearChange"
-                >
-                  <view class="filter-trigger">
-                    <text>{{ productYearText }}</text>
-                    <view class="arrow-down"></view>
-                  </view>
-                </picker>
-              </view>
+      <!-- #region 统计内容 -->
+      <view v-if="activeTab === 'stat'" class="stat-content p-16px">
+        <!-- 外包比例卡片 -->
+        <view class="card ratio-card">
+          <!-- <view class="card-title">外包比例</view> -->
+          <view class="card-header">
+            <view class="flex items-center">
+              <view class="title-indicator"></view>
+              <view class="card-title">外包比例</view>
             </view>
-            <view class="ratio-content">
-              <view class="pie-chart-wrapper">
-                <view
-                  class="pie-chart"
-                  :style="{
-                    background: `conic-gradient(#499AE6 0% ${outsourceRate.cro}%, #7ED321 ${outsourceRate.cro}% 100%)`
-                  }"
-                ></view>
-              </view>
-              <view class="ratio-legend">
-                <view class="legend-item">
-                  <view class="dot blue"></view>
-                  <view class="legend-info">
-                    <text class="label">外包CRO</text>
-                    <text class="value">{{ outsourceRate.cro }}%</text>
-                  </view>
+            <view class="filter-dropdown">
+              <picker
+                class="filter-picker"
+                mode="selector"
+                :range="yearOptions"
+                range-key="text"
+                @change="onProductYearChange"
+              >
+                <view class="filter-trigger">
+                  <text>{{ productYearText }}</text>
+                  <view class="arrow-down"></view>
                 </view>
-                <view class="legend-item">
-                  <view class="dot green"></view>
-                  <view class="legend-info">
-                    <text class="label">自己申报</text>
-                    <text class="value">{{ outsourceRate.self }}%</text>
-                  </view>
+              </picker>
+            </view>
+          </view>
+          <view class="ratio-content">
+            <view class="pie-chart-wrapper">
+              <view
+                class="pie-chart"
+                :style="{
+                  background: `conic-gradient(#499AE6 0% ${outsourceRate.cro}%, #7ED321 ${outsourceRate.cro}% 100%)`
+                }"
+              ></view>
+            </view>
+            <view class="ratio-legend">
+              <view class="legend-item">
+                <view class="dot blue"></view>
+                <view class="legend-info">
+                  <text class="label">外包CRO</text>
+                  <text class="value">{{ outsourceRate.cro }}%</text>
                 </view>
               </view>
-            </view>
-            <view class="ratio-stats">
-              <view class="stat-item">
-                <text class="label">外包项目数</text>
-                <text class="value">{{ outsourceRate.haveProjectNum }}</text>
-              </view>
-              <view class="stat-item">
-                <text class="label">自研项目数</text>
-                <text class="value">{{ outsourceRate.noProjectNum }}</text>
-              </view>
-              <view class="stat-item">
-                <text class="label">总项目数</text>
-                <text class="value">{{ outsourceRate.totalProjectNum }}</text>
+              <view class="legend-item">
+                <view class="dot green"></view>
+                <view class="legend-info">
+                  <text class="label">自己申报</text>
+                  <text class="value">{{ outsourceRate.self }}%</text>
+                </view>
               </view>
             </view>
           </view>
-
-          <!-- CRO合作名单卡片 -->
-          <view class="card list-card">
-            <!-- <view class="card-title">CRO合作榜单</view> -->
-            <view class="card-header">
-              <view class="flex items-center">
-                <view class="title-indicator"></view>
-                <view class="card-title">CRO合作榜单</view>
-              </view>
-              <view class="filter-dropdown">
-                <picker
-                  class="filter-picker"
-                  mode="selector"
-                  :range="yearOptions"
-                  range-key="text"
-                  @change="onCroYearChange"
-                >
-                  <view class="filter-trigger">
-                    <text>{{ croYearText }}</text>
-                    <view class="arrow-down"></view>
-                  </view>
-                </picker>
-              </view>
+          <view class="ratio-stats">
+            <view class="stat-item">
+              <text class="label">外包项目数</text>
+              <text class="value">{{ outsourceRate.haveProjectNum }}</text>
             </view>
-            <view class="table-header">
-              <text class="col-rank">排名</text>
-              <text class="col-name">CRO公司</text>
-              <text class="col-count">合作项目数</text>
+            <view class="stat-item">
+              <text class="label">自研项目数</text>
+              <text class="value">{{ outsourceRate.noProjectNum }}</text>
             </view>
-            <view class="table-body">
-              <view
-                class="table-row"
-                v-for="(item, index) in croList"
-                :key="index"
-                hover-class="row-hover"
-                @click="onCroClick(item)"
-              >
-                <text class="col-rank">{{ index + 1 }}</text>
-                <text class="col-name">{{ item.name }}</text>
-                <text class="col-count highlight">{{ item.count }}</text>
-              </view>
-            </view>
-
-            <!-- 加载状态提示 -->
-            <view class="load-status" v-if="croLoading">
-              <text>加载中...</text>
-            </view>
-            <view class="load-status" v-else-if="croNoMore && croList.length > 0">
-              <text>没有更多了</text>
-            </view>
-            <view class="load-status" v-if="!croLoading && !croList.length">
-              <text>暂无数据</text>
+            <view class="stat-item">
+              <text class="label">总项目数</text>
+              <text class="value">{{ outsourceRate.totalProjectNum }}</text>
             </view>
           </view>
         </view>
-        <!-- #endregion -->
 
-        <!-- #region 项目列表 -->
+        <!-- CRO合作名单卡片 -->
+        <view class="card list-card">
+          <!-- <view class="card-title">CRO合作榜单</view> -->
+          <view class="card-header">
+            <view class="flex items-center">
+              <view class="title-indicator"></view>
+              <view class="card-title">CRO合作榜单</view>
+            </view>
+            <view class="filter-dropdown">
+              <picker
+                class="filter-picker"
+                mode="selector"
+                :range="yearOptions"
+                range-key="text"
+                @change="onCroYearChange"
+              >
+                <view class="filter-trigger">
+                  <text>{{ croYearText }}</text>
+                  <view class="arrow-down"></view>
+                </view>
+              </picker>
+            </view>
+          </view>
+          <view class="table-header">
+            <text class="col-rank">排名</text>
+            <text class="col-name">CRO公司</text>
+            <text class="col-count">合作项目数</text>
+          </view>
+          <view class="table-body">
+            <view
+              class="table-row"
+              v-for="(item, index) in croList"
+              :key="index"
+              hover-class="row-hover"
+              @click="onCroClick(item)"
+            >
+              <text class="col-rank">{{ index + 1 }}</text>
+              <text class="col-name">{{ item.name }}</text>
+              <text class="col-count highlight">{{ item.count }}</text>
+            </view>
+          </view>
+
+          <!-- 加载状态提示 -->
+          <view class="load-status" v-if="croLoading">
+            <text>加载中...</text>
+          </view>
+          <view class="load-status" v-else-if="croNoMore && croList.length > 0">
+            <text>没有更多了</text>
+          </view>
+          <view class="load-status" v-if="!croLoading && !croList.length">
+            <text>暂无数据</text>
+          </view>
+        </view>
       </view>
+      <!-- #endregion -->
+
+      <!-- #region 项目列表 -->
+
+      <!-- #region 项目列表筛选（合作CRO公司 / 年份） -->
+      <view v-if="activeTab === 'list'" class="project-filter-wrapper">
+        <view class="project-filter-card">
+          <uni-data-select
+            v-model="currentCroCompany"
+            :localdata="croCompanyOptions"
+            :clear="false"
+            placeholder="合作CRO公司"
+          ></uni-data-select>
+        </view>
+        <view class="project-filter-card">
+          <uni-data-select
+            v-model="currentTimeFilterObj"
+            :localdata="yearOptions"
+            :clear="false"
+            placeholder="年份"
+          ></uni-data-select>
+        </view>
+      </view>
+      <!-- #endregion -->
 
       <view v-if="activeTab === 'list'" class="project-list p-16px">
         <view class="project-card" v-for="(item, index) in projectList" :key="index">
@@ -281,11 +300,16 @@
     if (options?.companyId) {
       sponsorParentCompanyId.value = Number(options.companyId)
     }
+    // 读取路由参数中的合作CRO公司ID，用于项目列表筛选默认选中
+    if (options?.partnerParentCompanyId) {
+      routeCroCompanyId.value = Number(options.partnerParentCompanyId)
+    }
     const sysInfo = uni.getSystemInfoSync()
     statusBarHeight.value = sysInfo.statusBarHeight || 0
     fetchRelatedCompanyList()
     fetchOutsourcingRatio()
     fetchCroRankList()
+    fetchCroCompanyOptions()
     fetchProjectList()
   })
 
@@ -320,6 +344,56 @@
     croYearFilter.value = yearOptions.value[Number(e.detail.value)]?.value || ''
     fetchCroRankList()
   }
+
+  // #region 项目列表筛选（合作CRO公司 / 年份）
+  // 合作CRO公司下拉选项，首位为「全部」
+  const croCompanyOptions = ref<{ value: string; text: string }[]>([{ value: '', text: '全部' }])
+  const currentCroCompany = ref('')
+  // 项目列表年份筛选，空值表示全部
+  const currentTimeFilterObj = ref('')
+
+  /** 获取合作CRO公司下拉选项（分页拉取全量） */
+  async function fetchCroCompanyOptions() {
+    try {
+      const pageSize = 100
+      const firstRes = await selectClinicalCroRankList({
+        sponsorParentCompanyId: sponsorParentCompanyId.value,
+        pageNum: 1,
+        pageSize,
+        sponsorStandardCompanyIdList: sponsorStandardCompanyIdList.value
+      })
+      let list = firstRes.data?.list || []
+      const pages = firstRes.data?.pages || 1
+      for (let page = 2; page <= pages; page++) {
+        const res = await selectClinicalCroRankList({
+          sponsorParentCompanyId: sponsorParentCompanyId.value,
+          pageNum: page,
+          pageSize,
+          sponsorStandardCompanyIdList: sponsorStandardCompanyIdList.value
+        })
+        list = [...list, ...(res.data?.list || [])]
+      }
+      croCompanyOptions.value = [
+        { value: '', text: '全部' },
+        ...list.map((item) => ({
+          value: String(item.parentCompanyId),
+          text: item.parentCompanyShortName
+        }))
+      ]
+      // 从 CRO 合作名单跳转时默认选中对应 CRO
+      if (routeCroCompanyId.value) {
+        const target = croCompanyOptions.value.find(
+          (opt) => opt.value === String(routeCroCompanyId.value)
+        )
+        if (target) {
+          currentCroCompany.value = String(routeCroCompanyId.value)
+        }
+      }
+    } catch {
+      // 静默处理
+    }
+  }
+  // #endregion
 
   // #region 相关公司筛选（多选）
   const companyOptions = ref<{ value: string; text: string }[]>([])
@@ -432,11 +506,17 @@
   }
   // #endregion
 
-  // #region 点击 CRO 合作名单行进入 CRO 主页
+  // #region 点击 CRO 合作名单行进入项目列表并按该 CRO 筛选
   const onCroClick = (item: any) => {
     if (!item.parentCompanyId) return
-    // 切换到项目列表 tab，并在 CRO 合作名单筛选中默认选中当前点击的 CRO
+    // 切换到项目列表 tab，并将合作CRO公司筛选中默认选中当前点击的 CRO
     activeTab.value = 'list'
+    const value = String(item.parentCompanyId)
+    // 下拉选项缺失时补入，避免选中值无法回显
+    if (!croCompanyOptions.value.some((opt) => opt.value === value)) {
+      croCompanyOptions.value.push({ value, text: item.name })
+    }
+    currentCroCompany.value = value
   }
   // #endregion
 
@@ -471,7 +551,13 @@
         // 有申办方母公司ID时按申办方过滤
         sponsorParentCompanyId: sponsorParentCompanyId.value || undefined,
         // 相关公司筛选（多选）
-        sponsorStandardCompanyIdList: sponsorStandardCompanyIdList.value
+        sponsorStandardCompanyIdList: sponsorStandardCompanyIdList.value,
+        // 年份筛选，空值表示全部
+        lastYear: currentTimeFilterObj.value ? Number(currentTimeFilterObj.value) : undefined,
+        // 合作CRO公司筛选，空值表示全部
+        partnerParentCompanyIdList: currentCroCompany.value
+          ? [Number(currentCroCompany.value)]
+          : undefined
       })
       if (res.data?.list) {
         const newList = res.data.list.map((item) => ({
@@ -522,6 +608,21 @@
     noMore.value = false
     fetchOutsourcingRatio()
     fetchCroRankList()
+    fetchCroCompanyOptions()
+    fetchProjectList()
+  })
+
+  // 年份变化时，重置项目列表分页并刷新
+  watch(currentTimeFilterObj, () => {
+    projectPage.value = 1
+    noMore.value = false
+    fetchProjectList()
+  })
+
+  // 合作CRO公司变化时，重置项目列表分页并刷新
+  watch(currentCroCompany, () => {
+    projectPage.value = 1
+    noMore.value = false
     fetchProjectList()
   })
   // #endregion
@@ -902,6 +1003,36 @@
       }
     }
   }
+
+  /* #region 项目列表筛选（合作CRO公司 / 年份） */
+  .project-filter-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    padding: 0 30rpx;
+
+    .project-filter-card {
+      flex: 1;
+      background: #ffffff;
+      height: 90rpx;
+      border-radius: 16rpx;
+      display: flex;
+      align-items: center;
+      padding: 0 30rpx;
+      box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
+
+      :deep(.uni-select) {
+        border: none;
+        padding: 0;
+
+        .uni-select__input-text {
+          font-size: 28rpx;
+          color: #333;
+        }
+      }
+    }
+  }
+  /* #endregion */
 
   /* 项目列表卡片 */
   .project-list {

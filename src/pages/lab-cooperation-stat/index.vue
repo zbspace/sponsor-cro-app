@@ -58,7 +58,7 @@
           <view class="card-header">
             <view class="flex items-center">
               <view class="title-indicator"></view>
-              <view class="card-title">外包比例</view>
+              <view class="card-title">使用中心实验室比例</view>
             </view>
             <view class="filter-dropdown">
               <picker
@@ -88,14 +88,14 @@
               <view class="legend-item">
                 <view class="dot blue"></view>
                 <view class="legend-info">
-                  <text class="label">外包CRO</text>
+                  <text class="label">使用</text>
                   <text class="value">{{ outsourceRate.cro }}%</text>
                 </view>
               </view>
               <view class="legend-item">
                 <view class="dot green"></view>
                 <view class="legend-info">
-                  <text class="label">自己申报</text>
+                  <text class="label">未使用</text>
                   <text class="value">{{ outsourceRate.self }}%</text>
                 </view>
               </view>
