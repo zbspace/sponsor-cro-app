@@ -329,7 +329,9 @@
     }
   }
 
-  const sponsorCompanyOptions = ref<{ value: string; text: string }[]>([{ value: '', text: '全部' }])
+  const sponsorCompanyOptions = ref<{ value: string; text: string }[]>([
+    { value: '', text: '全部' }
+  ])
   const currentSponsorCompany = ref('')
 
   async function fetchSponsorCompanyOptions() {
@@ -967,6 +969,7 @@
 
   /* 项目列表卡片 */
   .project-list {
+    padding: 30rpx;
     .project-card {
       background: #ffffff;
       border-radius: 24rpx;

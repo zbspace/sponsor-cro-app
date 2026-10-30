@@ -300,7 +300,7 @@
     if (timeFilter) {
       currentTimeFilterObj.value = timeFilter
     }
-    
+
     fetchCollectStatus()
     fetchOutsourcingRatio()
     if (!timeFilter) {
@@ -962,6 +962,7 @@
 
   /* 项目列表卡片 */
   .project-list {
+    padding: 30rpx;
     .project-card {
       background: #ffffff;
       border-radius: 24rpx;

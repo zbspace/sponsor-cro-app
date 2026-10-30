@@ -905,19 +905,20 @@
 
   /* 项目列表卡片 */
   .project-list {
+    padding: 30rpx;
     .project-card {
       background: #ffffff;
       border-radius: 24rpx;
       padding: 30rpx;
-      margin-bottom: 24rpx;
+      margin-bottom: 30rpx;
       box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
       position: relative;
 
       .project-title {
-        font-weight: bold;
-        font-size: 28rpx;
-        color: #333333;
-        line-height: 48rpx;
+        font-size: 30rpx;
+        color: #333;
+        font-weight: 500;
+        line-height: 1.5;
         margin-bottom: 30rpx;
         display: -webkit-box;
         -webkit-box-orient: vertical;
@@ -936,8 +937,8 @@
           gap: 16rpx;
 
           .info-icon {
-            width: 34rpx;
-            height: 34rpx;
+            width: 32rpx;
+            height: 32rpx;
             image {
               width: 100%;
               height: 100%;
@@ -945,9 +946,8 @@
           }
 
           .info-text {
-            font-weight: 400;
-            font-size: 24rpx;
-            color: #999999;
+            font-size: 26rpx;
+            color: #999;
           }
         }
       }

@@ -186,13 +186,23 @@
                   class="table-row"
                   v-for="(item, index) in productList"
                   :key="index"
-                  :class="{ zebra: index % 2 === 1 }"
+                  :class="[index % 2 === 1 ? 'zebra' : '', index < 3 ? 'top' + (index + 1) : '']"
                   @click="onProductClick(item)"
                 >
                   <text class="col-rank">{{ index + 1 }}</text>
                   <text class="col-name">{{ item.productName }}</text>
-                  <text class="col-category">{{ item.cleanedClassification || '--' }}</text>
-                  <text class="col-count">{{ item.applyCount }}</text>
+                  <view class="col-category">
+                    <text class="type-tag" v-if="item.cleanedClassification">
+                      {{ item.cleanedClassification }}
+                    </text>
+                    <text v-else>--</text>
+                  </view>
+                  <view class="col-count">
+                    <view class="count-go">
+                      <text>{{ item.applyCount }}</text>
+                      <view class="go-arrow"></view>
+                    </view>
+                  </view>
                 </view>
                 <view class="empty-tip" v-if="!productList.length && !productLoading">
                   暂无数据
@@ -1059,13 +1069,22 @@
     }
   }
 
+  /* #region 产品NDA榜单表格 */
   .data-table {
+    border: 2rpx solid #edf0f5;
+    border-radius: 20rpx;
+    overflow: hidden;
+    background: #ffffff;
+
     .table-header {
       display: flex;
-      padding: 20rpx 0;
-      font-size: 26rpx;
-      color: #999;
-      border-bottom: 1rpx solid #f8f8f8;
+      align-items: center;
+      height: 64rpx;
+      background: #f7f8fa;
+      border-bottom: 2rpx solid #f1f4f8;
+      font-size: 22rpx;
+      font-weight: 500;
+      color: #98a2b1;
     }
 
     /* #region 产品榜单滚动区域 */
@@ -1077,30 +1096,98 @@
 
     .table-row {
       display: flex;
-      padding: 24rpx 0;
-      font-size: 28rpx;
-      color: #333;
+      align-items: center;
+      height: 84rpx;
+      font-size: 26rpx;
+      color: #1f2329;
+
+      & + .table-row {
+        border-top: 2rpx solid #f1f4f8;
+      }
 
       &.zebra {
-        background: #fafbfc;
+        background: #fbfcfd;
+      }
+
+      // 前三名名次高亮
+      &.top1 .col-rank {
+        color: #f59e0b;
+      }
+      &.top2 .col-rank {
+        color: #94a3b8;
+      }
+      &.top3 .col-rank {
+        color: #c0834b;
       }
     }
 
     .col-rank {
-      width: 100rpx;
+      width: 90rpx;
+      flex-shrink: 0;
       text-align: center;
+      font-size: 24rpx;
+      font-weight: 600;
+      color: #98a2b1;
     }
+
     .col-name {
       flex: 1;
-      text-align: center;
+      min-width: 0;
+      padding-right: 12rpx;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
+
     .col-category {
-      width: 180rpx;
+      width: 120rpx;
+      flex-shrink: 0;
       text-align: center;
+      font-size: 24rpx;
+      color: #98a2b1;
     }
+
+    // 注册分类：浅橙标签
+    .type-tag {
+      display: inline-block;
+      padding: 2rpx 12rpx;
+      border-radius: 8rpx;
+      background: #fff3df;
+      color: #bc8218;
+      font-size: 20rpx;
+      font-weight: 500;
+      line-height: 1.6;
+    }
+
     .col-count {
       width: 160rpx;
-      text-align: center;
+      flex-shrink: 0;
+      box-sizing: border-box;
+      padding-right: 16rpx;
+      text-align: right;
+    }
+
+    // 条数：浅蓝胶囊入口样式
+    .count-go {
+      display: inline-flex;
+      align-items: center;
+      gap: 2rpx;
+      height: 48rpx;
+      padding: 0 8rpx 0 16rpx;
+      border-radius: 14rpx;
+      background: #eff4ff;
+      color: #2c6fdb;
+      font-size: 26rpx;
+      font-weight: 600;
+    }
+
+    .go-arrow {
+      width: 12rpx;
+      height: 12rpx;
+      flex-shrink: 0;
+      border-top: 4rpx solid rgba(44, 111, 219, 0.7);
+      border-right: 4rpx solid rgba(44, 111, 219, 0.7);
+      transform: rotate(45deg);
     }
 
     .empty-tip {
@@ -1117,6 +1204,7 @@
       color: #999;
     }
   }
+  /* #endregion */
 
   .project-card {
     background: #ffffff;

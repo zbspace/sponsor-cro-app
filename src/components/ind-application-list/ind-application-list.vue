@@ -158,7 +158,7 @@
 
 <script setup lang="ts">
   // #region 导入
-  import { ref, computed, onMounted, watch } from 'vue'
+  import { ref, computed, onMounted, watch, nextTick } from 'vue'
   import { getIndApplicationList, queryCleanedDrug } from '@/api'
   import type { IndApplicationItem, IndApplicationListReq, CleanedDrugItem } from '@/types/api'
   import { REGISTER_TYPE, DRUG_TYPE_VALUES, createEnumsToOptions } from '@/utils/enums'
@@ -291,11 +291,17 @@
   const loading = ref(false)
   // 是否已加载完所有数据，避免 total 与实际返回不一致时反复触发加载
   const finished = ref(false)
+  // 请求进行中被挂起的刷新标记（如榜单带入的筛选参数晚于首次请求到达）
+  let pendingRefresh = false
 
   const hasMore = computed(() => !finished.value && list.value.length < total.value)
 
   async function fetchList(refresh = false) {
-    if (loading.value) return
+    if (loading.value) {
+      // 请求进行中：刷新请求需等当前请求结束后补发，否则榜单带入的筛选条件会被丢弃
+      if (refresh) pendingRefresh = true
+      return
+    }
     // 仅在请求成功后推进页码，避免失败时跳页导致数据缺失、无法加载到底
     const targetPage = refresh ? 1 : pageNum.value + 1
     loading.value = true
@@ -327,6 +333,11 @@
       console.error('获取IND列表失败', e)
     } finally {
       loading.value = false
+      // 补发请求过程中被挂起的刷新，确保最新筛选条件生效
+      if (pendingRefresh) {
+        pendingRefresh = false
+        fetchList(true)
+      }
     }
   }
 
@@ -368,13 +379,16 @@
 
   // #region 生命周期
   onMounted(() => {
-    fetchList(true)
-    fetchProductOptions()
+    // 小程序端组件属性可能在挂载后才同步到子组件，延后一拍发起首次请求，避免丢失榜单带入的筛选参数
+    nextTick(() => {
+      fetchList(true)
+      fetchProductOptions()
+    })
   })
 
   // 外部参数变化时重新加载列表
   watch(
-    () => [props.companyParentId, props.productName],
+    () => [props.companyParentId, props.productName, props.classification],
     () => {
       fetchList(true)
     }
