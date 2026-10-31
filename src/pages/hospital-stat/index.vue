@@ -28,6 +28,13 @@
         flexDirection: 'column'
       }"
     >
+      <!-- #region 查询来源：药企 & 医院 -->
+      <view class="query-source-bar" v-if="querySourceText">
+        <text class="source-label">查询内容：</text>
+        <text class="source-value">{{ querySourceText }}</text>
+      </view>
+      <!-- #endregion -->
+
       <!-- 选项卡 -->
       <view class="tabs">
         <view
@@ -316,10 +323,16 @@
 
   // 路由筛选参数（来自搜索页选中的药企/医院/研究者）
   const companyName = ref('')
+  const hospitalName = ref('')
   const companyParentId = ref(0)
   const hospitalId = ref(0)
   const researcherId = ref<number>()
   const researcherName = ref('')
+
+  // 查询内容展示文案：药企&医院
+  const querySourceText = computed(() =>
+    [companyName.value, hospitalName.value].filter(Boolean).join('&')
+  )
 
   function goBack() {
     // 直接返回小程序首页
@@ -332,6 +345,9 @@
     // 读取路由筛选参数
     if (options?.companyName) {
       companyName.value = decodeURIComponent(options.companyName)
+    }
+    if (options?.hospitalName) {
+      hospitalName.value = decodeURIComponent(options.hospitalName)
     }
     if (options?.companyParentId) {
       companyParentId.value = Number(options.companyParentId)
@@ -1011,6 +1027,27 @@
       min-height: 0;
     }
   }
+
+  /* #region 查询内容：药企 & 医院 */
+  .query-source-bar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 24rpx;
+    font-size: 26rpx;
+    line-height: 1.5;
+
+    .source-label {
+      color: #999;
+      flex-shrink: 0;
+    }
+
+    .source-value {
+      color: #333;
+      font-weight: 500;
+      flex: 1;
+    }
+  }
+  /* #endregion */
 
   .tabs {
     display: flex;

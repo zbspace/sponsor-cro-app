@@ -247,6 +247,8 @@ export interface CroRankListResponse {
 export interface HospitalStatisticsQuery {
   /** 登记号 */
   acceptanceNo?: string
+  /** 药品名称(清洗后) */
+  cleanedDrugName?: string
   /** 药企母公司ID */
   companyParentId?: number
   /** 医院标准ID */
@@ -1256,6 +1258,8 @@ export interface NdaLastYearProjectVo {
 export interface NdaLastYearRegisterCategoryParam {
   /** 药品类型:1-化药,2-预防用生物制品,3-治疗用生物制品,4-中药/天然药物 */
   drugTypeCode?: number
+  /** 清洗后药品类型,可用值:中药,化药,治疗生物药,疫苗 */
+  cleanedDrugType?: string
   /** 药企母公司ID */
   parentCompanyId?: number
   /** 子公司ID集合 */

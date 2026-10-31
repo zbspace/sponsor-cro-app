@@ -196,7 +196,9 @@
   function onResearcherClick(item: ResearcherTrialStatisticItem) {
     const query = [
       `companyParentId=${companyParentId.value || ''}`,
+      `companyName=${encodeURIComponent(companyName.value)}`,
       `hosStandardId=${item.hosStandardId}`,
+      `hospitalName=${encodeURIComponent(item.hosStandardName || '')}`,
       `researcherName=${encodeURIComponent(item.researcherName || '')}`,
       `year=${encodeURIComponent(currentTimeFilter.value || '')}`,
       `trialStage=${encodeURIComponent(stageFilter.value || '')}`,

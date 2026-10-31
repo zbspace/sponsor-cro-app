@@ -245,9 +245,9 @@
     uni.navigateTo({
       url: `/pages/hospital-stat/index?companyParentId=${
         companyParentId.value || ''
-      }&companyName=${encodeURIComponent(companyName.value)}&hosStandardId=${
-        item.hosStandardId
-      }&tab=list`
+      }&companyName=${encodeURIComponent(companyName.value)}&hospitalName=${encodeURIComponent(
+        item.hosStandardName || ''
+      )}&hosStandardId=${item.hosStandardId}&tab=list`
     })
   }
 

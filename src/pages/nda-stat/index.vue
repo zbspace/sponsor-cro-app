@@ -361,7 +361,9 @@
   async function fetchRegisterCategory() {
     const res = await queryNdaLastYearRegisterCategory({
       parentCompanyId: companyParentId.value || undefined,
-      drugTypeCode: drugTypeCode.value
+      drugTypeCode: drugTypeCode.value,
+      // 清洗后药品类型（枚举文案），如：化药、疫苗、治疗生物药、中药
+      cleanedDrugType: drugTypeOptions.value.find((o) => o.value === drugTypeCode.value)?.text
     })
     registerCategoryList.value = buildRegisterCategoryList(res.data)
     drawBarChart()

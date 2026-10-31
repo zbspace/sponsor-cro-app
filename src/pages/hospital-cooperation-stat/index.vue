@@ -194,9 +194,11 @@
   /** 点击医院行，跳转到合作情况统计页的「试验列表」tab */
   function onHospitalClick(item: HospitalTrialStatisticItem) {
     uni.navigateTo({
-      url: `/pages/hospital-stat/index?companyParentId=${companyParentId.value || ''}&hosStandardId=${
-        item.hosStandardId
-      }&tab=list`
+      url: `/pages/hospital-stat/index?companyParentId=${
+        companyParentId.value || ''
+      }&companyName=${encodeURIComponent(companyName.value)}&hospitalName=${encodeURIComponent(
+        item.hosStandardName || ''
+      )}&hosStandardId=${item.hosStandardId}&tab=list`
     })
   }
 
