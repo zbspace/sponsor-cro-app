@@ -969,7 +969,6 @@
 
   /* 项目列表卡片 */
   .project-list {
-    padding: 30rpx;
     .project-card {
       background: #ffffff;
       border-radius: 24rpx;

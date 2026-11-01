@@ -89,8 +89,13 @@
         </view>
 
         <view class="mh-chips" v-if="recentList.length > 0">
-          <view class="mh-chip" v-for="name in recentList" :key="name" @click="selectRecent(name)">
-            <text>{{ name }}</text>
+          <view
+            class="mh-chip"
+            v-for="item in recentList"
+            :key="item.parentCompanyShortName"
+            @click="selectRecent(item)"
+          >
+            <text>{{ item.parentCompanyShortName }}</text>
           </view>
         </view>
 
@@ -169,7 +174,8 @@
 
   // #region 最近搜索记录
   const RECENT_MAX_COUNT = 10
-  const recentList = ref<string[]>([])
+  // 历史记录需连同母公司 id 一起保存，供下一个页面使用
+  const recentList = ref<ParentCompanyItem[]>([])
 
   // 最近搜索记录按 Tab 分开存储
   function getRecentStorageKey() {
@@ -179,19 +185,26 @@
   function loadRecentList() {
     try {
       const data = uni.getStorageSync(getRecentStorageKey())
-      recentList.value = Array.isArray(data) ? data.slice(0, RECENT_MAX_COUNT) : []
+      recentList.value = (Array.isArray(data) ? data : [])
+        .slice(0, RECENT_MAX_COUNT)
+        // 兼容早期只存公司名的旧数据
+        .map((item: ParentCompanyItem | string) =>
+          typeof item === 'string' ? { parentCompanyId: 0, parentCompanyShortName: item } : item
+        )
     } catch {
       recentList.value = []
     }
   }
 
-  // 记录公司名：去重、最新的排前面、最多保留 10 条
-  function saveRecent(name: string) {
-    if (!name) return
-    const list = [name, ...recentList.value.filter((item) => item !== name)].slice(
-      0,
-      RECENT_MAX_COUNT
-    )
+  // 记录公司：去重、最新的排前面、最多保留 10 条
+  function saveRecent(company: ParentCompanyItem) {
+    if (!company.parentCompanyShortName) return
+    const list = [
+      company,
+      ...recentList.value.filter(
+        (item) => item.parentCompanyShortName !== company.parentCompanyShortName
+      )
+    ].slice(0, RECENT_MAX_COUNT)
     recentList.value = list
     uni.setStorageSync(getRecentStorageKey(), list)
   }
@@ -202,10 +215,11 @@
     uni.removeStorageSync(getRecentStorageKey())
   }
 
-  // 点击历史记录：回填公司名并直接搜索
-  function selectRecent(name: string) {
-    searchKeyword.value = name
-    selectedCompany.value = null
+  // 点击历史记录：回填公司（含 id）并直接搜索
+  function selectRecent(item: ParentCompanyItem) {
+    searchKeyword.value = item.parentCompanyShortName
+    // 旧数据没有 id，只能按公司名查询
+    selectedCompany.value = item.parentCompanyId ? item : null
     showDropdown.value = false
     handleSearch()
   }
@@ -296,8 +310,11 @@
     const id = company ? company.parentCompanyId : ''
     const name = company ? company.parentCompanyShortName : keyword
 
-    // 记录最近搜索
-    saveRecent(name)
+    // 记录最近搜索：连同母公司 id 一起保存，供下一个页面使用
+    saveRecent({
+      parentCompanyId: company ? company.parentCompanyId : 0,
+      parentCompanyShortName: name
+    })
 
     if (currentTab.value === 'sponsor') {
       const query = `sponsorParentCompanyId=${id}&companyName=${encodeURIComponent(name)}`
