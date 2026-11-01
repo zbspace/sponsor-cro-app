@@ -190,7 +190,7 @@
   <!-- 申请试用弹窗 -->
   <trial-apply-popup v-model:visible="showTrialPopup" @success="fetchVipApplicationStatus" />
 
-  <!-- 找客户弹窗 -->
+  <!-- 找药企弹窗 -->
   <find-customer-popup v-model:visible="showFindPopup" />
 
   <!-- 查药企弹窗 -->
@@ -416,7 +416,7 @@
       path: 'customer/company-detail'
     },
     {
-      title: '找客户',
+      title: '找药企',
       desc: '立即前往',
       icon: '/static/home/2.png',
       path: 'customer/company-detail'
@@ -455,7 +455,7 @@
 
     if (item.title === '查药企&CRO') {
       showSearchPopup.value = true
-    } else if (item.title === '找客户') {
+    } else if (item.title === '找药企') {
       showFindPopup.value = true
     } else if (item.title === '查药企&实验室') {
       showCompanyLabPopup.value = true

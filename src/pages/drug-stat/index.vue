@@ -169,7 +169,12 @@
 <script setup lang="ts">
   import { ref, reactive } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
-  import { getIndApplicationList, getCdeTrailList, queryNdaProductList } from '@/api'
+  import {
+    getIndApplicationList,
+    getCdeTrailList,
+    queryNdaProductList,
+    queryDrugRecordCnt
+  } from '@/api'
 
   // #region 基础状态与生命周期
   const menu = ref({
@@ -209,6 +214,7 @@
     }
 
     fetchData()
+    fetchRecordCnt()
   })
 
   const goBack = () => {
@@ -228,6 +234,26 @@
     if (activeTab.value === value) return
     activeTab.value = value
     fetchData(true)
+  }
+
+  // 选项卡数量统一取汇总接口，不依赖列表接口的 total
+  const fetchRecordCnt = async () => {
+    try {
+      const res = await queryDrugRecordCnt({
+        drugStandardName: drugInfo.drugStandardName,
+        parentCompanyId: Number(drugInfo.parentCompanyId) || undefined
+      })
+      const countMap: Record<string, number> = {
+        ind: res.data?.indRecordCnt || 0,
+        trial: res.data?.cdeRecordCnt || 0,
+        nda: res.data?.ndaRecordCnt || 0
+      }
+      tabOptions.value.forEach((tab) => {
+        tab.count = countMap[tab.value] || 0
+      })
+    } catch (error) {
+      console.error('Fetch record count failed:', error)
+    }
   }
   // #endregion
 
@@ -271,12 +297,6 @@
 
       const newList = res.data?.list || []
       list.value = [...list.value, ...newList]
-
-      // 更新当前 tab 的数量
-      const currentTab = tabOptions.value.find((t) => t.value === activeTab.value)
-      if (currentTab) {
-        currentTab.count = res.data?.total || 0
-      }
 
       if (newList.length < pageSize) {
         noMore.value = true

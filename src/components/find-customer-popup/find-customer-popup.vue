@@ -4,93 +4,30 @@
       <!-- 头部：标题 + 副标题 + 关闭 -->
       <view class="modal-head-row">
         <view class="modal-title-wrap">
-          <text class="modal-title">找客户</text>
-          <text class="modal-sub">按适应症或药品反向匹配潜在客户</text>
+          <text class="modal-title">找药企</text>
+          <text class="modal-sub">按适应症反向匹配潜在客户</text>
         </view>
         <view class="modal-close" @click="close">
           <text>×</text>
         </view>
       </view>
 
-      <!-- #region 模式切换 -->
-      <view class="fc-mode">
-        <view
-          class="fc-mode-tab"
-          :class="{ active: activeTab === 'indication' }"
-          @click="switchTab('indication')"
-        >
-          <text>按适应症</text>
-        </view>
-        <view
-          class="fc-mode-tab"
-          :class="{ active: activeTab === 'drug' }"
-          @click="switchTab('drug')"
-        >
-          <text>按药品</text>
-        </view>
-      </view>
-      <!-- #endregion -->
-
       <!-- #region 搜索条件 -->
       <view class="search-wrap">
         <view class="modal-search">
           <view class="search-ico"></view>
-          <template v-if="activeTab === 'indication'">
-            <input
-              type="text"
-              :adjust-position="false"
-              v-model="indicationKeyword"
-              placeholder="输入适应症名称，如：非小细胞肺癌"
-              placeholder-style="color: #9CA3AF"
-              @keyboardheightchange="onKeyboardHeightChange"
-            />
-            <text class="clear-icon" v-if="indicationKeyword" @click="clearIndicationKeyword">
-              ×
-            </text>
-          </template>
-          <template v-else>
-            <input
-              type="text"
-              :adjust-position="false"
-              v-model="drugState.keyword"
-              placeholder="输入通用名或研发代号"
-              placeholder-style="color: #9CA3AF"
-              @input="onDrugInput"
-              @keyboardheightchange="onKeyboardHeightChange"
-            />
-            <text class="clear-icon" v-if="drugState.keyword" @click="clearDrugKeyword">×</text>
-          </template>
+          <input
+            type="text"
+            :adjust-position="false"
+            v-model="indicationKeyword"
+            placeholder="输入适应症名称，如：非小细胞肺癌"
+            placeholder-style="color: #9CA3AF"
+            @keyboardheightchange="onKeyboardHeightChange"
+          />
+          <text class="clear-icon" v-if="indicationKeyword" @click="clearIndicationKeyword">×</text>
           <view class="modal-confirm" @click="handleSearch">
             <text>查询</text>
           </view>
-        </view>
-
-        <!-- 药品 tab 的下拉联想 -->
-        <view class="search-dropdown" v-if="drugState.showDropdown">
-          <view class="dropdown-loading" v-if="drugState.loading">
-            <text>加载中...</text>
-          </view>
-          <template v-else>
-            <scroll-view
-              scroll-y
-              class="dropdown-list"
-              :show-scrollbar="false"
-              :style="dropdownListStyle(drugState.results.length)"
-              v-if="drugState.results.length > 0"
-            >
-              <view
-                class="dropdown-item"
-                v-for="item in drugState.results"
-                :key="item.cleanedDrugName"
-                @click="selectDrug(item)"
-              >
-                <text class="dropdown-name">{{ item.cleanedDrugName }}</text>
-              </view>
-            </scroll-view>
-            <view class="dropdown-empty" v-if="drugState.results.length === 0">
-              <text>未找到相关药品</text>
-            </view>
-          </template>
         </view>
       </view>
       <!-- #endregion -->
@@ -124,9 +61,7 @@
 
 <script setup lang="ts">
   // #region 导入
-  import { reactive, ref, computed, watch } from 'vue'
-  import { queryCleanedDrugName } from '@/api'
-  import type { CleanedDrugItem } from '@/types/api'
+  import { ref, watch } from 'vue'
   // #endregion
 
   // #region 属性与事件
@@ -147,165 +82,50 @@
   // #endregion
 
   // #region 状态
-  type SearchTab = 'indication' | 'drug'
-
-  // 当前 tab
-  const activeTab = ref<SearchTab>('indication')
   // 适应症关键字（开放性输入）
   const indicationKeyword = ref('')
-
-  // 药品搜索状态
-  const drugState = reactive({
-    keyword: '',
-    results: [] as CleanedDrugItem[],
-    showDropdown: false,
-    loading: false,
-    selected: null as CleanedDrugItem | null,
-    timer: null as ReturnType<typeof setTimeout> | null
-  })
   // #endregion
 
-  // #region Tab 切换
-  function switchTab(tab: SearchTab) {
-    if (activeTab.value === tab) return
-    if (drugState.timer) clearTimeout(drugState.timer)
-    drugState.showDropdown = false
-    activeTab.value = tab
-  }
-  // #endregion
-
-  // #region 药品搜索
-  function onDrugInput() {
-    if (drugState.timer) clearTimeout(drugState.timer)
-    drugState.selected = null // 输入时重置已选
-
-    const keyword = drugState.keyword.trim()
-    if (!keyword) {
-      drugState.results = []
-      drugState.showDropdown = false
-      return
-    }
-
-    drugState.timer = setTimeout(() => {
-      fetchDrugNames()
-    }, 300)
-  }
-
-  // 清空适应症搜索框：适应症仅有开放输入，复位关键字即可
+  // #region 搜索条件
+  // 清空适应症搜索框
   function clearIndicationKeyword() {
     indicationKeyword.value = ''
-  }
-
-  // 清空药品搜索框：复位关键字、联想下拉、已选药品并清理防抖
-  function clearDrugKeyword() {
-    if (drugState.timer) clearTimeout(drugState.timer)
-    drugState.timer = null
-    drugState.keyword = ''
-    drugState.results = []
-    drugState.showDropdown = false
-    drugState.selected = null
-  }
-
-  async function fetchDrugNames() {
-    const keyword = drugState.keyword.trim()
-    if (!keyword) return
-
-    drugState.loading = true
-    drugState.showDropdown = true
-
-    try {
-      const res = await queryCleanedDrugName({
-        pageNum: 1,
-        pageSize: 20,
-        searchKey: keyword
-      })
-      drugState.results = res.data?.list || []
-    } catch {
-      drugState.results = []
-    } finally {
-      drugState.loading = false
-    }
-  }
-
-  function selectDrug(item: CleanedDrugItem) {
-    drugState.keyword = item.cleanedDrugName
-    drugState.selected = item
-    drugState.showDropdown = false
   }
   // #endregion
 
   // #region 最近搜索记录
   const RECENT_MAX_COUNT = 10
-  const RECENT_KEYS: Record<SearchTab, string> = {
-    indication: 'findCustomerRecentIndication',
-    drug: 'findCustomerRecentDrug'
-  }
-  const recentIndicationList = ref<string[]>([])
-  const recentDrugList = ref<string[]>([])
+  const RECENT_STORAGE_KEY = 'findCustomerRecentIndication'
+  const recentList = ref<string[]>([])
 
-  // 当前 tab 对应的最近搜索记录
-  const recentList = computed(() =>
-    activeTab.value === 'indication' ? recentIndicationList.value : recentDrugList.value
-  )
-
-  function readRecent(key: string) {
+  function loadRecentList() {
     try {
-      const data = uni.getStorageSync(key)
-      return Array.isArray(data) ? data.slice(0, RECENT_MAX_COUNT) : []
+      const data = uni.getStorageSync(RECENT_STORAGE_KEY)
+      recentList.value = Array.isArray(data) ? data.slice(0, RECENT_MAX_COUNT) : []
     } catch {
-      return []
+      recentList.value = []
     }
-  }
-
-  function loadRecentLists() {
-    recentIndicationList.value = readRecent(RECENT_KEYS.indication)
-    recentDrugList.value = readRecent(RECENT_KEYS.drug)
   }
 
   // 记录搜索关键字：去重、最新的排前面、最多保留 10 条
   function saveRecent(name: string) {
-    const list = [name, ...recentList.value.filter((item) => item !== name)].slice(
+    recentList.value = [name, ...recentList.value.filter((item) => item !== name)].slice(
       0,
       RECENT_MAX_COUNT
     )
-    if (activeTab.value === 'indication') {
-      recentIndicationList.value = list
-    } else {
-      recentDrugList.value = list
-    }
-    uni.setStorageSync(RECENT_KEYS[activeTab.value], list)
+    uni.setStorageSync(RECENT_STORAGE_KEY, recentList.value)
   }
 
-  // 清空当前 tab 的搜索历史
+  // 清空搜索历史
   function clearRecentList() {
-    if (activeTab.value === 'indication') {
-      recentIndicationList.value = []
-    } else {
-      recentDrugList.value = []
-    }
-    uni.removeStorageSync(RECENT_KEYS[activeTab.value])
+    recentList.value = []
+    uni.removeStorageSync(RECENT_STORAGE_KEY)
   }
 
   // 点击历史记录：回填关键字并直接搜索
   function selectRecent(name: string) {
-    if (activeTab.value === 'indication') {
-      indicationKeyword.value = name
-    } else {
-      drugState.keyword = name
-      drugState.selected = null
-      drugState.showDropdown = false
-    }
+    indicationKeyword.value = name
     handleSearch()
-  }
-  // #endregion
-
-  // #region UI 辅助逻辑
-  // 下拉列表高度：单行约 88rpx，最多展示约 400rpx，超出可上下滚动
-  const DROPDOWN_ITEM_HEIGHT = 88
-  const DROPDOWN_MAX_HEIGHT = 400
-  function dropdownListStyle(count: number) {
-    const height = Math.min(count * DROPDOWN_ITEM_HEIGHT, DROPDOWN_MAX_HEIGHT)
-    return { height: `${height}rpx` }
   }
   // #endregion
 
@@ -315,17 +135,11 @@
     (val) => {
       if (val) {
         // 打开时读取最近搜索记录
-        loadRecentLists()
+        loadRecentList()
         return
       }
       // 关闭时重置表单
-      if (drugState.timer) clearTimeout(drugState.timer)
-      drugState.timer = null
       indicationKeyword.value = ''
-      drugState.keyword = ''
-      drugState.results = []
-      drugState.showDropdown = false
-      drugState.selected = null
     }
   )
   // #endregion
@@ -336,22 +150,17 @@
   }
 
   function handleSearch() {
-    const isIndication = activeTab.value === 'indication'
-    const keyword = (isIndication ? indicationKeyword.value : drugState.keyword).trim()
+    const keyword = indicationKeyword.value.trim()
 
     if (!keyword) {
-      uni.showToast({
-        title: isIndication ? '请输入适应症' : '请输入药品名',
-        icon: 'none'
-      })
+      uni.showToast({ title: '请输入适应症', icon: 'none' })
       return
     }
 
     saveRecent(keyword)
 
-    const query = `indication=${encodeURIComponent(isIndication ? keyword : '')}&drugName=${encodeURIComponent(isIndication ? '' : keyword)}`
     uni.navigateTo({
-      url: `/pages/customer/matching-degree?${query}`
+      url: `/pages/customer/matching-degree?indication=${encodeURIComponent(keyword)}`
     })
     close()
   }
@@ -419,32 +228,6 @@
   }
   /* #endregion */
 
-  /* #region 模式切换 */
-  .fc-mode {
-    display: flex;
-    padding: 6rpx;
-    margin-bottom: 16rpx;
-    background: #f7f8fa;
-    border-radius: 20rpx;
-
-    .fc-mode-tab {
-      flex: 1;
-      padding: 14rpx 0;
-      text-align: center;
-      font-size: 26rpx;
-      color: #6b7280;
-      border-radius: 16rpx;
-
-      &.active {
-        background: #ffffff;
-        color: #1e6fff;
-        font-weight: 600;
-        box-shadow: 0 2rpx 8rpx rgba(15, 23, 42, 0.06);
-      }
-    }
-  }
-  /* #endregion */
-
   /* #region 搜索框 */
   .search-wrap {
     position: relative;
@@ -492,44 +275,6 @@
 
       &:active {
         opacity: 0.85;
-      }
-    }
-
-    .search-dropdown {
-      position: absolute;
-      top: 92rpx;
-      left: 0;
-      right: 0;
-      padding: 8rpx 12rpx;
-      background: #ffffff;
-      border-radius: 20rpx;
-      box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.1);
-      z-index: 10;
-
-      .dropdown-list {
-        width: 100%;
-      }
-
-      .dropdown-item {
-        padding: 22rpx 16rpx;
-        border-radius: 16rpx;
-
-        &:active {
-          background: #f7f8fa;
-        }
-
-        .dropdown-name {
-          font-size: 28rpx;
-          color: #1f2329;
-        }
-      }
-
-      .dropdown-loading,
-      .dropdown-empty {
-        padding: 30rpx 0;
-        text-align: center;
-        font-size: 26rpx;
-        color: #9ca3af;
       }
     }
   }

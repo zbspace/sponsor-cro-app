@@ -6,131 +6,98 @@
         <view class="arrow"></view>
       </view>
     </view>
-    <text class="title">匹配度</text>
+    <text class="title">按适应症找客户</text>
     <view class="nav-right"></view>
   </view>
 
   <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
 
-  <!-- 搜索栏 -->
-  <view class="search-section">
-    <view class="search-input-section">
-      <view class="input-wrapper">
-        <icon type="search" size="18" color="#CCCCCC" class="search-icon" />
-        <input
-          type="text"
-          v-model="searchKeyword"
-          placeholder="输入查找目标客户"
-          placeholder-style="color: #CCCCCC"
-          @input="onSearchInput"
-        />
-        <text class="clear-icon" v-if="searchKeyword" @click="clearSearchKeyword">×</text>
-        <view class="arrow-down-icon"></view>
-      </view>
+  <view class="fm-wrap">
+    <!-- #region 搜索记录 -->
+    <view class="fm-record">
+      <text>搜索记录：</text>
+      <text class="fm-kw">{{ indicationKeyword || '—' }}</text>
+    </view>
+    <!-- #endregion -->
 
-      <!-- 搜索下拉联想 -->
-      <view class="search-dropdown" v-if="showDropdown">
-        <view class="dropdown-loading" v-if="searchLoading">
-          <text>加载中...</text>
-        </view>
-        <template v-else>
-          <!-- 结果较多时可上下滚动 -->
-          <scroll-view
-            scroll-y
-            class="dropdown-list"
-            :show-scrollbar="false"
-            :style="dropdownListStyle"
-            v-if="searchResults.length > 0"
-          >
-            <view
-              class="dropdown-item"
-              v-for="item in searchResults"
-              :key="item.parentCompanyId"
-              @click="selectCompany(item)"
-            >
-              <text class="dropdown-name">{{ item.parentCompanyShortName }}</text>
-            </view>
-          </scroll-view>
-          <view class="dropdown-empty" v-if="searchResults.length === 0">
-            <text>未找到相关公司</text>
-          </view>
-        </template>
+    <!-- #region 企业名称搜索 -->
+    <view class="fm-search">
+      <icon type="search" size="16" color="#9CA3AF" />
+      <input
+        type="text"
+        v-model="companyKeyword"
+        placeholder="搜索企业名称"
+        placeholder-style="color: #9CA3AF"
+      />
+      <view class="fm-clear" v-if="companyKeyword" @click="clearCompanyKeyword">
+        <text>×</text>
       </view>
     </view>
-  </view>
+    <!-- #endregion -->
 
-  <!-- 内容卡片 -->
-  <scroll-view
-    scroll-y
-    class="container-scroll-view"
-    :show-scrollbar="false"
-    :style="{
-      maxHeight: `calc(100vh - 130px - ${menu.top}px - ${menu.height}px)`,
-      marginTop: `${menu.top + menu.height + 88}rpx`
-    }"
-    @scrolltolower="onScrollToLower"
-  >
-    <view class="list-container">
+    <!-- #region 匹配汇总 -->
+    <view class="fm-sum">
+      <view class="fm-sum-top">
+        共
+        <text class="fm-sum-total">{{ summary.total }}</text>
+        家企业
+      </view>
+      <view class="fm-sum-grid">
+        <view class="fm-sum-cell yes">
+          <view class="fm-sum-line">
+            <text class="fm-sum-num">{{ summary.matchCnt }}</text>
+            <text class="fm-sum-unit">家</text>
+          </view>
+          <text class="fm-sum-label">匹配到相关产品管线</text>
+        </view>
+        <view class="fm-sum-cell no">
+          <view class="fm-sum-line">
+            <text class="fm-sum-num">{{ summary.notMatchCnt }}</text>
+            <text class="fm-sum-unit">家</text>
+          </view>
+          <text class="fm-sum-label">未匹配到相关产品管线</text>
+        </view>
+      </view>
+    </view>
+    <!-- #endregion -->
+
+    <!-- #region 列表上限提示 -->
+    <view class="fm-note" v-if="noteText">{{ noteText }}</view>
+    <!-- #endregion -->
+
+    <!-- #region 匹配企业列表 -->
+    <view class="fm-table">
+      <view class="fm-thead">
+        <text class="fm-th fm-c1">序号</text>
+        <text class="fm-th fm-c2">企业简称</text>
+        <text class="fm-th fm-c3">相关产品管线</text>
+      </view>
+
       <view
-        class="company-card"
-        v-for="item in list"
+        class="fm-tr"
+        v-for="(item, index) in filteredList"
         :key="item.parentCompanyId"
         @click="goToDetail(item)"
       >
-        <view class="card-header">
-          <view class="company-info">
-            <view class="company-logo">{{ item.shortName[0] }}</view>
-            <text class="company-name">{{ item.name }}</text>
-          </view>
-          <view class="match-score">
-            <text class="label">匹配分数：</text>
-            <text class="value">{{ item.score }}</text>
-          </view>
-        </view>
-
-        <view class="match-details">
-          <view class="detail-item">
-            <view class="status-icon" :class="{ success: item.indicationMatch }">
-              <icon
-                :type="item.indicationMatch ? 'success' : 'clear'"
-                size="14"
-                :color="item.indicationMatch ? '#52C41A' : '#F5222D'"
-              />
-            </view>
-            <text class="detail-label">适应症匹配记录</text>
-            <text class="detail-count">{{ item.indicationCount }}</text>
-          </view>
-          <view class="detail-item">
-            <view class="status-icon" :class="{ success: item.drugMatch }">
-              <icon
-                :type="item.drugMatch ? 'success' : 'clear'"
-                size="14"
-                :color="item.drugMatch ? '#52C41A' : '#F5222D'"
-              />
-            </view>
-            <text class="detail-label">药品匹配记录</text>
-            <text class="detail-count">{{ item.drugCount }}</text>
-          </view>
-          <view class="detail-item">
-            <view class="status-icon" :class="{ success: item.leadMatch }">
-              <icon
-                :type="item.leadMatch ? 'success' : 'clear'"
-                size="14"
-                :color="item.leadMatch ? '#52C41A' : '#F5222D'"
-              />
-            </view>
-            <text class="detail-label">商机线索匹配记录</text>
-            <text class="detail-count">{{ item.leadCount }}</text>
-          </view>
+        <text class="fm-idx">{{ index + 1 }}</text>
+        <text class="fm-co">{{ item.name }}</text>
+        <view class="fm-cell">
+          <text class="fm-tag" :class="item.matched ? 'yes' : 'no'">
+            {{ item.matched ? '是' : '否' }}
+          </text>
+          <view class="arrow-right-icon"></view>
         </view>
       </view>
 
-      <!-- 加载状态 -->
-      <view class="loading-status" v-if="list.length > 0 && (listLoading || noMore)">
-        <text>{{ listLoading ? '加载中...' : '没有更多了' }}</text>
+      <view class="fm-empty" v-if="listLoading">
+        <text>加载中...</text>
+      </view>
+      <view class="fm-empty" v-else-if="filteredList.length === 0">
+        <text>未找到匹配企业</text>
       </view>
     </view>
-  </scroll-view>
+    <!-- #endregion -->
+  </view>
 
   <phone-bind-popup />
 </template>
@@ -140,40 +107,27 @@
   import { ref, computed } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
-  import { getParentShortNameList, getMatchingScoreList } from '@/api'
-  import type { ParentCompanyItem } from '@/types/api'
-
+  import { getMatchingScoreList, matchingCompanyStatistics } from '@/api'
+  import type { MatchingScoreItem } from '@/types/api'
   // #endregion
 
   // #region 状态
-  const searchKeyword = ref('')
+  // 列表接口只返回第一页 100 条，更多企业靠企业名称搜索定位
+  const LIST_LIMIT = 100
 
   interface MatchingItem {
     parentCompanyId: number
     name: string
-    shortName: string
-    score: number
-    indicationMatch: boolean
-    indicationCount: number
-    drugMatch: boolean
-    drugCount: number
-    leadMatch: boolean
-    leadCount: number
+    matched: boolean
   }
 
+  // 路由带入的适应症，仅用于展示搜索记录
+  const indicationKeyword = ref('')
+  // 企业名称筛选（对已加载列表做前端过滤）
+  const companyKeyword = ref('')
   const list = ref<MatchingItem[]>([])
-  const pageNum = ref(1)
-  const pageSize = 20
   const listLoading = ref(false)
-  const noMore = ref(false)
-  // 请求序号，用于丢弃过期响应
-  let requestId = 0
-
-  // 搜索条件（来自找客户弹窗，仅用于查询，不回填搜索框）
-  const queryParams = {
-    indication: '',
-    productName: ''
-  }
+  const summary = ref({ total: 0, matchCnt: 0, notMatchCnt: 0 })
 
   // 胶囊位置信息
   const menu = ref({
@@ -181,18 +135,77 @@
     left: 0,
     height: 0
   })
+
+  // 按企业名称筛选后展示的列表
+  const filteredList = computed(() => {
+    const keyword = companyKeyword.value.trim()
+    if (!keyword) return list.value
+    return list.value.filter((item) => item.name.includes(keyword))
+  })
+
+  // 列表上限提示 / 筛选结果提示
+  const noteText = computed(() => {
+    if (companyKeyword.value.trim()) {
+      return `在全部 ${list.value.length} 家中搜索到 ${filteredList.value.length} 家`
+    }
+    if (list.value.length >= LIST_LIMIT) return `最多展示 ${LIST_LIMIT} 家`
+    return ''
+  })
   // #endregion
 
   // #region 生命周期
   onLoad((options) => {
-    const info = uni.getMenuButtonBoundingClientRect()
-    menu.value = info
+    menu.value = uni.getMenuButtonBoundingClientRect()
 
-    queryParams.indication = options?.indication ? decodeURIComponent(options.indication) : ''
-    queryParams.productName = options?.drugName ? decodeURIComponent(options.drugName) : ''
+    indicationKeyword.value = options?.indication ? decodeURIComponent(options.indication) : ''
 
-    fetchMatchingList(true)
+    fetchPageData()
   })
+  // #endregion
+
+  // #region 数据请求
+  function buildParams() {
+    return {
+      indication: indicationKeyword.value || undefined,
+      pageNum: 1,
+      pageSize: LIST_LIMIT
+    }
+  }
+
+  async function fetchPageData() {
+    listLoading.value = true
+    // 汇总统计与列表互不依赖，并行请求
+    await Promise.all([fetchSummary(), fetchList()])
+    listLoading.value = false
+  }
+
+  async function fetchSummary() {
+    try {
+      const res = await matchingCompanyStatistics(buildParams())
+      summary.value = {
+        total: res.data?.total ?? 0,
+        matchCnt: res.data?.matchCnt ?? 0,
+        notMatchCnt: res.data?.notMatchCnt ?? 0
+      }
+    } catch {
+      summary.value = { total: 0, matchCnt: 0, notMatchCnt: 0 }
+    }
+  }
+
+  async function fetchList() {
+    try {
+      const res = await getMatchingScoreList(buildParams())
+      list.value = (res.data?.list || []).map((item: MatchingScoreItem) => ({
+        parentCompanyId: item.parentCompanyId,
+        name: item.parentCompanyName,
+        matched: item.matchingResult === '是'
+      }))
+    } catch {
+      list.value = []
+    } finally {
+      listLoading.value = false
+    }
+  }
   // #endregion
 
   // #region 方法
@@ -200,335 +213,280 @@
     uni.navigateBack({ delta: 1, fail: () => uni.reLaunch({ url: '/pages/index/index' }) })
   }
 
+  // 清空企业名称筛选，回到全部企业
+  function clearCompanyKeyword() {
+    companyKeyword.value = ''
+  }
+
   function goToDetail(item: MatchingItem) {
     uni.navigateTo({
       url: `/pages/customer/company-detail?companyName=${encodeURIComponent(item.name)}&parentCompanyId=${item.parentCompanyId}`
     })
   }
-
-  // 获取匹配度列表，isRefresh 为 true 时重新从第一页加载
-  async function fetchMatchingList(isRefresh = false) {
-    if (!isRefresh) {
-      if (listLoading.value || noMore.value) return
-    } else {
-      pageNum.value = 1
-      noMore.value = false
-      list.value = []
-    }
-
-    const currentRequestId = ++requestId
-    listLoading.value = true
-    try {
-      const res = await getMatchingScoreList({
-        indication: queryParams.indication || undefined,
-        productName: queryParams.productName || undefined,
-        parentCompanyId: selectedCompany.value?.parentCompanyId,
-        pageNum: pageNum.value,
-        pageSize
-      })
-      // 已有更新的请求，忽略本次结果
-      if (currentRequestId !== requestId) return
-
-      const newList = (res.data?.list || []).map((item) => ({
-        parentCompanyId: item.parentCompanyId,
-        name: item.parentCompanyName,
-        shortName: (item.parentCompanyName || '').charAt(0),
-        score: item.matchingScore,
-        indicationMatch: item.matchingIndicationCnt > 0,
-        indicationCount: item.matchingIndicationCnt,
-        drugMatch: item.matchingDrugCnt > 0,
-        drugCount: item.matchingDrugCnt,
-        leadMatch: item.matchingBusinessClueCnt > 0,
-        leadCount: item.matchingBusinessClueCnt
-      }))
-      list.value = [...list.value, ...newList]
-
-      if (newList.length < pageSize) {
-        noMore.value = true
-      } else {
-        pageNum.value++
-      }
-    } catch {
-      if (currentRequestId === requestId) noMore.value = true
-    } finally {
-      if (currentRequestId === requestId) listLoading.value = false
-    }
-  }
-
-  // 滚动到底部加载下一页
-  function onScrollToLower() {
-    fetchMatchingList()
-  }
-  // #endregion
-
-  // #region 下拉联想
-  const selectedCompany = ref<ParentCompanyItem | null>(null)
-  let searchTimer: ReturnType<typeof setTimeout> | null = null
-  const searchResults = ref<ParentCompanyItem[]>([])
-  const showDropdown = ref(false)
-  const searchLoading = ref(false)
-
-  function onSearchInput() {
-    if (searchTimer) clearTimeout(searchTimer)
-    // 选中值发生变化时重新查询匹配列表
-    const hadSelected = selectedCompany.value !== null
-    selectedCompany.value = null // 输入时重置已选公司
-    if (hadSelected) fetchMatchingList(true)
-
-    const keyword = searchKeyword.value.trim()
-    if (!keyword) {
-      searchResults.value = []
-      showDropdown.value = false
-      return
-    }
-
-    searchTimer = setTimeout(() => {
-      fetchSearchResults()
-    }, 300)
-  }
-
-  /** 清空搜索关键字并复位联想状态，之前有已选公司时恢复完整匹配列表 */
-  function clearSearchKeyword() {
-    searchKeyword.value = ''
-    const hadSelected = selectedCompany.value !== null
-    selectedCompany.value = null
-    searchResults.value = []
-    showDropdown.value = false
-    if (searchTimer) {
-      clearTimeout(searchTimer)
-      searchTimer = null
-    }
-    if (hadSelected) fetchMatchingList(true)
-  }
-
-  async function fetchSearchResults() {
-    const keyword = searchKeyword.value.trim()
-    if (!keyword) return
-
-    searchLoading.value = true
-    showDropdown.value = true
-
-    try {
-      const res = await getParentShortNameList({
-        companyType: 'sponsor',
-        pageNum: 1,
-        pageSize: 20,
-        shortName: keyword
-      })
-      searchResults.value = res.data?.list || []
-    } catch {
-      searchResults.value = []
-    } finally {
-      searchLoading.value = false
-    }
-  }
-
-  // 下拉列表高度：单行约 88rpx，最多展示约 400rpx，超出可上下滚动
-  const DROPDOWN_ITEM_HEIGHT = 88
-  const DROPDOWN_MAX_HEIGHT = 400
-  const dropdownListStyle = computed(() => {
-    const count = searchResults.value.length
-    const height = Math.min(count * DROPDOWN_ITEM_HEIGHT, DROPDOWN_MAX_HEIGHT)
-    return { height: `${height}rpx` }
-  })
-
-  function selectCompany(item: ParentCompanyItem) {
-    searchKeyword.value = item.parentCompanyShortName
-    selectedCompany.value = item
-    showDropdown.value = false
-    // 选中值发生变化时重新查询匹配列表
-    fetchMatchingList(true)
-  }
   // #endregion
 </script>
 
 <style lang="scss" scoped>
-  .search-section {
-    position: fixed;
-    left: 30rpx;
-    right: 30rpx;
-    z-index: 90;
-    margin-top: 50rpx;
+  .fm-wrap {
+    padding: 12rpx 24rpx calc(40rpx + env(safe-area-inset-bottom));
   }
 
-  .list-container {
-    padding: 0 30rpx 30rpx;
-  }
-
-  .loading-status {
-    text-align: center;
-    padding: 30rpx 0;
+  /* #region 搜索记录 */
+  .fm-record {
+    margin: 0 8rpx 20rpx;
     font-size: 24rpx;
-    color: #999999;
-  }
+    color: #9ca3af;
 
-  .company-card {
+    .fm-kw {
+      color: #1f2329;
+      font-weight: 600;
+    }
+  }
+  /* #endregion */
+
+  /* #region 企业名称搜索 */
+  .fm-search {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+    height: 88rpx;
+    padding: 0 28rpx;
+    margin-bottom: 24rpx;
     background: #ffffff;
     border-radius: 24rpx;
-    padding: 30rpx;
-    margin-bottom: 30rpx;
-    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
+    box-shadow: 0 2rpx 6rpx rgba(15, 23, 42, 0.06);
 
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 30rpx;
-
-      .company-info {
-        display: flex;
-        align-items: center;
-        gap: 20rpx;
-
-        .company-logo {
-          width: 64rpx;
-          height: 64rpx;
-          background: #499ae6;
-          border-radius: 50%;
-          color: #ffffff;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          font-size: 32rpx;
-          font-weight: bold;
-        }
-
-        .company-name {
-          font-size: 32rpx;
-          color: #333;
-          font-weight: bold;
-        }
-      }
-
-      .match-score {
-        font-size: 24rpx;
-        .label {
-          color: #499ae6;
-        }
-        .value {
-          color: #499ae6;
-          font-weight: bold;
-        }
-      }
+    input {
+      flex: 1;
+      min-width: 0;
+      font-size: 28rpx;
+      color: #1f2329;
     }
 
-    .match-details {
-      background: #f7f8fa;
-      border-radius: 20rpx;
-      padding: 20rpx 30rpx;
-
-      .detail-item {
-        display: flex;
-        align-items: center;
-        margin-bottom: 20rpx;
-        &:last-child {
-          margin-bottom: 0;
-        }
-
-        .status-icon {
-          margin-right: 16rpx;
-          display: flex;
-          align-items: center;
-        }
-
-        .detail-label {
-          flex: 1;
-          font-size: 26rpx;
-          color: #666;
-        }
-
-        .detail-count {
-          font-size: 26rpx;
-          color: #333;
-          width: 60rpx;
-          text-align: right;
-        }
-      }
-    }
-  }
-
-  .search-input-section {
-    position: relative;
-    margin-bottom: 60rpx;
-
-    .arrow-down-icon {
-      width: 0;
-      height: 0;
-      border-left: 10rpx solid transparent;
-      border-right: 10rpx solid transparent;
-      border-top: 12rpx solid #cccccc;
-      margin-left: 16rpx;
-    }
-
-    .search-icon {
-      margin-right: 16rpx;
-    }
-
-    .input-wrapper {
-      background: #fff;
-      border-radius: 16rpx;
-      height: 88rpx;
-      padding: 0 30rpx;
+    .fm-clear {
+      width: 36rpx;
+      height: 36rpx;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: #c9cfd8;
       display: flex;
       align-items: center;
+      justify-content: center;
 
-      input {
-        flex: 1;
-        font-size: 28rpx;
-        color: #333333;
-      }
-
-      .clear-icon {
-        flex-shrink: 0;
-        padding-left: 10rpx;
-        font-size: 32rpx;
-        line-height: 1;
-        color: #cccccc;
-      }
-    }
-
-    .search-dropdown {
-      position: absolute;
-      top: 96rpx;
-      left: 0;
-      right: 0;
-      background: #ffffff;
-      border-radius: 12rpx;
-      box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
-      z-index: 10;
-      max-height: 400rpx;
-      overflow-y: auto;
-
-      // 滚动列表
-      .dropdown-list {
-        width: 100%;
-      }
-
-      .dropdown-item {
-        padding: 24rpx 30rpx;
-        border-bottom: 1rpx solid #f5f5f5;
-
-        &:last-child {
-          border-bottom: none;
-        }
-
-        &:active {
-          background: #f7f8fa;
-        }
-
-        .dropdown-name {
-          font-size: 28rpx;
-          color: #333333;
-        }
-      }
-
-      .dropdown-loading,
-      .dropdown-empty {
-        padding: 30rpx 0;
-        text-align: center;
+      text {
+        color: #ffffff;
         font-size: 26rpx;
-        color: #999999;
+        line-height: 1;
+      }
+
+      &:active {
+        background: #b3bac6;
       }
     }
   }
+  /* #endregion */
+
+  /* #region 匹配汇总 */
+  .fm-sum {
+    padding: 24rpx;
+    margin-bottom: 24rpx;
+    background: #ffffff;
+    border-radius: 32rpx;
+    box-shadow: 0 2rpx 6rpx rgba(15, 23, 42, 0.06);
+
+    .fm-sum-top {
+      margin: 0 4rpx 18rpx;
+      font-size: 24rpx;
+      color: #9ca3af;
+
+      .fm-sum-total {
+        font-size: 26rpx;
+        font-weight: 700;
+        color: #1f2329;
+      }
+    }
+
+    .fm-sum-grid {
+      display: flex;
+      gap: 16rpx;
+    }
+
+    .fm-sum-cell {
+      flex: 1;
+      min-width: 0;
+      padding: 18rpx 22rpx;
+      border-radius: 24rpx;
+
+      &.yes {
+        background: #e6f7f1;
+
+        .fm-sum-num,
+        .fm-sum-unit,
+        .fm-sum-label {
+          color: #0b7b5b;
+        }
+      }
+
+      &.no {
+        background: #f5f6f8;
+
+        .fm-sum-num,
+        .fm-sum-unit,
+        .fm-sum-label {
+          color: #8a929e;
+        }
+      }
+    }
+
+    .fm-sum-line {
+      display: flex;
+      align-items: baseline;
+      gap: 6rpx;
+    }
+
+    .fm-sum-num {
+      font-size: 46rpx;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .fm-sum-unit {
+      font-size: 22rpx;
+      font-weight: 500;
+    }
+
+    .fm-sum-label {
+      display: block;
+      margin-top: 6rpx;
+      font-size: 22rpx;
+      line-height: 1.45;
+    }
+  }
+  /* #endregion */
+
+  /* #region 列表上限提示 */
+  .fm-note {
+    margin: 0 4rpx 18rpx;
+    padding-left: 24rpx;
+    font-size: 23rpx;
+    line-height: 1.6;
+    color: #9ca3af;
+  }
+  /* #endregion */
+
+  /* #region 匹配企业列表 */
+  .fm-table {
+    padding: 0 24rpx;
+    background: #ffffff;
+    border-radius: 32rpx;
+    box-shadow: 0 2rpx 6rpx rgba(15, 23, 42, 0.06);
+  }
+
+  .fm-thead {
+    display: flex;
+    align-items: center;
+    padding: 22rpx 4rpx;
+    border-bottom: 2rpx solid #f0f1f3;
+  }
+
+  .fm-th {
+    font-size: 24rpx;
+    color: #9ca3af;
+  }
+
+  .fm-c1 {
+    width: 84rpx;
+    flex-shrink: 0;
+    text-align: center;
+  }
+
+  .fm-c2 {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .fm-c3 {
+    width: 184rpx;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .fm-tr {
+    display: flex;
+    align-items: center;
+    padding: 0 4rpx;
+    border-bottom: 2rpx solid #f0f1f3;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:active {
+      background: #fafbfd;
+    }
+  }
+
+  .fm-idx {
+    width: 84rpx;
+    flex-shrink: 0;
+    padding: 26rpx 0;
+    text-align: center;
+    font-size: 26rpx;
+    color: #6b7280;
+  }
+
+  .fm-co {
+    flex: 1;
+    min-width: 0;
+    padding: 26rpx 0;
+    font-size: 29rpx;
+    font-weight: 500;
+    color: #1f2329;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .fm-cell {
+    width: 184rpx;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10rpx;
+
+    .arrow-right-icon {
+      flex-shrink: 0;
+    }
+  }
+
+  .fm-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 44rpx;
+    min-width: 76rpx;
+    padding: 0 16rpx;
+    border-radius: 14rpx;
+    font-size: 24rpx;
+    font-weight: 600;
+
+    &.yes {
+      background: #e6f7f1;
+      color: #0b7b5b;
+    }
+
+    &.no {
+      background: #f1f3f7;
+      color: #6b7280;
+    }
+  }
+
+  .fm-empty {
+    padding: 60rpx 0;
+    text-align: center;
+    font-size: 26rpx;
+    color: #9ca3af;
+  }
+  /* #endregion */
 </style>

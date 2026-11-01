@@ -23,6 +23,7 @@ import type {
   SponsorRankListResponse,
   RelatedCompanyListResponse,
   StandardCompanyListResponse,
+  DrugRecordCntResponse,
   HospitalStatisticsResponse,
   TrialStageResponse,
   TrialStatusResponse,
@@ -38,6 +39,7 @@ import type {
   SearchCustIndexReq,
   MatchingScoreParam,
   MatchingScoreListResponse,
+  MatchingCompanyStatisticsResponse,
   BusinessClueStatisticsResponse,
   CroAndThirdLabStatisticsResponse,
   PipelineStatisticsResponse,
@@ -493,6 +495,24 @@ export async function queryParentCompanyByDrugName(params: {
   )
 }
 
+/**
+ * 获取药品对应的记录数（IND / CDE / NDA）
+ * @param params { drugStandardName, pageNum, pageSize, parentCompanyId }
+ * @returns Promise<DrugRecordCntResponse>
+ */
+export async function queryDrugRecordCnt(params: {
+  /** 清洗后的药品名称 */
+  drugStandardName?: string
+  /** 当前页数 */
+  pageNum?: number
+  /** 每页条数 */
+  pageSize?: number
+  /** 母公司ID */
+  parentCompanyId?: number
+}) {
+  return post<DrugRecordCntResponse>('/api/searchDrug/queryDrugRecordCnt', params, true)
+}
+
 // #endregion
 
 // #region 医院/研究者合作情况统计模块
@@ -814,12 +834,25 @@ export async function reviewWord(wordId: number, answerResult: boolean) {
 // #region 查客户首页模块
 
 /**
- * 找客户-匹配度列表
+ * 找客户-匹配度列表（接口只返回第一页 100 条）
  * @param params { indication, productName, parentCompanyId, pageNum, pageSize }
  * @returns Promise<MatchingScoreListResponse>
  */
 export async function getMatchingScoreList(params: MatchingScoreParam) {
   return post<MatchingScoreListResponse>('/api/seekCust/matchingScoreList', params, true)
+}
+
+/**
+ * 找客户-企业匹配统计（共 N 家、匹配 M 家、未匹配 K 家）
+ * @param params { indication, productName, parentCompanyId, pageNum, pageSize }
+ * @returns Promise<MatchingCompanyStatisticsResponse>
+ */
+export async function matchingCompanyStatistics(params: MatchingScoreParam) {
+  return post<MatchingCompanyStatisticsResponse>(
+    '/api/seekCust/matchingCompanyStatistics',
+    params,
+    true
+  )
 }
 
 /**

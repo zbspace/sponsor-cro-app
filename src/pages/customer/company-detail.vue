@@ -149,7 +149,7 @@
                 <image src="/static/search-customer/4.png" mode="aspectFit" />
               </view>
               <view class="item-info">
-                <text class="label">上市后</text>
+                <text class="label">IV期/IIT</text>
                 <text class="value">{{ businessClueStat.afterListingNum }}</text>
               </view>
             </view>
@@ -158,7 +158,7 @@
                 <image src="/static/search-customer/5.png" mode="aspectFit" />
               </view>
               <view class="item-info">
-                <text class="label">上市前</text>
+                <text class="label">I期/II期/III期</text>
                 <text class="value">{{ businessClueStat.beforeListingNum }}</text>
               </view>
             </view>

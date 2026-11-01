@@ -128,7 +128,7 @@
     {
       "path": "pages/customer/matching-degree",
       "style": {
-        "navigationBarTitleText": "匹配度",
+        "navigationBarTitleText": "按适应症找客户",
         "navigationStyle": "custom"
       }
     },

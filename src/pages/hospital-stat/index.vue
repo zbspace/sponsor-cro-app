@@ -28,7 +28,7 @@
         flexDirection: 'column'
       }"
     >
-      <!-- #region 查询来源：药企 & 医院 -->
+      <!-- #region 查询来源：药企 & 研究者 & 医院 -->
       <view class="query-source-bar" v-if="querySourceText">
         <text class="source-label">查询内容：</text>
         <text class="source-value">{{ querySourceText }}</text>
@@ -329,14 +329,9 @@
   const researcherId = ref<number>()
   const researcherName = ref('')
 
-  // 查询内容展示文案：药企&医院
-  const querySourceText = computed(() =>
-    [companyName.value, hospitalName.value].filter(Boolean).join('&')
-  )
-
   function goBack() {
-    // 直接返回小程序首页
-    uni.reLaunch({ url: '/pages/index/index' })
+    // 返回上一页；若无上一页（如直接进入）则回到首页
+    uni.navigateBack({ delta: 1, fail: () => uni.reLaunch({ url: '/pages/index/index' }) })
   }
 
   onLoad((options: any) => {
@@ -660,6 +655,22 @@
   const routeListYear = ref('')
   const routeListStage = ref('')
   const routeListStatus = ref('')
+  // #endregion
+
+  // #region 查询内容展示文案：药企 & 研究者（医生） 医院（医院）
+  const querySourceText = computed(() => {
+    const parts: string[] = []
+    if (companyName.value) parts.push(companyName.value)
+    // 读取路由变量：切 Tab 会清空 researcherName，不能直接用它
+    if (routeListResearcherName.value) parts.push(`${routeListResearcherName.value}`)
+    let text = parts.join('&')
+    if (hospitalName.value) {
+      // 与研究者成对出现时标注医院身份，单独出现时保持原有展示
+      const hospital = routeListResearcherName.value ? `${hospitalName.value}` : hospitalName.value
+      text = text ? `${text} ${hospital}` : hospital
+    }
+    return text
+  })
   // #endregion
   // #endregion
 

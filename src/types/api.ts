@@ -131,6 +131,18 @@ export interface CleanedDrugNameListResponse {
 }
 
 /**
+ * 药品记录汇总（药品对应的各类型记录数）
+ */
+export interface DrugRecordCntResponse {
+  /** CDE记录数 */
+  cdeRecordCnt: number
+  /** IND记录数 */
+  indRecordCnt: number
+  /** NDA记录数 */
+  ndaRecordCnt: number
+}
+
+/**
  * 药品关联的母公司信息条目
  */
 export interface CompanyShortItem {
@@ -754,14 +766,28 @@ export interface MatchingScoreItem {
   matchingDrugCnt: number
   /** 商机线索匹配记录 */
   matchingBusinessClueCnt: number
+  /** 匹配结果，是或者否 */
+  matchingResult: string
 }
 
 /**
- * 找客户-匹配度列表响应
+ * 找客户-匹配度列表响应（接口只返回第一页 100 条）
  */
 export interface MatchingScoreListResponse {
   list: MatchingScoreItem[]
   pages: number
+  total: number
+}
+
+/**
+ * 找客户-企业匹配统计返回对象
+ */
+export interface MatchingCompanyStatisticsResponse {
+  /** 匹配数 */
+  matchCnt: number
+  /** 未匹配数 */
+  notMatchCnt: number
+  /** 总数 */
   total: number
 }
 
