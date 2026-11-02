@@ -593,6 +593,21 @@
     fetchProjectList()
   })
 
+  // 切换选项卡时重新请求对应数据（需放在 currentCroCompany 监听之前，
+  // 保证从榜单点击进入「项目列表」时先按第 1 页发起请求）
+  watch(activeTab, (val) => {
+    if (val === 'stat') {
+      croPage.value = 1
+      croNoMore.value = false
+      fetchOutsourcingRatio()
+      fetchCroRankList()
+      return
+    }
+    projectPage.value = 1
+    noMore.value = false
+    fetchProjectList()
+  })
+
   watch(currentCroCompany, () => {
     croPage.value = 1
     croNoMore.value = false
@@ -604,6 +619,7 @@
     croNoMore.value = false
     fetchCroRankList()
     fetchCroCompanyOptions()
+    fetchProjectList()
   })
   // #endregion
 </script>

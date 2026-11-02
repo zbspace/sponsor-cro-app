@@ -1,18 +1,20 @@
 <template>
   <!-- 头部 -->
   <view class="header" :style="{ paddingTop: `${menu.top}px` }">
-    <view
-      class="vip-btn-wrapper"
-      v-if="userInfo?.vipCode === VIP_CODE.普通"
-      @click="handleApplyTrialClick"
-    >
+    <view class="vip-btn-wrapper" v-if="headerVipState === 'apply'" @click="handleApplyTrialClick">
       <text>申请试用</text>
       <view class="arrow-right-icon" style="border-color: #fff"></view>
     </view>
-    <view class="vip-btn-wrapper" v-if="userInfo?.vipCode === VIP_CODE.VIP试用">
+    <view class="vip-btn-wrapper" v-if="headerVipState === 'applying'">
+      <text>申请试用中</text>
+    </view>
+    <view class="vip-btn-wrapper" v-if="headerVipState === 'pending'">
+      <text>会员待开通</text>
+    </view>
+    <view class="vip-btn-wrapper" v-if="headerVipState === 'trial'">
       <text>试用中</text>
     </view>
-    <view class="vip-badge" v-if="userInfo?.vipCode === VIP_CODE.VIP用户">
+    <view class="vip-badge" v-if="headerVipState === 'member'">
       <text>尊享会员</text>
     </view>
   </view>
@@ -513,6 +515,18 @@
     () =>
       applyStatus.value === APPLY_STATUS.申请试用中 || applyStatus.value === APPLY_STATUS.申请开通中
   )
+
+  // 首页头部会员状态：VIP 等级优先，普通用户再按申请状态区分
+  // applyStatus：0-未申请，1-申请试用中，2-试用中，3-申请开通中，4-开通中
+  const headerVipState = computed<'apply' | 'applying' | 'pending' | 'trial' | 'member'>(() => {
+    const vipCode = userInfo.value?.vipCode
+    if (vipCode === VIP_CODE.VIP用户) return 'member'
+    if (vipCode === VIP_CODE.VIP试用) return 'trial'
+    const status = userInfo.value?.applyStatus ?? APPLY_STATUS.未申请
+    if (status === APPLY_STATUS.申请试用中) return 'applying'
+    if (status === APPLY_STATUS.申请开通中 || status === APPLY_STATUS.开通中) return 'pending'
+    return 'apply'
+  })
 
   async function fetchVipApplicationStatus() {
     const detail = await refreshUserDetail()
