@@ -22,12 +22,6 @@
       }
     },
     {
-      "path": "pages/vip/index",
-      "style": {
-        "navigationBarTitleText": "会员"
-      }
-    },
-    {
       "path": "pages/mine/index",
       "style": {
         "navigationBarTitleText": "我的",

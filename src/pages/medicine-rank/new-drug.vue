@@ -231,6 +231,8 @@
     searchResults.value = []
     showDropdown.value = false
     selectedCompany.value = null
+    // 清空企业筛选后重新加载全量列表
+    fetchList(true)
   }
 
   async function fetchSearchResults() {

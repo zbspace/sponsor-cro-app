@@ -76,24 +76,18 @@
         <text class="menu-label">分享好友</text>
         <view class="menu-arrow"></view>
       </button>
-
-      <button class="menu-item menu-item-btn" open-type="share">
-        <view class="menu-ico ico-gray"></view>
-        <text class="menu-label">账号与登录</text>
-        <view class="menu-arrow"></view>
-      </button>
     </view>
     <!-- #endregion -->
 
-    <!-- #region 我的客户 -->
+    <!-- #region 我的收藏 -->
     <view class="sec-head">
-      <text class="sec-title">我的客户</text>
+      <text class="sec-title">我的收藏</text>
     </view>
 
     <!-- 空数据：暂无收藏客户 -->
     <view class="cust-empty" v-if="!loading && customers.length === 0">
       <view class="ce-ico"></view>
-      <text class="ce-title">暂无我的客户</text>
+      <text class="ce-title">暂无我的收藏</text>
       <text class="ce-desc">收藏的企业、CRO 将显示在这里</text>
     </view>
 
@@ -233,7 +227,7 @@
   }
   // #endregion
 
-  // #region 我的客户（收藏数据）
+  // #region 我的收藏（收藏数据）
   interface CustomerRow {
     id: number
     parentCompanyId: number
@@ -564,7 +558,7 @@
   }
   /* #endregion */
 
-  /* #region 我的客户 */
+  /* #region 我的收藏 */
   .sec-head {
     flex-shrink: 0;
     display: flex;
@@ -652,7 +646,7 @@
     transform: rotate(45deg);
   }
 
-  // 空态：暂无我的客户
+  // 空态：暂无我的收藏
   .cust-empty {
     flex-shrink: 0;
     display: flex;

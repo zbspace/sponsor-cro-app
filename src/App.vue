@@ -70,13 +70,14 @@
       }
     }
 
+    /* #region 会员标签：配色与规格对齐原型 trial-tag */
     .vip-btn-wrapper {
-      background: linear-gradient(90deg, #ec7e62 0%, #f0a755 100%);
+      background: linear-gradient(120deg, #ffa940, #ff7e2d);
       color: #fff;
-      padding: 12rpx 16rpx;
-      border-radius: 40rpx;
-      font-weight: bold;
-      font-size: 24rpx;
+      padding: 8rpx 24rpx;
+      border-radius: 28rpx;
+      font-weight: 600;
+      font-size: 22rpx;
       display: flex;
       align-items: center;
       gap: 10rpx;
@@ -87,21 +88,16 @@
     }
 
     .vip-badge {
-      background: linear-gradient(135deg, #2c2c40, #4a4a6a);
-      color: #f59e0b;
+      background: linear-gradient(120deg, #2bd8a0, #0fae7a);
+      color: #fff;
       padding: 8rpx 24rpx;
-      border-radius: 40rpx;
-      font-size: 28rpx;
+      border-radius: 28rpx;
+      font-weight: 600;
+      font-size: 22rpx;
       display: flex;
       align-items: center;
-      border: 2rpx solid rgba(245, 158, 11, 0.3);
-
-      .vip-badge-icon {
-        width: 36rpx;
-        height: 36rpx;
-        margin-right: 12rpx;
-      }
     }
+    /* #endregion */
     .title {
       font-family:
         PingFang SC,

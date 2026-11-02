@@ -12,12 +12,7 @@
     <view class="vip-btn-wrapper" v-if="userInfo?.vipCode === VIP_CODE.VIP试用">
       <text>试用中</text>
     </view>
-    <view
-      class="vip-badge"
-      v-if="userInfo?.vipCode === VIP_CODE.VIP用户"
-      @click="goTo('vip/index')"
-    >
-      <image class="vip-badge-icon" src="/static/vip-icon.svg" mode="aspectFit" />
+    <view class="vip-badge" v-if="userInfo?.vipCode === VIP_CODE.VIP用户">
       <text>尊享会员</text>
     </view>
   </view>
