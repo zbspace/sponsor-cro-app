@@ -79,14 +79,14 @@
     {
       "path": "pages/cro-rank/index",
       "style": {
-        "navigationBarTitleText": "CRO榜单",
+        "navigationBarTitleText": "全国临床CRO公司榜",
         "navigationStyle": "custom"
       }
     },
     {
       "path": "pages/lab-rank/index",
       "style": {
-        "navigationBarTitleText": "LAB榜单",
+        "navigationBarTitleText": "全国中心实验室榜",
         "navigationStyle": "custom"
       }
     },

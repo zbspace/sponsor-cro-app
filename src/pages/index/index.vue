@@ -481,6 +481,12 @@
       path: 'cro-rank/index'
     },
     {
+      title: '全国中心实验室榜',
+      icon: 'LAB',
+      iconUrl: '/static/home/15.png',
+      path: 'lab-rank/index'
+    },
+    {
       title: '中国附条件获批上市药品清单',
       icon: 'med',
       iconUrl: '/static/home/12.png',
