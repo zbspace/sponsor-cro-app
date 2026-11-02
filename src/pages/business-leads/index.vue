@@ -70,21 +70,56 @@
     </view>
   </view>
 
-  <!-- 线索类型 -->
-  <view class="seg-tabs">
+  <!-- #region 筛选行：线索类型 / 登记时间 -->
+  <view class="lead-filter-row">
     <view
-      class="seg-tab"
-      v-for="item in typeOptions"
-      :key="item.value"
-      :class="{ active: type === item.value }"
-      @click="handleTypeChange(item.value)"
+      class="lead-filter-btn"
+      :class="{ on: typePicked, open: activeFilter === 'type' }"
+      @click="toggleFilter('type')"
     >
-      <text>{{ item.label }}</text>
-      <text class="seg-n" v-if="typeCounts[item.value] > 0">
-        {{ formatCount(typeCounts[item.value]) }}
-      </text>
+      <text class="lead-filter-val">{{ typeLabel }}</text>
+      <view class="lead-filter-arrow"></view>
+    </view>
+    <view
+      class="lead-filter-btn"
+      :class="{ on: timeDays > 0, open: activeFilter === 'time' }"
+      @click="toggleFilter('time')"
+    >
+      <text class="lead-filter-val">{{ timeLabel }}</text>
+      <view class="lead-filter-arrow"></view>
+    </view>
+
+    <!-- 下拉选项面板 -->
+    <view
+      class="cb-dropdown"
+      :class="activeFilter === 'type' ? 'align-left' : 'align-right'"
+      v-if="activeFilter"
+    >
+      <view
+        class="cb-opt"
+        v-for="option in activeOptions"
+        :key="option.value"
+        :class="{ active: option.value === activeValue }"
+        @click="handleFilterSelect(option.value)"
+      >
+        <text>{{ option.label }}</text>
+      </view>
     </view>
   </view>
+  <!-- #endregion -->
+
+  <!-- 下拉蒙层：点击收起 -->
+  <view class="filter-mask" v-if="activeFilter" @click="activeFilter = null"></view>
+
+  <!-- #region 结果条 -->
+  <view class="lead-result-bar">
+    <text class="lrb-count">共 {{ resultCount }} 条</text>
+    <text class="lrb-sum">{{ filterSummary }}</text>
+    <text class="lrb-reset" v-if="filterSummary && visibleList.length > 0" @click="clearFilters">
+      清空筛选
+    </text>
+  </view>
+  <!-- #endregion -->
 
   <scroll-view
     scroll-y
@@ -99,22 +134,21 @@
     <view class="container">
       <!-- 列表内容 -->
       <view class="list-container">
-        <view class="lead-card" v-for="(item, index) in list" :key="index">
+        <view class="lead-card" v-for="(item, index) in visibleList" :key="index">
           <!-- 药品名称 + 分类/分期 -->
           <view class="lead-head">
             <text class="lead-drug">{{ item.drugStandardName }}</text>
             <text class="tag tag-lead" v-if="item.cleanedClassificationOrStages">
               {{ item.cleanedClassificationOrStages }}
             </text>
-          </view>
-
-          <view class="lead-tags">
-            <text class="tag" :class="getDrugTypeClass(item)" v-if="item.cleanedDrugType">
-              {{ item.cleanedDrugType }}
-            </text>
-            <text class="tag tag-amber" v-if="item.ndaPriorityApproval">
-              {{ item.ndaPriorityApproval }}
-            </text>
+            <view class="lead-tags">
+              <text class="tag" :class="getDrugTypeClass(item)" v-if="item.cleanedDrugType">
+                {{ item.cleanedDrugType }}
+              </text>
+              <text class="tag tag-amber" v-if="item.ndaPriorityApproval">
+                {{ item.ndaPriorityApproval }}
+              </text>
+            </view>
           </view>
 
           <!-- 字段信息 -->
@@ -122,7 +156,7 @@
             <view class="lf" v-for="row in getFieldRows(item)" :key="row.label">
               <text class="lf-label">{{ row.label }}：</text>
               <text class="lf-value">{{ row.value || '—' }}</text>
-              <text class="tag tag-fresh" v-if="row.fresh">6个月以内</text>
+              <text class="tag tag-fresh" v-if="row.fresh">{{ row.fresh }}</text>
               <text class="lf-note" v-if="row.note">{{ row.note }}</text>
             </view>
           </view>
@@ -134,11 +168,18 @@
           </view>
         </view>
 
+        <!-- 空态 -->
+        <view class="lead-empty" v-if="!loading && visibleList.length === 0">
+          <view class="lead-empty-icon"></view>
+          <text class="lead-empty-title">没有符合条件的线索</text>
+          <text class="lead-empty-desc">换个关键词或筛选条件，或清空筛选看看全部线索</text>
+          <text class="lead-empty-reset" @click="clearFilters">清空筛选</text>
+        </view>
+
         <!-- 加载状态 -->
-        <view class="load-more">
+        <view class="load-more" v-if="loading || (finished && visibleList.length > 0)">
           <text v-if="loading">加载中...</text>
-          <text v-else-if="finished && list.length > 0">没有更多了</text>
-          <text v-else-if="list.length === 0">暂无数据</text>
+          <text v-else>没有更多了</text>
         </view>
       </view>
     </view>
@@ -152,7 +193,7 @@
 
 <script setup lang="ts">
   // #region 导入
-  import { ref, computed } from 'vue'
+  import { ref, reactive, computed } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
   import {
@@ -194,66 +235,131 @@
     }
 
     fetchList()
-    fetchTypeCount(otherType())
     fetchVipApplicationStatus()
   })
   // #endregion
 
   // #region 线索列表加载逻辑
+  // 接口命名与线索类型相反：上市前 -> getBeforeListingBusinessClueList，上市后 -> getAfterListingBusinessClueList
   type ClueType = 'before' | 'after'
+  /** 筛选维度：全部 / I期·II期·III期（上市前）/ IV期·IIT（上市后） */
+  type LeadType = 'all' | ClueType
 
-  const type = ref<ClueType>('before')
-  const typeOptions = [
-    { label: 'I期/II期/III期', value: 'before' },
-    { label: 'IV期/IIT', value: 'after' }
-  ] as const
-  /** 各类型线索条数（用于 Tab 角标） */
-  const typeCounts = ref<Record<ClueType, number>>({ before: 0, after: 0 })
-
-  const list = ref<OpportunityVo[]>([])
-  const pageNum = ref(1)
-  const pageSize = 10
-  const loading = ref(false)
-  const finished = ref(false)
-
-  function otherType() {
-    return type.value === 'before' ? 'after' : 'before'
+  interface FilterOption {
+    value: string | number
+    label: string
   }
 
-  // 注意：后端接口命名与线索类型相反
-  // 上市前 -> getBeforeListingBusinessClueList，上市后 -> getAfterListingBusinessClueList
+  const LEAD_TYPE_OPTS: FilterOption[] = [
+    { value: 'all', label: '全部类型' },
+    { value: 'before', label: 'I期/II期/III期' },
+    { value: 'after', label: 'IV期/IIT' }
+  ]
+
+  const LEAD_TIME_OPTS: FilterOption[] = [
+    { value: 0, label: '全部时间' },
+    { value: 7, label: '近1周' },
+    { value: 30, label: '近1个月' },
+    { value: 90, label: '近3个月' },
+    { value: 180, label: '近6个月' },
+    { value: 365, label: '近1年' }
+  ]
+
+  const type = ref<LeadType>('all')
+  const timeDays = ref(0)
+  const activeFilter = ref<'type' | 'time' | null>(null)
+
+  /** 基准日（只到日），卡片时效标签与登记时间筛选共用同一口径 */
+  const LEAD_REF = (() => {
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  })()
+
+  /** 日期距今天数，无有效日期返回 null */
+  function daysFromToday(date: string) {
+    if (!date) return null
+    const [year, month, day] = date.split('-').map(Number)
+    if (!year || !month || !day) return null
+    return Math.max(0, Math.floor((LEAD_REF - new Date(year, month - 1, day).getTime()) / 86400000))
+  }
+
+  /** 时效档位标签，超过 1 年不展示 */
+  function freshLabel(date: string) {
+    const days = daysFromToday(date)
+    if (days === null) return ''
+    if (days <= 7) return '近1周'
+    if (days <= 30) return '近1个月'
+    if (days <= 90) return '近3个月'
+    if (days <= 180) return '近6个月'
+    if (days <= 365) return '近1年'
+    return ''
+  }
+
+  const feeds = reactive<Record<ClueType, OpportunityVo[]>>({ before: [], after: [] })
+  const feedMeta = reactive<Record<ClueType, { pageNum: number; finished: boolean }>>({
+    before: { pageNum: 1, finished: false },
+    after: { pageNum: 1, finished: false }
+  })
+  const typeCounts = ref<Record<ClueType, number>>({ before: 0, after: 0 })
+  const loading = ref(false)
+  const pageSize = 10
+
+  /** 当前筛选已加载的原始列表 */
+  const list = computed<OpportunityVo[]>(() =>
+    type.value === 'all' ? [...feeds.before, ...feeds.after] : feeds[type.value]
+  )
+
+  /** 当前筛选命中的接口类型 */
+  const targetTypes = computed<ClueType[]>(() =>
+    type.value === 'all' ? (['before', 'after'] as ClueType[]) : ([type.value] as ClueType[])
+  )
+
+  /** 当前筛选是否已加载完毕 */
+  const finished = computed(() => targetTypes.value.every((t) => feedMeta[t].finished))
+
   function getListApi(target: ClueType) {
     return target === 'before' ? getBeforeListingBusinessClueList : getAfterListingBusinessClueList
   }
 
-  function resetList() {
-    list.value = []
-    pageNum.value = 1
-    finished.value = false
+  /** 清空已加载数据并复位分页与计数 */
+  function resetFeeds() {
+    feeds.before = []
+    feeds.after = []
+    feedMeta.before = { pageNum: 1, finished: false }
+    feedMeta.after = { pageNum: 1, finished: false }
+    typeCounts.value = { before: 0, after: 0 }
   }
 
   async function fetchList() {
-    if (loading.value || finished.value) return
+    if (loading.value) return
+    const pending = targetTypes.value.filter((t) => !feedMeta[t].finished)
+    if (!pending.length) return
     loading.value = true
 
     try {
-      const params: OpportunityParam = {
-        pageNum: pageNum.value,
-        pageSize: pageSize,
-        parentCompanyId: companyId.value
-      }
+      const resList = await Promise.all(
+        pending.map((t) =>
+          getListApi(t)({
+            pageNum: feedMeta[t].pageNum,
+            pageSize,
+            parentCompanyId: companyId.value
+          } as OpportunityParam)
+        )
+      )
 
-      const res = await getListApi(type.value)(params)
-      const resData = res.data
-
-      if (resData) {
-        const newList = resData.list || []
-        list.value = [...list.value, ...newList]
-        typeCounts.value[type.value] = resData.total || 0
-        if (newList.length < pageSize || pageNum.value >= resData.pages) {
-          finished.value = true
+      pending.forEach((t, i) => {
+        const data = resList[i].data
+        if (!data) {
+          feedMeta[t].finished = true
+          return
         }
-      }
+        const newList = data.list || []
+        feeds[t] = [...feeds[t], ...newList]
+        typeCounts.value[t] = data.total || 0
+        if (newList.length < pageSize || feedMeta[t].pageNum >= data.pages) {
+          feedMeta[t].finished = true
+        }
+      })
     } catch (error) {
       console.error('获取列表失败:', error)
     } finally {
@@ -261,43 +367,28 @@
     }
   }
 
-  /** 未加载过的类型也需要展示线索条数，这里轻量拉取一次总数 */
-  async function fetchTypeCount(target: ClueType) {
-    if (typeCounts.value[target]) return
-    try {
-      const res = await getListApi(target)({
-        pageNum: 1,
-        pageSize: 1,
-        parentCompanyId: companyId.value
-      })
-      typeCounts.value[target] = res.data?.total || 0
-    } catch {
-      typeCounts.value[target] = 0
-    }
-  }
-
-  function handleTypeChange(val: ClueType) {
-    if (type.value === val) return
-    type.value = val
-    resetList()
+  function loadMore() {
+    if (loading.value) return
+    targetTypes.value.forEach((t) => {
+      if (!feedMeta[t].finished) feedMeta[t].pageNum++
+    })
     fetchList()
   }
 
-  function loadMore() {
-    if (!finished.value && !loading.value) {
-      pageNum.value++
-      fetchList()
-    }
+  /** 切换线索类型：重置后重新拉取 */
+  function changeType(next: LeadType) {
+    if (type.value === next) return
+    type.value = next
+    resetFeeds()
+    fetchList()
   }
 
   /** 按企业筛选线索列表 */
   function applyCompany(item: StandardCompanyItem) {
     companyName.value = item.companyStandardName
     companyId.value = item.parentCompanyId
-    typeCounts.value = { before: 0, after: 0 }
-    resetList()
+    resetFeeds()
     fetchList()
-    fetchTypeCount(otherType())
   }
 
   /** 药品类型标签配色：生物制品用紫色，化药用青色 */
@@ -308,8 +399,8 @@
   interface FieldRow {
     label: string
     value: string
-    /** 是否展示「6个月以内」标签 */
-    fresh?: boolean
+    /** 时效档位标签（近1周 / 近1个月…），为空则不展示 */
+    fresh?: string
     /** 值后的补充说明 */
     note?: string
   }
@@ -320,21 +411,11 @@
     nda: '受理日期'
   }
 
-  /** 日期是否在 6 个月以内 */
-  function isFreshDate(date: string) {
-    if (!date) return false
-    const [year, month, day] = date.split('-').map(Number)
-    if (!year || !month || !day) return false
-    const limit = new Date()
-    limit.setMonth(limit.getMonth() - 6)
-    return new Date(year, month - 1, day).getTime() >= limit.getTime()
-  }
-
   /**
    * 根据数据类型组装卡片字段行
-   * ind: 受理日期 + 受理状态 + 获批日期 + 受理号 + 适应症
-   * cde: 登记日期 + 试验分期 + 登记号 + 适应症
-   * nda: 受理日期 + 申请状态 + 获批日期 + 受理号 + 适应症
+   * ind: 申请人 + 受理日期 + 受理状态 + 获批日期 + 受理号 + 适应症
+   * cde: 申请人 + 登记日期 + 试验分期 + 登记号 + 适应症
+   * nda: 申请人 + 受理日期 + 申请状态 + 获批日期 + 受理号 + 适应症
    */
   function getFieldRows(item: OpportunityVo): FieldRow[] {
     const rows: FieldRow[] = [
@@ -342,7 +423,7 @@
       {
         label: DATE_LABEL[item.dataType] || '受理日期',
         value: item.undertakeDate,
-        fresh: isFreshDate(item.undertakeDate)
+        fresh: freshLabel(item.undertakeDate)
       }
     ]
 
@@ -354,7 +435,11 @@
         label: item.dataType === 'nda' ? '申请状态' : '受理状态',
         value: item.applicationStatus
       })
-      rows.push({ label: '获批日期', value: item.approvalTime })
+      rows.push({
+        label: '获批日期',
+        value: item.approvalTime,
+        fresh: freshLabel(item.approvalTime)
+      })
       rows.push({ label: '受理号', value: item.acceptanceNo })
     }
 
@@ -366,10 +451,69 @@
 
     return rows
   }
+  // #endregion
 
-  /** Tab 角标数字千分位展示 */
-  function formatCount(count: number) {
-    return String(count).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  // #region 筛选交互（线索类型 / 登记时间）
+  /** 线索类型是否已选（用于按钮高亮） */
+  const typePicked = computed(() => type.value !== 'all')
+
+  function optionLabel(opts: FilterOption[], value: string | number) {
+    return opts.find((o) => o.value === value)?.label || ''
+  }
+
+  const typeLabel = computed(() => optionLabel(LEAD_TYPE_OPTS, type.value))
+  const timeLabel = computed(() =>
+    timeDays.value > 0 ? optionLabel(LEAD_TIME_OPTS, timeDays.value) : '登记时间'
+  )
+  const activeOptions = computed(() =>
+    activeFilter.value === 'type' ? LEAD_TYPE_OPTS : LEAD_TIME_OPTS
+  )
+  const activeValue = computed(() => (activeFilter.value === 'type' ? type.value : timeDays.value))
+
+  function toggleFilter(key: 'type' | 'time') {
+    activeFilter.value = activeFilter.value === key ? null : key
+  }
+
+  function handleFilterSelect(value: string | number) {
+    if (activeFilter.value === 'type') {
+      changeType(value as LeadType)
+    } else {
+      timeDays.value = Number(value)
+    }
+    activeFilter.value = null
+  }
+
+  /** 登记时间为前端过滤（接口不支持时间参数），仅过滤已加载数据 */
+  const visibleList = computed<OpportunityVo[]>(() => {
+    if (timeDays.value <= 0) return list.value
+    return list.value.filter((item) => {
+      const days = daysFromToday(item.undertakeDate)
+      return days !== null && days <= timeDays.value
+    })
+  })
+
+  /** 结果条条数：有时间筛选时按已加载数据统计 */
+  const resultCount = computed(() => {
+    if (timeDays.value > 0) return visibleList.value.length
+    return targetTypes.value.reduce((sum, t) => sum + (typeCounts.value[t] || 0), 0)
+  })
+
+  const filterSummary = computed(() => {
+    const conds: string[] = []
+    if (type.value !== 'all') conds.push(typeLabel.value)
+    if (timeDays.value > 0) conds.push(timeLabel.value)
+    return conds.join(' · ')
+  })
+
+  function clearFilters() {
+    const typeChanged = type.value !== 'all'
+    type.value = 'all'
+    timeDays.value = 0
+    activeFilter.value = null
+    if (typeChanged) {
+      resetFeeds()
+      fetchList()
+    }
   }
   // #endregion
 
@@ -418,6 +562,7 @@
       clearTimeout(searchTimer)
       searchTimer = null
     }
+    fetchList()
   }
 
   async function fetchSearchResults() {
@@ -541,17 +686,18 @@
   /* #region 查询公司 */
   .search-input-section {
     position: relative;
-    margin: 40rpx 0;
+    z-index: 20;
+    margin: 24rpx 0 20rpx;
     padding: 0 30rpx;
 
     .input-wrapper {
       background: #ffffff;
       border-radius: 44rpx;
-      height: 88rpx;
-      padding: 0 12rpx 0 32rpx;
+      height: 84rpx;
+      padding: 0 12rpx 0 28rpx;
       display: flex;
       align-items: center;
-      box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.03);
+      box-shadow: 0 2rpx 6rpx rgba(15, 23, 42, 0.06);
 
       .search-icon {
         margin-right: 16rpx;
@@ -559,8 +705,9 @@
 
       input {
         flex: 1;
+        min-width: 0;
         font-size: 28rpx;
-        color: #333333;
+        color: #1f2329;
       }
 
       .clear-icon {
@@ -569,16 +716,18 @@
         font-size: 32rpx;
         line-height: 1;
         color: #cccccc;
+        margin-right: 16rpx;
       }
 
       .search-go {
         flex-shrink: 0;
+        width: 116rpx;
         height: 64rpx;
-        padding: 0 28rpx;
         border-radius: 32rpx;
         background: #1e6fff;
         display: flex;
         align-items: center;
+        justify-content: center;
 
         text {
           color: #ffffff;
@@ -594,12 +743,12 @@
 
     .search-dropdown {
       position: absolute;
-      top: 96rpx;
+      top: 92rpx;
       left: 30rpx;
       right: 30rpx;
       background: #ffffff;
-      border-radius: 12rpx;
-      box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
+      border-radius: 24rpx;
+      box-shadow: 0 16rpx 48rpx rgba(15, 23, 42, 0.1);
       z-index: 10;
       max-height: 400rpx;
       overflow-y: auto;
@@ -638,46 +787,205 @@
   }
   /* #endregion */
 
-  /* #region 线索类型切换 */
-  .seg-tabs {
+  /* #region 筛选行：线索类型 / 登记时间 */
+  .lead-filter-row {
+    position: relative;
+    z-index: 40;
     display: flex;
-    background: #ffffff;
-    border-radius: 24rpx;
-    padding: 6rpx;
-    margin: 0 30rpx 24rpx;
-    box-shadow: 0 2rpx 6rpx rgba(15, 23, 42, 0.06);
+    align-items: center;
+    margin: 0 30rpx 20rpx;
 
-    .seg-tab {
+    .lead-filter-btn {
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10rpx;
-      padding: 16rpx 0;
-      border-radius: 18rpx;
+      gap: 8rpx;
+      height: 64rpx;
+
+      .lead-filter-val {
+        font-size: 28rpx;
+        color: #6b7280;
+      }
+
+      .lead-filter-arrow {
+        width: 30rpx;
+        height: 30rpx;
+        flex-shrink: 0;
+        transition: transform 0.15s;
+
+        &::after {
+          content: '';
+          display: block;
+          width: 14rpx;
+          height: 14rpx;
+          margin: 4rpx auto 0;
+          border-right: 4rpx solid #9ca3af;
+          border-bottom: 4rpx solid #9ca3af;
+          transform: rotate(45deg);
+        }
+      }
+
+      &.on {
+        .lead-filter-val {
+          color: #1e6fff;
+          font-weight: 600;
+        }
+
+        .lead-filter-arrow::after {
+          border-color: #1e6fff;
+        }
+      }
+
+      &.open .lead-filter-arrow {
+        transform: rotate(180deg);
+      }
+    }
+
+    .cb-dropdown {
+      position: absolute;
+      top: 76rpx;
+      z-index: 70;
+      background: #ffffff;
+      border-radius: 24rpx;
+      box-shadow: 0 16rpx 48rpx rgba(15, 23, 42, 0.1);
+      padding: 12rpx;
+      min-width: 280rpx;
+      max-height: 520rpx;
+      overflow-y: auto;
+      box-sizing: border-box;
+
+      &.align-left {
+        left: 0;
+      }
+
+      &.align-right {
+        right: 0;
+      }
+
+      .cb-opt {
+        padding: 20rpx 28rpx;
+        font-size: 26rpx;
+        color: #1f2329;
+        border-radius: 16rpx;
+        white-space: nowrap;
+
+        &:active {
+          background: #f7f8fa;
+        }
+
+        &.active {
+          color: #1e6fff;
+          font-weight: 600;
+          background: #ebf3ff;
+        }
+      }
+    }
+  }
+
+  /* 下拉蒙层：点击收起 */
+  .filter-mask {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 30;
+  }
+  /* #endregion */
+
+  /* #region 结果条 */
+  .lead-result-bar {
+    display: flex;
+    align-items: baseline;
+    gap: 12rpx;
+    margin: 0 30rpx 16rpx;
+    font-size: 24rpx;
+    line-height: 32rpx;
+
+    .lrb-count {
+      color: #1f2329;
+      font-weight: 600;
+    }
+
+    .lrb-sum {
+      flex: 1;
+      min-width: 0;
+      color: #9ca3af;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .lrb-reset {
+      flex-shrink: 0;
+      color: #1e6fff;
+    }
+  }
+  /* #endregion */
+
+  /* #region 空态 */
+  .lead-empty {
+    background: #ffffff;
+    border-radius: 28rpx;
+    padding: 68rpx 40rpx;
+    text-align: center;
+    box-shadow: 0 2rpx 6rpx rgba(15, 23, 42, 0.06);
+
+    .lead-empty-icon {
+      position: relative;
+      width: 96rpx;
+      height: 96rpx;
+      margin: 0 auto;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: 6rpx;
+        top: 6rpx;
+        width: 62rpx;
+        height: 62rpx;
+        border: 5rpx solid #c7d2e0;
+        border-radius: 50%;
+        box-sizing: border-box;
+      }
+
+      &::after {
+        content: '';
+        position: absolute;
+        right: 10rpx;
+        bottom: 12rpx;
+        width: 34rpx;
+        height: 5rpx;
+        border-radius: 4rpx;
+        background: #c7d2e0;
+        transform: rotate(45deg);
+      }
+    }
+
+    .lead-empty-title {
+      display: block;
+      margin-top: 20rpx;
+      font-size: 28rpx;
+      font-weight: 600;
+      color: #1f2329;
+    }
+
+    .lead-empty-desc {
+      display: block;
+      margin-top: 12rpx;
+      font-size: 24rpx;
+      color: #9ca3af;
+    }
+
+    .lead-empty-reset {
+      display: inline-block;
+      margin-top: 28rpx;
+      padding: 14rpx 36rpx;
+      border-radius: 32rpx;
+      border: 2rpx solid #1e6fff;
+      color: #1e6fff;
       font-size: 26rpx;
-      color: #6b7280;
-      transition: all 0.15s;
-
-      &.active {
-        background: #1e6fff;
-        color: #ffffff;
-        font-weight: 600;
-      }
-
-      .seg-n {
-        padding: 2rpx 12rpx;
-        border-radius: 18rpx;
-        background: rgba(30, 111, 255, 0.09);
-        color: #1e6fff;
-        font-size: 22rpx;
-        font-weight: 600;
-      }
-
-      &.active .seg-n {
-        background: rgba(255, 255, 255, 0.24);
-        color: #ffffff;
-      }
     }
   }
   /* #endregion */
@@ -725,6 +1033,7 @@
     .lead-head {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 12rpx;
 
       .lead-drug {
@@ -737,14 +1046,16 @@
         margin-left: auto;
         flex-shrink: 0;
       }
-    }
 
-    .lead-tags {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12rpx;
-      margin-top: 12rpx;
+      .lead-tags {
+        flex-basis: 100%;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12rpx;
+        row-gap: 10rpx;
+        margin-top: 4rpx;
+      }
     }
 
     .lead-fields {
