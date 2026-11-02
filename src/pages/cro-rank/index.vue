@@ -97,10 +97,10 @@
               <view
                 class="dropdown-item"
                 v-for="item in searchResults"
-                :key="item.standardId"
+                :key="item.parentCompanyId"
                 @click="selectCompany(item)"
               >
-                <text class="dropdown-name">{{ item.companyStandardName }}</text>
+                <text class="dropdown-name">{{ item.parentCompanyShortName }}</text>
               </view>
             </scroll-view>
             <view class="dropdown-empty" v-else>
@@ -172,10 +172,10 @@
   import {
     selectClinicalCroRankList,
     getUserInfo,
-    queryStandardCompany,
+    getParentShortNameList,
     refreshUserDetail
   } from '@/api'
-  import type { StandardCompanyItem } from '@/types/api'
+  import type { ParentCompanyItem } from '@/types/api'
   import { APPLY_STATUS } from '@/utils/enums'
   // #endregion
 
@@ -261,7 +261,7 @@
         pageNum: 1,
         pageSize: LIST_LIMIT,
         lastYear: selectedYear.value,
-        croParentCompanyId: selectedCompany.value?.standardId
+        croParentCompanyId: selectedCompany.value?.parentCompanyId
       })
       rankList.value = (res.data?.list || []).map((item) => ({
         parentCompanyId: item.parentCompanyId,
@@ -317,9 +317,9 @@
   const searchKeyword = ref('')
   const showDropdown = ref(false)
   const searchLoading = ref(false)
-  const searchResults = ref<StandardCompanyItem[]>([])
+  const searchResults = ref<ParentCompanyItem[]>([])
   let searchTimer: ReturnType<typeof setTimeout> | null = null
-  const selectedCompany = ref<StandardCompanyItem | null>(null)
+  const selectedCompany = ref<ParentCompanyItem | null>(null)
 
   const DROPDOWN_ITEM_HEIGHT = 88
   const DROPDOWN_MAX_HEIGHT = 400
@@ -369,10 +369,11 @@
     searchLoading.value = true
 
     try {
-      const res = await queryStandardCompany({
-        companyStandardName: keyword,
+      const res = await getParentShortNameList({
+        companyType: 'cro',
         pageNum: 1,
-        pageSize: 99
+        pageSize: 20,
+        shortName: keyword
       })
       searchResults.value = res.data?.list || []
     } catch {
@@ -382,8 +383,8 @@
     }
   }
 
-  function selectCompany(item: StandardCompanyItem) {
-    searchKeyword.value = item.companyStandardName
+  function selectCompany(item: ParentCompanyItem) {
+    searchKeyword.value = item.parentCompanyShortName
     selectedCompany.value = item
     showDropdown.value = false
     fetchRankData()
@@ -407,7 +408,7 @@
 
     if (!selectedCompany.value) {
       await fetchSearchResults()
-      const matched = searchResults.value.find((item) => item.companyStandardName === keyword)
+      const matched = searchResults.value.find((item) => item.parentCompanyShortName === keyword)
       if (!matched) {
         showDropdown.value = searchResults.value.length > 0
         uni.showToast({ title: '请从列表中选择企业名称', icon: 'none' })
