@@ -1,17 +1,6 @@
 <!-- 中心实验室合作统计 -->
 <template>
   <view class="page-container">
-    <!-- #region 头部导航 -->
-    <!-- <view class="header-nav" :style="{ paddingTop: `${statusBarHeight}px` }">
-      <view class="nav-content">
-        <view class="back-btn" @click="goBack">
-          <uni-icons type="left" size="24" color="#333"></uni-icons>
-        </view>
-        <text class="title">{{ companyName || '中心实验室合作记录' }}</text>
-        <view class="nav-placeholder"></view>
-      </view>
-    </view> -->
-
     <view class="header" :style="{ paddingTop: `${menu.top}px` }">
       <view class="nav-left" @click="goBack">
         <view class="back-icon">
@@ -472,11 +461,19 @@
   }
 
   // #region 选项卡切换
-  // 首次切换到项目列表 tab 时按需加载数据
+  // 每次切换选项卡都重新请求对应数据，保证数据最新
   watch(activeTab, (val) => {
-    if (val !== 'list') return
-    if (projectList.value.length || noMore.value || loading.value) return
+    if (val === 'stat') {
+      // 回到统计 tab：重新拉取外包比例 + 中心实验室合作榜单（榜单从第一页开始）
+      fetchOutsourcingRatio()
+      croPage.value = 1
+      croNoMore.value = false
+      fetchCroRankList()
+      return
+    }
+    // 切到项目列表 tab：从第一页重新拉取项目列表
     projectPage.value = 1
+    noMore.value = false
     fetchProjectList()
   })
   // #endregion

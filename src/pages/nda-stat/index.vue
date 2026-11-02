@@ -241,7 +241,7 @@
     NdaProductRankVo,
     NdaProjectSumVo
   } from '@/types/api'
-  import { DRUG_TYPE_VALUES_INT, createEnumsToOptions } from '@/utils/enums'
+  import { DRUG_TYPE_VALUES, createEnumsToOptions } from '@/utils/enums'
   // #endregion
 
   // #region 基础状态与生命周期
@@ -342,7 +342,7 @@
   // #endregion
 
   // #region 注册分类统计
-  const drugTypeOptions = computed(() => createEnumsToOptions(DRUG_TYPE_VALUES_INT))
+  const drugTypeOptions = computed(() => createEnumsToOptions(DRUG_TYPE_VALUES))
   const drugTypeCode = ref(drugTypeOptions.value[0].value)
   const drugTypeText = computed(
     () => drugTypeOptions.value.find((o) => o.value === drugTypeCode.value)?.text || '药品类型'
