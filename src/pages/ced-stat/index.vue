@@ -1,231 +1,222 @@
 <template>
-  <!-- 头部导航 -->
-  <view class="header" :style="{ paddingTop: `${menu.top}px`, zIndex: 999 }">
-    <view class="nav-left" @click="goBack">
-      <view class="back-icon">
-        <view class="arrow"></view>
+  <view class="page-container">
+    <!-- 头部导航 -->
+    <view class="header" :style="{ paddingTop: `${menu.top}px`, zIndex: 999 }">
+      <view class="nav-left" @click="goBack">
+        <view class="back-icon">
+          <view class="arrow"></view>
+        </view>
+      </view>
+      <text class="title">{{ companyName || '合作情况统计' }}</text>
+      <view class="nav-right"></view>
+    </view>
+
+    <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
+
+    <!-- 选项卡 -->
+    <view class="tabs">
+      <view class="tab-item" :class="{ active: activeTab === 'stat' }" @click="activeTab = 'stat'">
+        <text>统计</text>
+        <view class="active-line" v-if="activeTab === 'stat'"></view>
+      </view>
+      <view class="tab-item" :class="{ active: activeTab === 'list' }" @click="activeTab = 'list'">
+        <text>试验列表</text>
+        <view class="active-line" v-if="activeTab === 'list'"></view>
       </view>
     </view>
-    <text class="title">{{ companyName || '合作情况统计' }}</text>
-    <view class="nav-right"></view>
-  </view>
 
-  <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
-
-  <scroll-view
-    :scroll-y="activeTab === 'stat'"
-    class="container-scroll-view"
-    :show-scrollbar="false"
-    :style="{
-      height: `calc(100vh - ${menu.top}px - ${menu.height}px)`
-    }"
-  >
-    <view
-      class="container"
-      :style="{
-        height: activeTab === 'list' ? '100%' : 'auto',
-        display: activeTab === 'list' ? 'flex' : 'block',
-        flexDirection: 'column'
-      }"
+    <scroll-view
+      :scroll-y="activeTab === 'stat'"
+      class="container-scroll-view"
+      :show-scrollbar="false"
     >
-      <!-- 选项卡 -->
-      <view class="tabs">
-        <view
-          class="tab-item"
-          :class="{ active: activeTab === 'stat' }"
-          @click="activeTab = 'stat'"
-        >
-          <text>统计</text>
-          <view class="active-line" v-if="activeTab === 'stat'"></view>
-        </view>
-        <view
-          class="tab-item"
-          :class="{ active: activeTab === 'list' }"
-          @click="activeTab = 'list'"
-        >
-          <text>试验列表</text>
-          <view class="active-line" v-if="activeTab === 'list'"></view>
-        </view>
-      </view>
+      <view
+        class="container"
+        :style="{
+          height: activeTab === 'list' ? '100%' : 'auto',
+          display: activeTab === 'list' ? 'flex' : 'block',
+          flexDirection: 'column'
+        }"
+      >
+        <!-- 统计内容 -->
+        <view v-if="activeTab === 'stat'" class="stat-content">
+          <!-- 近五年临床试验公示 -->
+          <view class="section-card">
+            <view class="section-header">
+              <view class="section-title">近五年临床试验公示</view>
+              <view class="filter-dropdown">
+                <picker
+                  class="filter-picker"
+                  mode="selector"
+                  :range="trialStageOptions"
+                  range-key="text"
+                  @change="onTrialStageChange"
+                >
+                  <view class="filter-trigger">
+                    <text>{{ trialStageText }}</text>
+                    <view class="arrow-down"></view>
+                  </view>
+                </picker>
+              </view>
+            </view>
+            <view class="chart-container line-chart">
+              <!-- #ifdef MP-WEIXIN -->
+              <canvas id="lineCanvas" type="2d" class="canvas"></canvas>
+              <!-- #endif -->
+              <!-- #ifndef MP-WEIXIN -->
+              <canvas canvas-id="lineCanvas" class="canvas"></canvas>
+              <!-- #endif -->
+            </view>
+          </view>
 
-      <!-- 统计内容 -->
-      <view v-if="activeTab === 'stat'" class="stat-content">
-        <!-- 近五年临床试验公示 -->
-        <view class="section-card">
-          <view class="section-header">
-            <view class="section-title">近五年临床试验公示</view>
-            <view class="filter-dropdown">
-              <picker
-                class="filter-picker"
-                mode="selector"
-                :range="trialStageOptions"
-                range-key="text"
-                @change="onTrialStageChange"
-              >
-                <view class="filter-trigger">
-                  <text>{{ trialStageText }}</text>
-                  <view class="arrow-down"></view>
-                </view>
-              </picker>
+          <!-- 试验分期 -->
+          <view class="section-card">
+            <view class="section-header">
+              <view class="section-title">试验分期</view>
+              <view class="filter-dropdown">
+                <picker
+                  class="filter-picker"
+                  mode="selector"
+                  :range="yearOptions"
+                  range-key="text"
+                  @change="onStageYearChange"
+                >
+                  <view class="filter-trigger">
+                    <text>{{ stageYearText }}</text>
+                    <view class="arrow-down"></view>
+                  </view>
+                </picker>
+              </view>
             </view>
-          </view>
-          <view class="chart-container line-chart">
-            <!-- #ifdef MP-WEIXIN -->
-            <canvas id="lineCanvas" type="2d" class="canvas"></canvas>
-            <!-- #endif -->
-            <!-- #ifndef MP-WEIXIN -->
-            <canvas canvas-id="lineCanvas" class="canvas"></canvas>
-            <!-- #endif -->
-          </view>
-        </view>
-
-        <!-- 试验分期 -->
-        <view class="section-card">
-          <view class="section-header">
-            <view class="section-title">试验分期</view>
-            <view class="filter-dropdown">
-              <picker
-                class="filter-picker"
-                mode="selector"
-                :range="yearOptions"
-                range-key="text"
-                @change="onStageYearChange"
-              >
-                <view class="filter-trigger">
-                  <text>{{ stageYearText }}</text>
-                  <view class="arrow-down"></view>
-                </view>
-              </picker>
+            <view class="chart-container radar-chart">
+              <!-- #ifdef MP-WEIXIN -->
+              <canvas id="radarCanvas" type="2d" class="canvas"></canvas>
+              <!-- #endif -->
+              <!-- #ifndef MP-WEIXIN -->
+              <canvas canvas-id="radarCanvas" class="canvas"></canvas>
+              <!-- #endif -->
             </view>
-          </view>
-          <view class="chart-container radar-chart">
-            <!-- #ifdef MP-WEIXIN -->
-            <canvas id="radarCanvas" type="2d" class="canvas"></canvas>
-            <!-- #endif -->
-            <!-- #ifndef MP-WEIXIN -->
-            <canvas canvas-id="radarCanvas" class="canvas"></canvas>
-            <!-- #endif -->
-          </view>
-          <view class="phase-table">
-            <view class="table-header">
-              <text v-for="(item, index) in trialStageList" :key="index">
-                {{ item.cleanedTrialStages }}
-              </text>
-              <text v-if="!trialStageList.length">暂无数据</text>
-            </view>
-            <view class="table-body">
-              <text v-for="(item, index) in trialStageList" :key="index">{{ item.number }}</text>
-              <text v-if="!trialStageList.length">-</text>
-            </view>
-          </view>
-        </view>
-
-        <!-- 试验状态 -->
-        <view class="section-card">
-          <view class="section-header">
-            <view class="section-title">试验状态</view>
-            <view class="filter-dropdown">
-              <picker
-                class="filter-picker"
-                mode="selector"
-                :range="yearOptions"
-                range-key="text"
-                @change="onStatusYearChange"
-              >
-                <view class="filter-trigger">
-                  <text>{{ statusYearText }}</text>
-                  <view class="arrow-down"></view>
-                </view>
-              </picker>
-            </view>
-          </view>
-          <view class="donut-chart-wrapper">
-            <view class="donut-chart" :style="{ background: donutGradient }"></view>
-            <view class="legend-grid">
-              <view class="legend-item" v-for="(item, index) in trialStatusLegend" :key="index">
-                <view class="dot" :style="{ backgroundColor: item.color }"></view>
-                <text class="name">{{ item.name }}</text>
-                <text class="count">{{ item.count }}</text>
+            <view class="phase-table">
+              <view class="table-header">
+                <text v-for="(item, index) in trialStageList" :key="index">
+                  {{ item.cleanedTrialStages }}
+                </text>
+                <text v-if="!trialStageList.length">暂无数据</text>
+              </view>
+              <view class="table-body">
+                <text v-for="(item, index) in trialStageList" :key="index">{{ item.number }}</text>
+                <text v-if="!trialStageList.length">-</text>
               </view>
             </view>
           </view>
-        </view>
 
-        <!-- 产品试验榜单 -->
-        <view class="section-card">
-          <view class="section-header">
-            <view class="section-title">产品试验榜单</view>
-            <view class="filter-dropdown">
-              <picker
-                class="filter-picker"
-                mode="selector"
-                :range="yearOptions"
-                range-key="text"
-                @change="onProductYearChange"
-              >
-                <view class="filter-trigger">
-                  <text>{{ productYearText }}</text>
-                  <view class="arrow-down"></view>
+          <!-- 试验状态 -->
+          <view class="section-card">
+            <view class="section-header">
+              <view class="section-title">试验状态</view>
+              <view class="filter-dropdown">
+                <picker
+                  class="filter-picker"
+                  mode="selector"
+                  :range="yearOptions"
+                  range-key="text"
+                  @change="onStatusYearChange"
+                >
+                  <view class="filter-trigger">
+                    <text>{{ statusYearText }}</text>
+                    <view class="arrow-down"></view>
+                  </view>
+                </picker>
+              </view>
+            </view>
+            <view class="donut-chart-wrapper">
+              <view class="donut-chart" :style="{ background: donutGradient }"></view>
+              <view class="legend-grid">
+                <view class="legend-item" v-for="(item, index) in trialStatusLegend" :key="index">
+                  <view class="dot" :style="{ backgroundColor: item.color }"></view>
+                  <text class="name">{{ item.name }}</text>
+                  <text class="count">{{ item.count }}</text>
                 </view>
-              </picker>
+              </view>
             </view>
           </view>
-          <view class="data-table">
-            <view class="table-header">
-              <text class="col-rank">排名</text>
-              <text class="col-name">产品名称</text>
-              <text class="col-count">临床试验数</text>
-            </view>
-            <!-- #region 产品榜单滚动加载 -->
-            <scroll-view
-              scroll-y
-              class="table-scroll"
-              :show-scrollbar="false"
-              enhanced
-              @scrolltolower="loadMoreProduct"
-            >
-              <view class="table-body">
-                <view
-                  class="table-row"
-                  v-for="(item, index) in productList"
-                  :key="index"
-                  hover-class="row-hover"
-                  :class="[index % 2 === 1 ? 'zebra' : '', index < 3 ? 'top' + (index + 1) : '']"
-                  @click="onProductClick(item)"
+
+          <!-- 产品试验榜单 -->
+          <view class="section-card">
+            <view class="section-header">
+              <view class="section-title">产品试验榜单</view>
+              <view class="filter-dropdown">
+                <picker
+                  class="filter-picker"
+                  mode="selector"
+                  :range="yearOptions"
+                  range-key="text"
+                  @change="onProductYearChange"
                 >
-                  <text class="col-rank">{{ item.rankNo || index + 1 }}</text>
-                  <text class="col-name">{{ item.drugStandardName }}</text>
-                  <view class="col-count">
-                    <view class="count-go">
-                      <text>{{ item.cdeTrialNum }}</text>
-                      <view class="go-arrow"></view>
+                  <view class="filter-trigger">
+                    <text>{{ productYearText }}</text>
+                    <view class="arrow-down"></view>
+                  </view>
+                </picker>
+              </view>
+            </view>
+            <view class="data-table">
+              <view class="table-header">
+                <text class="col-rank">排名</text>
+                <text class="col-name">产品名称</text>
+                <text class="col-count">临床试验数</text>
+              </view>
+              <!-- #region 产品榜单滚动加载 -->
+              <scroll-view
+                scroll-y
+                class="table-scroll"
+                show-scrollbar
+                enhanced
+                @scrolltolower="loadMoreProduct"
+              >
+                <view class="table-body">
+                  <view
+                    class="table-row"
+                    v-for="(item, index) in productList"
+                    :key="index"
+                    hover-class="row-hover"
+                    :class="[index % 2 === 1 ? 'zebra' : '', index < 3 ? 'top' + (index + 1) : '']"
+                    @click="onProductClick(item)"
+                  >
+                    <text class="col-rank">{{ item.rankNo || index + 1 }}</text>
+                    <text class="col-name">{{ item.drugStandardName }}</text>
+                    <view class="col-count">
+                      <view class="count-go">
+                        <text>{{ item.cdeTrialNum }}</text>
+                        <view class="go-arrow"></view>
+                      </view>
                     </view>
                   </view>
+                  <view class="empty-tip" v-if="!productList.length && !productLoading">
+                    暂无数据
+                  </view>
+                  <view class="loading-tip" v-if="productList.length">
+                    <text>{{ productHasMore ? '正在加载...' : '没有更多了' }}</text>
+                  </view>
                 </view>
-                <view class="empty-tip" v-if="!productList.length && !productLoading">
-                  暂无数据
-                </view>
-                <view class="loading-tip" v-if="productList.length">
-                  <text>{{ productHasMore ? '正在加载...' : '没有更多了' }}</text>
-                </view>
-              </view>
-            </scroll-view>
-            <!-- #endregion -->
+              </scroll-view>
+              <!-- #endregion -->
+            </view>
           </view>
         </view>
-      </view>
 
-      <!-- cde试验列表 -->
-      <view v-else class="detail-content">
-        <CdeTrialList
-          class="trial-list-comp"
-          :company-parent-id="companyParentId"
-          v-model:drug-name="selectedDrugName"
-          :year="selectedListYear"
-        />
+        <!-- cde试验列表 -->
+        <view v-else class="detail-content">
+          <CdeTrialList
+            class="trial-list-comp"
+            :company-parent-id="companyParentId"
+            v-model:drug-name="selectedDrugName"
+            :year="selectedListYear"
+          />
+        </view>
       </view>
-    </view>
-  </scroll-view>
+    </scroll-view>
+  </view>
 
   <phone-bind-popup />
 </template>
@@ -933,20 +924,26 @@
 </script>
 
 <style lang="scss" scoped>
-  // 标题展示企业名称，过长时单行省略
-  .header .title {
+  .page-container {
+    height: 100vh;
     overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+    display: flex;
+    flex-direction: column;
+    .header,
+    .tabs {
+      flex-shrink: 0;
+    }
   }
-
   .container-scroll-view {
+    flex: 1;
+    height: 0;
+    min-height: 0;
     display: flex;
     flex-direction: column;
   }
 
   .container {
-    padding: 30rpx;
+    padding: 0 30rpx 30rpx 30rpx;
     min-height: 100%;
     box-sizing: border-box;
   }
@@ -965,20 +962,20 @@
     }
   }
 
+  /* 选项卡 */
   .tabs {
     display: flex;
-    justify-content: center;
-    gap: 120rpx;
-    margin-bottom: 40rpx;
+    justify-content: space-around;
+    margin-bottom: 30rpx;
 
     .tab-item {
       position: relative;
-      font-size: 32rpx;
+      padding: 20rpx 0;
+      font-size: 28rpx;
       color: #999;
-      padding-bottom: 12rpx;
 
       &.active {
-        color: #499ae6;
+        color: #333;
         font-weight: bold;
       }
 
@@ -989,7 +986,7 @@
         transform: translateX(-50%);
         width: 40rpx;
         height: 6rpx;
-        background: #499ae6;
+        background-color: #499ae6;
         border-radius: 3rpx;
       }
     }
@@ -1175,7 +1172,7 @@
 
     /* #region 产品榜单滚动区域 */
     .table-scroll {
-      height: 600rpx;
+      height: 800rpx;
       box-sizing: border-box;
     }
     /* #endregion */

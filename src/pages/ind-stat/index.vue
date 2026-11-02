@@ -28,9 +28,6 @@
       :scroll-y="activeTab === 'stat'"
       class="container-scroll-view"
       :show-scrollbar="false"
-      :style="{
-        height: `calc(100vh - ${menu.top}px - ${menu.height}px)`
-      }"
     >
       <view
         class="container"
@@ -171,7 +168,7 @@
               <scroll-view
                 scroll-y
                 class="table-scroll"
-                :show-scrollbar="false"
+                show-scrollbar
                 enhanced
                 @scrolltolower="loadMoreProduct"
               >
@@ -914,19 +911,20 @@
 
 <style lang="scss" scoped>
   .page-container {
-    height: calc(100vh);
+    height: 100vh;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     .header,
     .tabs {
-      flex: 0;
-    }
-    .container-scroll-view {
-      flex: 1;
+      flex-shrink: 0;
     }
   }
 
   .container-scroll-view {
+    flex: 1;
+    height: 0;
+    min-height: 0;
     display: flex;
     flex-direction: column;
   }
@@ -1161,7 +1159,7 @@
 
     /* #region 产品榜单滚动区域 */
     .table-scroll {
-      height: 600rpx;
+      height: 800rpx;
       box-sizing: border-box;
     }
     /* #endregion */
