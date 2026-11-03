@@ -193,7 +193,6 @@
 
   /* #region 表格区域 */
   .table-container {
-    padding: 20rpx 40rpx 40rpx;
     flex: 1;
     display: flex;
     flex-direction: column;
