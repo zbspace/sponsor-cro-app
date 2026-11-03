@@ -133,9 +133,9 @@
 <style lang="scss" scoped>
   .popup-content {
     width: 100%;
-    min-height: 80vh;
-    max-height: 84vh;
-    padding: 56rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
+    // 确定高度：内部列表用 flex:1 撑满剩余空间，父级必须有确定高度，scroll-view 才能滚动
+    height: 84vh;
+    padding: 36rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
     box-sizing: border-box;
     background-color: #fff;
     border-radius: 40rpx 40rpx 0 0;
@@ -191,13 +191,15 @@
   }
   /* #endregion */
 
+  /* #region 表格区域 */
   .table-container {
     padding: 20rpx 40rpx 40rpx;
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 600rpx;
-    max-height: 800rpx;
+    // 允许被压缩，避免被列表内容撑开导致滚动区高度失真
+    min-height: 0;
+    overflow: hidden;
 
     .table-header {
       display: flex;
@@ -217,7 +219,8 @@
 
     .table-body-scroll {
       flex: 1;
-      height: 600rpx;
+      // 必须设置高度 0，配合 flex:1 才能正确滚动
+      height: 0;
       min-height: 0;
     }
 
@@ -253,6 +256,7 @@
       flex: 1;
     }
   }
+  /* #endregion */
 
   .loading-status {
     padding: 30rpx 0;
