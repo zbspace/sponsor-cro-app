@@ -54,6 +54,9 @@
     <view class="login-version">数仓医药出品</view>
     <!-- #endregion -->
   </view>
+
+  <!-- 首次登录：微信登录后先授权手机号，再进入完善资料页 -->
+  <phone-bind-popup v-if="showPhoneBind" @success="handlePhoneBound" />
 </template>
 
 <script setup lang="ts">
@@ -61,11 +64,14 @@
   import { ref } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import { ensureLogin, getUserInfo, resetEnsureLogin } from '@/api'
+  import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
   // #endregion
 
   // #region 页面状态
   const agreed = ref(false)
   const loading = ref(false)
+  // 微信登录成功后是否需要先授权手机号
+  const showPhoneBind = ref(false)
 
   /** 平台覆盖数据（与原型保持一致） */
   const stats = [
@@ -110,16 +116,29 @@
       // 重置登录单例，确保每次点击都重新发起登录
       resetEnsureLogin()
       await ensureLogin()
-      if (!getUserInfo()?.token) {
+      const info = getUserInfo()
+      if (!info?.token) {
         throw new Error('登录失败')
       }
-      // 登录成功后进入完善资料页
-      uni.reLaunch({ url: '/pages/profile-setup/index' })
+      // 已绑定手机号直接进入完善资料页；未绑定则先授权手机号
+      if (info.phone) {
+        uni.reLaunch({ url: '/pages/profile-setup/index' })
+      } else {
+        showPhoneBind.value = true
+      }
     } catch {
       uni.showToast({ title: '登录失败，请稍后重试', icon: 'none' })
     } finally {
       loading.value = false
     }
+  }
+
+  /**
+   * 手机号授权成功后进入完善资料页
+   */
+  function handlePhoneBound() {
+    showPhoneBind.value = false
+    uni.reLaunch({ url: '/pages/profile-setup/index' })
   }
   // #endregion
 </script>

@@ -1,4 +1,4 @@
-import { get, post } from '@/utils/request'
+import { get, post, setReloginHandler } from '@/utils/request'
 import { VIP_CODE } from '@/utils/enums'
 import type {
   UserInfo,
@@ -145,6 +145,12 @@ export function ensureLogin(): Promise<void> {
 export function resetEnsureLogin() {
   loginPromise = null
 }
+
+// 注册静默重新登录处理器：登录过期（401）时由请求层直接调用，实现自动登录而不跳转登录页
+setReloginHandler(async () => {
+  resetEnsureLogin()
+  await ensureLogin()
+})
 
 /**
  * 绑定手机号

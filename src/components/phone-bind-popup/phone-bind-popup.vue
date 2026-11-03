@@ -18,6 +18,10 @@
   import { getUserInfo, setUserInfo, bandPhone } from '@/api'
   // #endregion
 
+  // #region 事件
+  const emit = defineEmits<{ (e: 'success'): void }>()
+  // #endregion
+
   // #region 状态
   const visible = ref(false)
   // #endregion
@@ -54,6 +58,7 @@
         }
         visible.value = false
         uni.showToast({ title: '手机号绑定成功', icon: 'success' })
+        emit('success')
       } catch {
         uni.showToast({ title: '绑定失败，请重试', icon: 'none' })
       }

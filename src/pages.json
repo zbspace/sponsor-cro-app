@@ -85,13 +85,6 @@
       }
     },
     {
-      "path": "pages/collect/index",
-      "style": {
-        "navigationBarTitleText": "收藏",
-        "navigationStyle": "custom"
-      }
-    },
-    {
       "path": "pages/hospital-stat/index",
       "style": {
         "navigationBarTitleText": "合作情况统计",

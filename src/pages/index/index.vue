@@ -6,9 +6,16 @@
       <view class="arrow-right-icon" style="border-color: #fff"></view>
     </view>
     <view class="vip-btn-wrapper" v-if="headerVipState === 'applying'">
-      <text>申请试用中</text>
+      <text>开通中</text>
     </view>
-    <view class="vip-btn-wrapper" v-if="headerVipState === 'pending'">
+    <view class="vip-tag-normal" v-if="headerVipState === 'normal'">
+      <text>普通用户</text>
+    </view>
+    <view
+      class="vip-btn-wrapper"
+      v-if="headerVipState === 'pending'"
+      @click="handleApplyTrialClick"
+    >
       <text>会员待开通</text>
     </view>
     <view class="vip-btn-wrapper" v-if="headerVipState === 'trial'">
@@ -151,13 +158,6 @@
       </view>
     </view>
   </scroll-view>
-
-  <image
-    class="collect-icon"
-    src="../../static/icons/收藏.png"
-    mode="aspectFit"
-    @click="goTo('collect/index')"
-  />
 
   <!-- #region 免费领VIP -->
   <view class="free-vip-banner-container">
@@ -518,15 +518,20 @@
 
   // 首页头部会员状态：VIP 等级优先，普通用户再按申请状态区分
   // applyStatus：0-未申请，1-申请试用中，2-试用中，3-申请开通中，4-开通中
-  const headerVipState = computed<'apply' | 'applying' | 'pending' | 'trial' | 'member'>(() => {
-    const vipCode = userInfo.value?.vipCode
-    if (vipCode === VIP_CODE.VIP用户) return 'member'
-    if (vipCode === VIP_CODE.VIP试用) return 'trial'
-    const status = userInfo.value?.applyStatus ?? APPLY_STATUS.未申请
-    if (status === APPLY_STATUS.申请试用中) return 'applying'
-    if (status === APPLY_STATUS.申请开通中 || status === APPLY_STATUS.开通中) return 'pending'
-    return 'apply'
-  })
+  const headerVipState = computed<'apply' | 'applying' | 'pending' | 'trial' | 'member' | 'normal'>(
+    () => {
+      const vipCode = userInfo.value?.vipCode
+      if (vipCode === VIP_CODE.VIP用户) return 'member'
+      if (vipCode === VIP_CODE.VIP试用) return 'trial'
+      const status = userInfo.value?.applyStatus ?? APPLY_STATUS.未申请
+      if (status === APPLY_STATUS.申请试用中 || status === APPLY_STATUS.申请开通中)
+        return 'applying'
+      if (status === APPLY_STATUS.申请开通中 || status === APPLY_STATUS.开通中) return 'pending'
+      // 普通用户：非会员且从未提交过申请
+      if (status === APPLY_STATUS.未申请) return 'normal'
+      return 'apply'
+    }
+  )
 
   async function fetchVipApplicationStatus() {
     const detail = await refreshUserDetail()
@@ -561,7 +566,9 @@
       showVipExpiredPopup.value = true
       return false
     }
-    return true
+    // 普通用户且未提交过申请 → 直接弹出申请试用弹窗
+    showTrialPopup.value = true
+    return false
   }
 
   function handleApplyTrialClick() {
@@ -592,6 +599,19 @@
 </script>
 
 <style lang="scss" scoped>
+  /* #region 头部普通用户标签 */
+  .vip-tag-normal {
+    padding: 8rpx 24rpx;
+    border-radius: 28rpx;
+    font-weight: 600;
+    font-size: 22rpx;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    background: linear-gradient(120deg, #6aa9ff, #3a86ff);
+  }
+  /* #endregion */
+
   /* #region 标题 */
   .title-section {
     text-align: center;
@@ -928,16 +948,6 @@
         }
       }
     }
-  }
-  /* #endregion */
-
-  .collect-icon {
-    position: absolute;
-    z-index: 10;
-    width: 82rpx;
-    height: 82rpx;
-    right: 30rpx;
-    bottom: 180rpx;
   }
   /* #endregion */
 

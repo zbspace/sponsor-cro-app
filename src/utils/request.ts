@@ -115,7 +115,46 @@ function isLoginExpired(res: UniApp.RequestSuccessCallbackResult): boolean {
 }
 
 /**
- * 登录过期后跳转登录页，由登录页统一重新发起登录
+ * 静默重新登录处理器：由 api 模块注册，避免模块间循环依赖
+ * @returns 无
+ */
+type ReloginHandler = () => Promise<void>
+let reloginHandler: ReloginHandler | null = null
+
+/**
+ * 注册静默重新登录处理器（执行微信登录并写入本地 token）
+ * @param handler 重新登录处理函数
+ */
+export function setReloginHandler(handler: ReloginHandler) {
+  reloginHandler = handler
+}
+
+/**
+ * 静默重新登录（单例模式，避免并发 401 时重复登录）
+ * @returns 是否重新登录成功
+ */
+let silentLoginPromise: Promise<boolean> | null = null
+function silentLogin(): Promise<boolean> {
+  if (silentLoginPromise) return silentLoginPromise
+
+  silentLoginPromise = (async () => {
+    try {
+      if (!reloginHandler) return false
+      await reloginHandler()
+      return !!getToken()
+    } catch (err) {
+      console.error('自动登录失败', err)
+      return false
+    } finally {
+      silentLoginPromise = null
+    }
+  })()
+
+  return silentLoginPromise
+}
+
+/**
+ * 自动登录失败后的兜底：清除登录态并跳转登录页由用户手动登录
  */
 let redirectingToLogin = false
 function redirectToLogin() {
@@ -146,7 +185,7 @@ export function request<T = any>(config: RequestConfig): Promise<ApiResponse<T>>
   logRequest(url, method, data)
 
   return new Promise((resolve, reject) => {
-    const send = () => {
+    const send = (retried = false) => {
       const header: any = {
         'Content-Type': 'application/json'
       }
@@ -169,8 +208,16 @@ export function request<T = any>(config: RequestConfig): Promise<ApiResponse<T>>
           // 打印接口响应日志（接口名 + 出参）
           logResponse(url, res.data)
 
-          // 登录过期：清除登录态并跳转登录页重新登录
+          // 登录过期：静默自动登录后重试一次原请求，无需跳转登录页
           if (needToken && isLoginExpired(res)) {
+            if (!retried) {
+              const ok = await silentLogin()
+              if (ok) {
+                send(true)
+                return
+              }
+            }
+            // 自动登录仍失败，兜底跳转登录页由用户手动登录
             redirectToLogin()
             reject(new Error('登录已过期，请重新登录'))
             return
