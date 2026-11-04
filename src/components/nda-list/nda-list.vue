@@ -119,10 +119,13 @@
     companyParentId?: number
     /** 药品名称（榜单点击带入，支持 v-model:product-name） */
     productName?: string
+    /** 年份，空值表示全部年份（榜单点击带入，支持 v-model:year） */
+    year?: string | number
   }>()
 
   const emit = defineEmits<{
     (e: 'update:productName', value: string): void
+    (e: 'update:year', value: string): void
   }>()
 
   // #region 筛选状态
@@ -168,7 +171,22 @@
     set: (value: string) => emit('update:productName', value)
   })
 
-  const currentYearFilter = ref('')
+  // 未通过 v-model:year 绑定时组件内部自持年份，保证下拉选择依然生效
+  const innerYear = ref('')
+
+  /** 年份与 year 属性双向绑定，榜单带入与下拉选择共用同一数据源 */
+  const currentYearFilter = computed({
+    get: () => {
+      if (props.year === undefined || props.year === null) return innerYear.value
+      // 空字符串或 0 都表示“全部年份”
+      return props.year === '' || props.year === 0 ? '' : String(props.year)
+    },
+    set: (value: string) => {
+      innerYear.value = value
+      emit('update:year', value)
+    }
+  })
+
   const drugTypeFilter = ref('')
   const cleanedClassification = ref('')
   // #endregion
@@ -232,18 +250,8 @@
   // #endregion
 
   // 筛选变化时自动重新请求列表数据
-  watch(currentYearFilter, () => {
-    fetchList(true)
-  })
-  watch(drugTypeFilter, () => {
-    fetchList(true)
-  })
-
-  watch(cleanedClassification, () => {
-    fetchList(true)
-  })
-
-  watch(productFilter, () => {
+  // 合并监听：榜单点击会同时带入药品名与年份，分开监听会连发两次请求（fetchList 会丢弃进行中的重复调用）
+  watch([currentYearFilter, drugTypeFilter, cleanedClassification, productFilter], () => {
     fetchList(true)
   })
 
@@ -291,7 +299,11 @@
   .trial-list-wrapper {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    // 与父级 flex 布局配合，不能依赖 height: 100%（小程序内百分比高度会解析为 auto 导致列表高度为 0）
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    overflow: hidden;
 
     .filter-wrapper {
       display: flex;
@@ -388,6 +400,8 @@
     .list-scroll {
       flex: 1;
       height: 0; // 必须设置高度 0，配合 flex:1 才能正确工作
+      min-height: 0;
+      box-sizing: border-box;
     }
 
     .trial-card {

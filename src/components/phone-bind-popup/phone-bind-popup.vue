@@ -15,7 +15,7 @@
 <script setup lang="ts">
   // #region 导入
   import { ref, onMounted } from 'vue'
-  import { getUserInfo, setUserInfo, bandPhone } from '@/api'
+  import { getUserInfo, bandPhone, refreshUserDetail, hasBoundPhone, markPhoneBound } from '@/api'
   // #endregion
 
   // #region 事件
@@ -38,10 +38,9 @@
    * 检查用户手机号状态，未绑定则弹出弹窗
    */
   function checkAndShowBindModal() {
-    const userInfo = getUserInfo()
-    if (userInfo && !userInfo.phone) {
-      visible.value = true
-    }
+    if (!getUserInfo()) return
+    if (hasBoundPhone()) return
+    visible.value = true
   }
 
   /**
@@ -51,11 +50,10 @@
     if (e.detail.code) {
       try {
         await bandPhone(e.detail.code)
-        // 绑定成功后更新本地用户信息，标记手机号已绑定
-        const userInfo = getUserInfo()
-        if (userInfo) {
-          setUserInfo({ ...userInfo, phone: 'bound' })
-        }
+        // 标记本地已绑定，并拉取服务端最新用户信息，拿到真实手机号
+        // （不要往 phone 字段写占位字符串，"我的"页会把占位值直接展示出来）
+        markPhoneBound()
+        await refreshUserDetail()
         visible.value = false
         uni.showToast({ title: '手机号绑定成功', icon: 'success' })
         emit('success')

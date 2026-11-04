@@ -172,11 +172,14 @@
     productName?: string
     /** 注册分类（榜单点击带入，支持 v-model:classification） */
     classification?: string
+    /** 年份，空值表示全部年份（榜单点击带入，支持 v-model:year） */
+    year?: string | number
   }>()
 
   const emit = defineEmits<{
     (e: 'update:productName', value: string): void
     (e: 'update:classification', value: string): void
+    (e: 'update:year', value: string): void
   }>()
   // #endregion
 
@@ -199,7 +202,22 @@
     ...createEnumsToOptions(REGISTER_TYPE)
   ]
 
-  const currentYearFilter = ref('')
+  // 未通过 v-model:year 绑定时组件内部自持年份，保证下拉选择依然生效
+  const innerYear = ref('')
+
+  /** 年份与 year 属性双向绑定，榜单带入与下拉选择共用同一数据源 */
+  const currentYearFilter = computed({
+    get: () => {
+      if (props.year === undefined || props.year === null) return innerYear.value
+      // 空字符串或 0 都表示“全部年份”
+      return props.year === '' || props.year === 0 ? '' : String(props.year)
+    },
+    set: (value: string) => {
+      innerYear.value = value
+      emit('update:year', value)
+    }
+  })
+
   const drugTypeFilter = ref('')
 
   /** 注册分类与 classification 属性双向绑定，保证榜单带入与下拉选择共用同一数据源 */
@@ -349,14 +367,16 @@
   // #endregion
 
   // #region 筛选联动
-  watch(currentYearFilter, () => {
-    fetchList(true)
-  })
+  // 年份与注册分类通过 v-model 回写为组件属性，统一由下面的属性监听处理，避免同一次变更触发两次请求
   watch(drugTypeFilter, () => {
     fetchList(true)
   })
-  watch(cleanedClassification, () => {
-    fetchList(true)
+
+  // 未使用 v-model:year 时年份只存在于组件内部，需要自行触发刷新（受控场景交给属性监听）
+  watch(currentYearFilter, () => {
+    if (props.year === undefined || props.year === null) {
+      fetchList(true)
+    }
   })
   // #endregion
 
@@ -386,9 +406,9 @@
     })
   })
 
-  // 外部参数变化时重新加载列表
+  // 外部参数（含榜单点击带入的产品/分类/年份）变化时重新加载列表
   watch(
-    () => [props.companyParentId, props.productName, props.classification],
+    () => [props.companyParentId, props.productName, props.classification, props.year],
     () => {
       fetchList(true)
     }

@@ -63,7 +63,7 @@
   // #region 导入
   import { ref } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
-  import { ensureLogin, getUserInfo, resetEnsureLogin } from '@/api'
+  import { ensureLogin, getUserInfo, resetEnsureLogin, hasBoundPhone } from '@/api'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
   // #endregion
 
@@ -121,7 +121,7 @@
         throw new Error('登录失败')
       }
       // 已绑定手机号直接进入完善资料页；未绑定则先授权手机号
-      if (info.phone) {
+      if (hasBoundPhone()) {
         uni.reLaunch({ url: '/pages/profile-setup/index' })
       } else {
         showPhoneBind.value = true

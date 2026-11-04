@@ -3,17 +3,12 @@ import { VIP_CODE } from '@/utils/enums'
 import type {
   UserInfo,
   LoginResponse,
-  IndexInfoResponse,
-  EnglishQuestionResponse,
-  ChineseQuestionResponse,
-  WordDetailResponse,
   PayParams,
   PayQueryResponse,
-  CollectListResponse,
-  UserCollectListResponse,
   VipOption,
   VirtualPayData,
   VipRenewResponse,
+  UserCollectListResponse,
   CroRankListResponse,
   OutsourcingRatioResponse,
   CroProjectListResponse,
@@ -116,13 +111,11 @@ export function ensureLogin(): Promise<void> {
     try {
       const { code } = await uni.login()
 
-      console.log('code->', code)
       if (!code) {
         console.error('微信登录失败：未获取到 code')
         reject(new Error('未获取到 code'))
         return
       }
-      // return console.log(code);
       const res = await wechatLogin(code)
       if (res.data) {
         // 存储用户信息对象
@@ -304,14 +297,6 @@ export async function applyVip(data: {
 // #region 首页模块
 
 /**
- * 获取首页信息
- * @returns Promise<IndexInfoResponse>
- */
-export async function getIndexInfo() {
-  return get<IndexInfoResponse>('/word/index/getIndexInfo', {}, true)
-}
-
-/**
  * 获取中国临床CRO榜单
  * @param pageNum 页码
  * @param pageSize 每页条数
@@ -411,6 +396,20 @@ export async function queryPharmaShortName(params: {
     params,
     true
   )
+}
+
+/**
+ * 查询母公司信息（搜索下拉）
+ * @param params { id, pageNum, pageSize, searchKey }
+ * @returns Promise<ParentCompanyListResponse>
+ */
+export async function queryParentName(params: {
+  id?: number
+  pageNum?: number
+  pageSize?: number
+  searchKey?: string
+}) {
+  return post<ParentCompanyListResponse>('/api/v1/base/company/queryParentName', params, true)
 }
 
 /**
@@ -655,6 +654,8 @@ export async function researcherTrialStatistic(params: HospitalTrialStatisticPar
 
 // #endregion
 
+// #region CRO/中心实验室合作名单模块
+
 /**
  * 获取CRO/中心实验室sponsor合作名单
  * @param params { companyType, lastYear, pageNum, pageSize, partnerParentCompanyId, partnerStandardCompanyIdList }
@@ -721,118 +722,6 @@ export async function cancelUserCollect(id: number) {
  */
 export async function getUserCollectList(data: any) {
   return get<UserCollectListResponse>('/api/v1/userCollect/getCollectList', { ...data }, true)
-}
-
-// #endregion
-
-// #region 单词背诵模块
-
-/**
- * 获取英文题目详情
- * @param wordId 单词 ID
- * @returns Promise<EnglishQuestionResponse>
- */
-export async function getEnglishQuestionDetailByWordId(wordId: number) {
-  return get<EnglishQuestionResponse>('/word/recite/getEnglishQuestionDetailByWordId', { wordId })
-}
-
-/**
- * 提交单词背诵答题结果
- * @param wordId 单词 ID
- * @param answerResult 答题结果，true 正确，false 错误
- * @returns Promise
- */
-export async function reciteWord(wordId: number, answerResult: boolean) {
-  return post('/word/recite/reciteWord', { wordId, answerResult }, true)
-}
-
-// #endregion
-
-// #region 单词详情模块
-
-/**
- * 获取已背诵单词列表
- * @param pageNum 页码
- * @param pageSize 每页条数
- * @returns Promise<CollectListResponse>
- */
-export async function getReciteWordList(pageNum: number = 1, pageSize: number = 20) {
-  return get<CollectListResponse>('/word/word/getReciteWordList', { pageNum, pageSize }, true)
-}
-
-/**
- * 获取待复习单词列表
- * @param pageNum 页码
- * @param pageSize 每页条数
- * @returns Promise<CollectListResponse>
- */
-export async function getReviewWordList(pageNum: number = 1, pageSize: number = 20) {
-  return get<CollectListResponse>('/word/word/getReviewWordList', { pageNum, pageSize }, true)
-}
-
-/**
- * 获取单词详情
- * @param wordId 单词 ID
- * @param wordType 单词场景类型，recite(背诵时)，recite(已背诵)，review(待复习)，collected(已收藏)
- * @returns Promise<WordDetailResponse>
- */
-export async function getWordDetailByWordId(wordId: number, wordType: string) {
-  return get<WordDetailResponse>('/word/word/getWordDetailByWordId', { wordId, wordType }, true)
-}
-
-// #endregion
-
-// #region 收藏模块
-
-/**
- * 获取收藏列表
- * @param pageNum 页码
- * @param pageSize 每页条数
- * @returns Promise<CollectListResponse>
- */
-export async function getCollectList(pageNum: number = 1, pageSize: number = 20) {
-  return get<CollectListResponse>('/word/word/getCollectWordList', { pageNum, pageSize }, true)
-}
-
-/**
- * 确认单词收藏状态
- * @param wordId 单词 ID
- * @returns Promise<{ collectResult: boolean }>
- */
-export async function confirmCollect(wordId: number) {
-  return get<{ collectResult: boolean }>('/word/collect/confirmCollectWord', { wordId }, true)
-}
-
-/**
- * 取消单词收藏状态
- * @param wordId 单词 ID
- * @returns Promise<{ collectResult: boolean }>
- */
-export async function cancelCollect(wordId: number) {
-  return get<{ collectResult: boolean }>('/word/collect/cancelCollectWord', { wordId }, true)
-}
-
-// #endregion
-
-// #region 复习详情模块
-
-/**
- * 获取中文题目详情
- * @param wordId 单词 ID
- * @returns Promise<ChineseQuestionResponse>
- */
-export async function getChineseQuestionDetail(wordId: number) {
-  return get<ChineseQuestionResponse>('/word/review/getChineseQuestionDetailByWordId', { wordId })
-}
-
-/**
- * 提交单词复习答题结果
- * @param wordId 单词 ID
- * @param answerResult 答题结果，true 正确，false 错误
- * @returns Promise
- */
-export async function reviewWord(wordId: number, answerResult: boolean) {
-  return post('/word/review/reviewWord', { wordId, answerResult })
 }
 
 // #endregion
@@ -1217,11 +1106,31 @@ export function getVip(): number {
   return userInfo ? (userInfo.vip ? 1 : 0) : 0
 }
 
+// 手机号绑定标记：服务端未回传手机号时，用它判断"已绑定"，避免用占位字符串污染 phone 字段
+const PHONE_BOUND_KEY = 'phoneBound'
+
 /**
- * 从本地存储移除用户信息
+ * 标记当前用户已绑定手机号
+ */
+export function markPhoneBound() {
+  uni.setStorageSync(PHONE_BOUND_KEY, true)
+}
+
+/**
+ * 当前用户是否已绑定手机号（优先看真实手机号，其次看本地标记）
+ * @returns 是否已绑定
+ */
+export function hasBoundPhone(): boolean {
+  const userInfo = getUserInfo()
+  return !!userInfo?.phone || !!uni.getStorageSync(PHONE_BOUND_KEY)
+}
+
+/**
+ * 从本地存储移除用户信息（同时清空手机号绑定标记）
  */
 export function removeUserInfo() {
   uni.removeStorageSync('userInfo')
+  uni.removeStorageSync(PHONE_BOUND_KEY)
 }
 
 // endregion

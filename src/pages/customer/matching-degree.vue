@@ -20,21 +20,6 @@
     </view>
     <!-- #endregion -->
 
-    <!-- #region 企业名称搜索 -->
-    <view class="fm-search">
-      <icon type="search" size="16" color="#9CA3AF" />
-      <input
-        type="text"
-        v-model="companyKeyword"
-        placeholder="搜索企业名称"
-        placeholder-style="color: #9CA3AF"
-      />
-      <view class="fm-clear" v-if="companyKeyword" @click="clearCompanyKeyword">
-        <text>×</text>
-      </view>
-    </view>
-    <!-- #endregion -->
-
     <!-- #region 匹配汇总 -->
     <view class="fm-sum">
       <view class="fm-sum-top">
@@ -61,6 +46,53 @@
     </view>
     <!-- #endregion -->
 
+    <!-- #region 企业名称搜索 -->
+    <view class="fm-select">
+      <view class="fm-search">
+        <icon type="search" size="16" color="#9CA3AF" />
+        <input
+          type="text"
+          :value="companyKeyword"
+          placeholder="搜索并选择企业"
+          placeholder-style="color: #9CA3AF"
+          @input="onCompanyInput"
+          @focus="openCompanyDropdown"
+        />
+        <view class="fm-clear" v-if="companyKeyword" @click="clearCompanyKeyword">
+          <text>×</text>
+        </view>
+      </view>
+
+      <!-- 母公司下拉联想 -->
+      <view class="fm-dropdown" v-if="showCompanyDropdown">
+        <view class="fm-dropdown-hint" v-if="companyLoading">
+          <text>加载中...</text>
+        </view>
+        <template v-else>
+          <scroll-view
+            scroll-y
+            class="fm-dropdown-list"
+            :show-scrollbar="false"
+            :style="companyDropdownStyle"
+            v-if="companyOptions.length > 0"
+          >
+            <view
+              class="fm-dropdown-item"
+              v-for="item in companyOptions"
+              :key="item.parentCompanyId"
+              @click="selectCompany(item)"
+            >
+              <text>{{ item.parentCompanyShortName }}</text>
+            </view>
+          </scroll-view>
+          <view class="fm-dropdown-hint" v-else>
+            <text>未找到相关企业</text>
+          </view>
+        </template>
+      </view>
+    </view>
+    <!-- #endregion -->
+
     <!-- #region 列表上限提示 -->
     <view class="fm-note" v-if="noteText">{{ noteText }}</view>
     <!-- #endregion -->
@@ -75,7 +107,7 @@
 
       <view
         class="fm-tr"
-        v-for="(item, index) in filteredList"
+        v-for="(item, index) in list"
         :key="item.parentCompanyId"
         @click="goToDetail(item)"
       >
@@ -92,7 +124,7 @@
       <view class="fm-empty" v-if="listLoading">
         <text>加载中...</text>
       </view>
-      <view class="fm-empty" v-else-if="filteredList.length === 0">
+      <view class="fm-empty" v-else-if="list.length === 0">
         <text>未找到匹配企业</text>
       </view>
     </view>
@@ -105,15 +137,20 @@
 <script setup lang="ts">
   // #region 导入
   import { ref, computed } from 'vue'
-  import { onLoad } from '@dcloudio/uni-app'
+  import { onLoad, onUnload } from '@dcloudio/uni-app'
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
-  import { getMatchingScoreList, matchingCompanyStatistics } from '@/api'
-  import type { MatchingScoreItem } from '@/types/api'
+  import { getMatchingScoreList, matchingCompanyStatistics, queryParentName } from '@/api'
+  import type { MatchingScoreItem, ParentCompanyItem } from '@/types/api'
   // #endregion
 
   // #region 状态
-  // 列表接口只返回第一页 100 条，更多企业靠企业名称搜索定位
+  // 列表接口只返回第一页 100 条，更多企业靠选择母公司定位
   const LIST_LIMIT = 100
+
+  // 母公司下拉分页与高度
+  const COMPANY_PAGE_SIZE = 20
+  const DROPDOWN_ITEM_HEIGHT = 84
+  const DROPDOWN_MAX_HEIGHT = 504
 
   interface MatchingItem {
     parentCompanyId: number
@@ -123,8 +160,13 @@
 
   // 路由带入的适应症，仅用于展示搜索记录
   const indicationKeyword = ref('')
-  // 企业名称筛选（对已加载列表做前端过滤）
+  // 企业名称搜索关键词
   const companyKeyword = ref('')
+  // 母公司下拉数据
+  const companyOptions = ref<ParentCompanyItem[]>([])
+  const companyLoading = ref(false)
+  const showCompanyDropdown = ref(false)
+  const selectedCompany = ref<ParentCompanyItem | null>(null)
   const list = ref<MatchingItem[]>([])
   const listLoading = ref(false)
   const summary = ref({ total: 0, matchCnt: 0, notMatchCnt: 0 })
@@ -136,21 +178,16 @@
     height: 0
   })
 
-  // 按企业名称筛选后展示的列表
-  const filteredList = computed(() => {
-    const keyword = companyKeyword.value.trim()
-    if (!keyword) return list.value
-    return list.value.filter((item) => item.name.includes(keyword))
+  // 下拉列表高度随条目数变化
+  const companyDropdownStyle = computed(() => {
+    const height = Math.min(companyOptions.value.length * DROPDOWN_ITEM_HEIGHT, DROPDOWN_MAX_HEIGHT)
+    return { height: `${height}rpx` }
   })
 
-  // 列表上限提示 / 筛选结果提示
-  const noteText = computed(() => {
-    if (companyKeyword.value.trim()) {
-      return `在全部 ${list.value.length} 家中搜索到 ${filteredList.value.length} 家`
-    }
-    if (list.value.length >= LIST_LIMIT) return `最多展示 ${LIST_LIMIT} 家`
-    return ''
-  })
+  // 列表上限提示
+  const noteText = computed(() =>
+    list.value.length >= LIST_LIMIT ? `最多展示 ${LIST_LIMIT} 家` : ''
+  )
   // #endregion
 
   // #region 生命周期
@@ -161,12 +198,18 @@
 
     fetchPageData()
   })
+
+  onUnload(() => {
+    if (companySearchTimer) clearTimeout(companySearchTimer)
+  })
   // #endregion
 
   // #region 数据请求
   function buildParams() {
     return {
       indication: indicationKeyword.value || undefined,
+      // 选中母公司后按其 ID 查询
+      parentCompanyId: selectedCompany.value?.parentCompanyId,
       pageNum: 1,
       pageSize: LIST_LIMIT
     }
@@ -208,6 +251,48 @@
   }
   // #endregion
 
+  // #region 母公司下拉
+  let companySearchTimer: ReturnType<typeof setTimeout> | null = null
+
+  function openCompanyDropdown() {
+    showCompanyDropdown.value = true
+    if (!companyOptions.value.length && !companyLoading.value) fetchCompanyOptions()
+  }
+
+  // 输入即查询母公司（防抖 300ms）
+  function onCompanyInput(e: any) {
+    companyKeyword.value = e?.detail?.value ?? ''
+    selectedCompany.value = null
+    showCompanyDropdown.value = true
+    if (companySearchTimer) clearTimeout(companySearchTimer)
+    companySearchTimer = setTimeout(fetchCompanyOptions, 300)
+  }
+
+  async function fetchCompanyOptions() {
+    companyLoading.value = true
+    try {
+      const res = await queryParentName({
+        pageNum: 1,
+        pageSize: COMPANY_PAGE_SIZE,
+        searchKey: companyKeyword.value.trim() || undefined
+      })
+      companyOptions.value = res.data?.list || []
+    } catch {
+      companyOptions.value = []
+    } finally {
+      companyLoading.value = false
+    }
+  }
+
+  // 选中母公司后按 parentCompanyId 重新查询列表
+  function selectCompany(item: ParentCompanyItem) {
+    selectedCompany.value = item
+    companyKeyword.value = item.parentCompanyShortName
+    showCompanyDropdown.value = false
+    fetchPageData()
+  }
+  // #endregion
+
   // #region 方法
   function goBack() {
     uni.navigateBack({ delta: 1, fail: () => uni.reLaunch({ url: '/pages/index/index' }) })
@@ -215,7 +300,12 @@
 
   // 清空企业名称筛选，回到全部企业
   function clearCompanyKeyword() {
+    if (companySearchTimer) clearTimeout(companySearchTimer)
     companyKeyword.value = ''
+    selectedCompany.value = null
+    companyOptions.value = []
+    showCompanyDropdown.value = false
+    fetchPageData()
   }
 
   function goToDetail(item: MatchingItem) {
@@ -245,13 +335,17 @@
   /* #endregion */
 
   /* #region 企业名称搜索 */
+  .fm-select {
+    position: relative;
+    margin-bottom: 24rpx;
+  }
+
   .fm-search {
     display: flex;
     align-items: center;
     gap: 16rpx;
     height: 88rpx;
     padding: 0 28rpx;
-    margin-bottom: 24rpx;
     background: #ffffff;
     border-radius: 24rpx;
     box-shadow: 0 2rpx 6rpx rgba(15, 23, 42, 0.06);
@@ -283,6 +377,47 @@
         background: #b3bac6;
       }
     }
+  }
+
+  .fm-dropdown {
+    position: absolute;
+    top: 96rpx;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background: #ffffff;
+    border-radius: 24rpx;
+    box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.14);
+    overflow: hidden;
+  }
+
+  .fm-dropdown-list {
+    box-sizing: border-box;
+  }
+
+  .fm-dropdown-item {
+    display: flex;
+    align-items: center;
+    height: 84rpx;
+    padding: 0 28rpx;
+    font-size: 28rpx;
+    color: #1f2329;
+    border-bottom: 1rpx solid #f2f4f7;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:active {
+      background: #f5f7fa;
+    }
+  }
+
+  .fm-dropdown-hint {
+    padding: 32rpx 28rpx;
+    text-align: center;
+    font-size: 26rpx;
+    color: #9ca3af;
   }
   /* #endregion */
 

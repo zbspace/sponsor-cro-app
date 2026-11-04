@@ -14,7 +14,7 @@
   <!-- #region 背景与页面容器 -->
   <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
 
-  <view class="page" :style="{ height: `calc(100vh - ${menu.top}px - ${menu.height}px - 70px)` }">
+  <view class="page" :style="{ height: `calc(100vh - ${menu.top}px - ${menu.height}px - 70px - env(safe-area-inset-bottom))` }">
     <!-- #region 用户信息 -->
     <view class="profile-card">
       <view class="pc-top" @click="goProfileSetup">
@@ -178,10 +178,10 @@
     return time ? time.slice(0, 10) : ''
   })
 
-  // 手机号脱敏：138****8888
+  // 手机号脱敏：138****8888；非手机号格式（含历史遗留的占位值）一律显示 --
   const maskedPhone = computed(() => {
     const phone = userInfo.value?.phone || ''
-    if (!phone) return '--'
+    if (!/^1\d{10}$/.test(phone)) return '--'
     return phone.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2')
   })
 

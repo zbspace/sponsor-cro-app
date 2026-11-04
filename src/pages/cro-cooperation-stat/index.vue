@@ -506,7 +506,7 @@
   }
   // #endregion
 
-  // #region 点击 CRO 合作名单行进入项目列表并按该 CRO 筛选
+  // #region 点击 CRO 合作名单行进入项目列表并按该 CRO、榜单年份筛选
   const onCroClick = (item: any) => {
     if (!item.parentCompanyId) return
     // 切换到项目列表 tab，并将合作CRO公司筛选中默认选中当前点击的 CRO
@@ -517,6 +517,8 @@
       croCompanyOptions.value.push({ value, text: item.name })
     }
     currentCroCompany.value = value
+    // 榜单按年份统计合作项目数，带入同一年份才能让列表条数与榜单一致；未选年份则不带年份条件
+    currentTimeFilterObj.value = croYearFilter.value || ''
   }
   // #endregion
 
@@ -612,15 +614,9 @@
     fetchProjectList()
   })
 
-  // 年份变化时，重置项目列表分页并刷新
-  watch(currentTimeFilterObj, () => {
-    projectPage.value = 1
-    noMore.value = false
-    fetchProjectList()
-  })
-
-  // 合作CRO公司变化时，重置项目列表分页并刷新
-  watch(currentCroCompany, () => {
+  // 项目列表筛选条件（年份、合作CRO公司）变化时，重置分页并刷新
+  // 两者可能同时变更（榜单点击会带入 CRO 与年份），合并监听避免第二次请求被 loading 拦截而丢弃条件
+  watch([currentTimeFilterObj, currentCroCompany], () => {
     projectPage.value = 1
     noMore.value = false
     fetchProjectList()

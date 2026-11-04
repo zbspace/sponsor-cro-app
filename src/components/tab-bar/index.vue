@@ -95,11 +95,11 @@
     display: flex;
     align-items: center;
     justify-content: space-around;
-    // padding-bottom: constant(safe-area-inset-bottom);
-    // padding-bottom: env(safe-area-inset-bottom);
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
     z-index: 999;
     height: 70px;
+    // 适配 iPhone 底部安全区，避免图标文字被 Home 指示条压住
+    // 全局样式里 view 是 border-box，这里单独改回 content-box 让 70px 表示内容高度
 
     .tab-item {
       display: flex;

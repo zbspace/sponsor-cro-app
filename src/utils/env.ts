@@ -27,8 +27,9 @@ switch (envVersion) {
 // #endif
 
 // #ifndef MP-WEIXIN
-// H5/App环境单独配置
-baseUrl = import.meta.env.VITE_API_URL
+// H5/App 环境从 .env 读取（变量名见 .env.example 与 src/env.d.ts）
+// 未配置时回退到测试环境，避免 baseUrl 为 undefined 导致请求发到 "undefined/xxx"
+baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://test.shucangyiyao.com/lyqApi'
 // #endif
 
 export default {
