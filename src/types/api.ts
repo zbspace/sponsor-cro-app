@@ -845,6 +845,8 @@ export interface HospitalAndMainResearcherStatisticsResponse {
  * 商机线索通用参数
  */
 export interface OpportunityParam {
+  /** 日期标签：近1周 / 近1月 / 近3月 / 近6月 / 近1年 */
+  dataFlag?: string
   pageNum?: number
   pageSize?: number
   parentCompanyId?: number
@@ -877,6 +879,8 @@ export interface OpportunityVo {
   ndaPriorityApproval: string
   /** ind承办日期//cde公示日期//NDA受理日期 */
   undertakeDate: string
+  /** 商机线索类型 */
+  businessClueType: string
 }
 
 /**

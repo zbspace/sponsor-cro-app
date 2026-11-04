@@ -138,15 +138,23 @@
           <!-- 药品名称 + 分类/分期 -->
           <view class="lead-head">
             <text class="lead-drug">{{ item.drugStandardName }}</text>
-            <text class="tag tag-lead" v-if="item.cleanedClassificationOrStages">
-              {{ item.cleanedClassificationOrStages }}
+            <text class="tag tag-lead" v-if="item.businessClueType">
+              {{ item.businessClueType }}
             </text>
+
             <view class="lead-tags">
               <text class="tag" :class="getDrugTypeClass(item)" v-if="item.cleanedDrugType">
                 {{ item.cleanedDrugType }}
               </text>
               <text class="tag tag-amber" v-if="item.ndaPriorityApproval">
                 {{ item.ndaPriorityApproval }}
+              </text>
+              <text
+                class="tag tag-lead"
+                style="margin-left: 10rpx"
+                v-if="item.cleanedClassificationOrStages"
+              >
+                {{ item.cleanedClassificationOrStages }}
               </text>
             </view>
           </view>
@@ -265,6 +273,15 @@
     { value: 365, label: '近1年' }
   ]
 
+  /** 时间档位 → 接口 dataFlag（接口接受的日期标签口径） */
+  const TIME_DAYS_FLAG: Record<number, string> = {
+    7: '近1周',
+    30: '近1月',
+    90: '近3月',
+    180: '近6月',
+    365: '近1年'
+  }
+
   const type = ref<LeadType>('all')
   const timeDays = ref(0)
   const activeFilter = ref<'type' | 'time' | null>(null)
@@ -342,7 +359,8 @@
           getListApi(t)({
             pageNum: feedMeta[t].pageNum,
             pageSize,
-            parentCompanyId: companyId.value
+            parentCompanyId: companyId.value,
+            dataFlag: TIME_DAYS_FLAG[timeDays.value]
           } as OpportunityParam)
         )
       )
@@ -422,8 +440,7 @@
       { label: '申请人', value: item.applicationCompany },
       {
         label: DATE_LABEL[item.dataType] || '受理日期',
-        value: item.undertakeDate,
-        fresh: freshLabel(item.undertakeDate)
+        value: item.undertakeDate
       }
     ]
 
@@ -478,25 +495,24 @@
     if (activeFilter.value === 'type') {
       changeType(value as LeadType)
     } else {
-      timeDays.value = Number(value)
+      const next = Number(value)
+      // 切换登记时间：重置分页并按接口 dataFlag 重新请求
+      if (next !== timeDays.value) {
+        timeDays.value = next
+        resetFeeds()
+        fetchList()
+      }
     }
     activeFilter.value = null
   }
 
-  /** 登记时间为前端过滤（接口不支持时间参数），仅过滤已加载数据 */
-  const visibleList = computed<OpportunityVo[]>(() => {
-    if (timeDays.value <= 0) return list.value
-    return list.value.filter((item) => {
-      const days = daysFromToday(item.undertakeDate)
-      return days !== null && days <= timeDays.value
-    })
-  })
+  /** 登记时间由接口按 dataFlag 过滤，前端直接使用已加载数据 */
+  const visibleList = computed<OpportunityVo[]>(() => list.value)
 
-  /** 结果条条数：有时间筛选时按已加载数据统计 */
-  const resultCount = computed(() => {
-    if (timeDays.value > 0) return visibleList.value.length
-    return targetTypes.value.reduce((sum, t) => sum + (typeCounts.value[t] || 0), 0)
-  })
+  /** 结果条条数：取接口返回的各类型总数之和 */
+  const resultCount = computed(() =>
+    targetTypes.value.reduce((sum, t) => sum + (typeCounts.value[t] || 0), 0)
+  )
 
   const filterSummary = computed(() => {
     const conds: string[] = []
@@ -507,10 +523,11 @@
 
   function clearFilters() {
     const typeChanged = type.value !== 'all'
+    const timeChanged = timeDays.value !== 0
     type.value = 'all'
     timeDays.value = 0
     activeFilter.value = null
-    if (typeChanged) {
+    if (typeChanged || timeChanged) {
       resetFeeds()
       fetchList()
     }
@@ -749,7 +766,7 @@
       background: #ffffff;
       border-radius: 24rpx;
       box-shadow: 0 16rpx 48rpx rgba(15, 23, 42, 0.1);
-      z-index: 10;
+      z-index: 99;
       max-height: 400rpx;
       overflow-y: auto;
 
