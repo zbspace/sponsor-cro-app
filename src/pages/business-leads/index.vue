@@ -25,7 +25,7 @@
 
   <!-- 查询公司 -->
   <view class="search-input-section">
-    <view class="input-wrapper">
+    <view class="input-wrapper" @click="closeFilter">
       <icon type="search" size="18" color="#B2B2B2" class="search-icon" />
       <input
         type="text"
@@ -181,7 +181,9 @@
           <view class="lead-empty-icon"></view>
           <text class="lead-empty-title">没有符合条件的线索</text>
           <text class="lead-empty-desc">换个关键词或筛选条件，或清空筛选看看全部线索</text>
-          <text class="lead-empty-reset" @click="clearFilters">清空筛选</text>
+          <view class="lead-empty-reset" hover-class="lead-empty-reset-hover" @click="clearFilters">
+            清空筛选
+          </view>
         </view>
 
         <!-- 加载状态 -->
@@ -488,7 +490,14 @@
   const activeValue = computed(() => (activeFilter.value === 'type' ? type.value : timeDays.value))
 
   function toggleFilter(key: 'type' | 'time') {
+    // 打开筛选面板时收起企业联想下拉，避免两个浮层互相遮挡
+    showDropdown.value = false
     activeFilter.value = activeFilter.value === key ? null : key
+  }
+
+  /** 收起筛选面板（点击搜索框时调用） */
+  function closeFilter() {
+    activeFilter.value = null
   }
 
   function handleFilterSelect(value: string | number) {
@@ -521,16 +530,33 @@
     return conds.join(' · ')
   })
 
+  /**
+   * 清空全部筛选条件（线索类型 / 登记时间 / 企业关键词），并重新拉取列表
+   * 空态与结果条上的「清空筛选」共用
+   */
   function clearFilters() {
-    const typeChanged = type.value !== 'all'
-    const timeChanged = timeDays.value !== 0
+    if (loading.value) return // 加载中直接忽略，避免清空数据后请求被早退逻辑跳过
+
+    // 复位企业搜索条件
+    companyId.value = undefined
+    companyName.value = ''
+    searchKeyword.value = ''
+    selectedCompany.value = null
+    searchResults.value = []
+    showDropdown.value = false
+    if (searchTimer) {
+      clearTimeout(searchTimer)
+      searchTimer = null
+    }
+
+    // 复位筛选条件
     type.value = 'all'
     timeDays.value = 0
     activeFilter.value = null
-    if (typeChanged || timeChanged) {
-      resetFeeds()
-      fetchList()
-    }
+
+    // 无论是否有条件被清掉都重新请求一次，保证点击有明确反馈
+    resetFeeds()
+    fetchList()
   }
   // #endregion
 
@@ -554,6 +580,8 @@
     if (!checkPermission()) {
       return
     }
+    // 输入联想展开前先收起筛选面板，避免浮层层级冲突
+    closeFilter()
     if (searchTimer) clearTimeout(searchTimer)
     selectedCompany.value = null
 
@@ -608,6 +636,7 @@
     if (!checkPermission()) {
       return
     }
+    closeFilter()
     if (!searchKeyword.value.trim()) {
       uni.showToast({ title: '请输入企业名称', icon: 'none' })
       return
@@ -703,7 +732,9 @@
   /* #region 查询公司 */
   .search-input-section {
     position: relative;
-    z-index: 20;
+    /* 需高于筛选行（z-index: 40），否则下拉联想会被「全部类型 / 登记时间」遮挡
+       注意：该元素本身形成层叠上下文，内部下拉的 z-index 无法越过这里 */
+    z-index: 50;
     margin: 24rpx 0 20rpx;
     padding: 0 30rpx;
 
@@ -1003,6 +1034,11 @@
       border: 2rpx solid #1e6fff;
       color: #1e6fff;
       font-size: 26rpx;
+    }
+
+    /* 按下反馈 */
+    .lead-empty-reset-hover {
+      background: #ebf3ff;
     }
   }
   /* #endregion */

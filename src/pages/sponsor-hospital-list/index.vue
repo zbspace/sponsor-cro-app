@@ -240,14 +240,26 @@
   // #endregion
 
   // #region 跳转
-  /** 点击医院行，跳转到合作情况统计页的「试验列表」tab */
+  /** 点击医院行，跳转到合作情况统计页的「试验列表」tab，并带上当前年份/试验状态/试验分期筛选条件 */
   function onHospitalClick(item: HospitalTrialStatisticItem) {
+    const query = [
+      `companyParentId=${companyParentId.value || ''}`,
+      `companyName=${encodeURIComponent(companyName.value)}`,
+      `hospitalName=${encodeURIComponent(item.hosStandardName || '')}`,
+      `hosStandardId=${item.hosStandardId}`,
+      'tab=list'
+    ]
+    if (filters.year) {
+      query.push(`year=${encodeURIComponent(filters.year)}`)
+    }
+    if (filters.status) {
+      query.push(`trialStatus=${encodeURIComponent(filters.status)}`)
+    }
+    if (filters.phase) {
+      query.push(`trialStage=${encodeURIComponent(filters.phase)}`)
+    }
     uni.navigateTo({
-      url: `/pages/hospital-stat/index?companyParentId=${
-        companyParentId.value || ''
-      }&companyName=${encodeURIComponent(companyName.value)}&hospitalName=${encodeURIComponent(
-        item.hosStandardName || ''
-      )}&hosStandardId=${item.hosStandardId}&tab=list`
+      url: `/pages/hospital-stat/index?${query.join('&')}`
     })
   }
 
