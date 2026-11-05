@@ -12,17 +12,14 @@
 
   <image class="bg-img" src="../../static/icons/header-bg.png" mode="aspectFit" />
 
-  <scroll-view
-    scroll-y
-    class="container-scroll-view"
-    :show-scrollbar="false"
-    enhanced
+  <view
+    class="page-body"
     :style="{
       height: `calc(100vh - ${menu.top}px - ${menu.height}px)`
     }"
-    @scrolltolower="onScrollToLower"
   >
-    <view class="container">
+    <!-- #region 顶部筛选栏（固定，不参与滚动） -->
+    <view class="fixed-head">
       <!-- 顶部筛选栏 -->
       <view class="top-filter-bar">
         <view class="filter-input-card">
@@ -75,171 +72,182 @@
           <view class="active-line" v-if="activeTab === 'list'"></view>
         </view>
       </view>
+    </view>
+    <!-- #endregion -->
 
-      <!-- 时间筛选 -->
-      <view class="time-filter-wrapper" v-if="activeTab === 'stat'">
-        <uni-data-select
-          v-model="currentTimeFilter"
-          :localdata="timeOptions"
-          :clear="false"
-          placeholder="请选择"
-        ></uni-data-select>
-      </view>
-
-      <view class="filter-wrapper" v-if="activeTab === 'list'">
-        <!-- LAB合作名单筛选 -->
-        <view class="time-filter-wrapper">
-          <uni-data-select
-            v-model="currentLabCompany"
-            :localdata="labCompanyOptions"
-            :clear="false"
-            placeholder="请选择"
-          ></uni-data-select>
-        </view>
-
+    <scroll-view
+      scroll-y
+      class="container-scroll-view"
+      :show-scrollbar="false"
+      enhanced
+      @scrolltolower="onScrollToLower"
+    >
+      <view class="container">
         <!-- 时间筛选 -->
-        <view class="time-filter-wrapper">
+        <view class="time-filter-wrapper" v-if="activeTab === 'stat'">
           <uni-data-select
-            v-model="currentTimeFilterObj"
+            v-model="currentTimeFilter"
             :localdata="timeOptions"
             :clear="false"
             placeholder="请选择"
           ></uni-data-select>
         </view>
-      </view>
 
-      <view class="time-filter-tip" v-if="activeTab === 'list'">
-        注：同一个项目可能存在多条HGR获批记录，时间按照HGR批准 时间统计
-      </view>
+        <view class="filter-wrapper" v-if="activeTab === 'list'">
+          <!-- LAB合作名单筛选 -->
+          <view class="time-filter-wrapper">
+            <uni-data-select
+              v-model="currentLabCompany"
+              :localdata="labCompanyOptions"
+              :clear="false"
+              placeholder="请选择"
+            ></uni-data-select>
+          </view>
 
-      <!-- 统计内容 -->
-      <view v-if="activeTab === 'stat'">
-        <!-- 外包比例卡片 -->
-        <view class="card ratio-card">
-          <view class="card-title">外包比例</view>
-          <view class="ratio-content">
-            <view class="pie-chart-wrapper">
-              <view
-                class="pie-chart"
-                :style="{
-                  background: `conic-gradient(#499AE6 0% ${outsourceRate.lab}%, #7ED321 ${outsourceRate.lab}% 100%)`
-                }"
-              ></view>
-            </view>
-            <view class="ratio-legend">
-              <view class="legend-item">
-                <view class="dot blue"></view>
-                <view class="legend-info">
-                  <text class="label">外包Lab</text>
-                  <text class="value">{{ outsourceRate.lab }}%</text>
+          <!-- 时间筛选 -->
+          <view class="time-filter-wrapper">
+            <uni-data-select
+              v-model="currentTimeFilterObj"
+              :localdata="timeOptions"
+              :clear="false"
+              placeholder="请选择"
+            ></uni-data-select>
+          </view>
+        </view>
+
+        <view class="time-filter-tip" v-if="activeTab === 'list'">
+          注：同一个项目可能存在多条HGR获批记录，时间按照HGR批准 时间统计
+        </view>
+
+        <!-- 统计内容 -->
+        <view v-if="activeTab === 'stat'">
+          <!-- 外包比例卡片 -->
+          <view class="card ratio-card">
+            <view class="card-title">外包比例</view>
+            <view class="ratio-content">
+              <view class="pie-chart-wrapper">
+                <view
+                  class="pie-chart"
+                  :style="{
+                    background: `conic-gradient(#499AE6 0% ${outsourceRate.lab}%, #7ED321 ${outsourceRate.lab}% 100%)`
+                  }"
+                ></view>
+              </view>
+              <view class="ratio-legend">
+                <view class="legend-item">
+                  <view class="dot blue"></view>
+                  <view class="legend-info">
+                    <text class="label">外包Lab</text>
+                    <text class="value">{{ outsourceRate.lab }}%</text>
+                  </view>
+                </view>
+                <view class="legend-item">
+                  <view class="dot green"></view>
+                  <view class="legend-info">
+                    <text class="label">自己申报</text>
+                    <text class="value">{{ outsourceRate.self }}%</text>
+                  </view>
                 </view>
               </view>
-              <view class="legend-item">
-                <view class="dot green"></view>
-                <view class="legend-info">
-                  <text class="label">自己申报</text>
-                  <text class="value">{{ outsourceRate.self }}%</text>
-                </view>
+            </view>
+            <view class="ratio-stats">
+              <view class="stat-item">
+                <text class="label">外包项目数</text>
+                <text class="value">{{ outsourceRate.haveProjectNum }}</text>
+              </view>
+              <view class="stat-item">
+                <text class="label">自研项目数</text>
+                <text class="value">{{ outsourceRate.noProjectNum }}</text>
+              </view>
+              <view class="stat-item">
+                <text class="label">总项目数</text>
+                <text class="value">{{ outsourceRate.totalProjectNum }}</text>
               </view>
             </view>
           </view>
-          <view class="ratio-stats">
-            <view class="stat-item">
-              <text class="label">外包项目数</text>
-              <text class="value">{{ outsourceRate.haveProjectNum }}</text>
+
+          <!-- LAB合作名单卡片 -->
+          <view class="card list-card">
+            <view class="card-title">Lab合作名单</view>
+            <view class="table-header">
+              <text class="col-rank">排序</text>
+              <text class="col-name">Lab公司</text>
+              <text class="col-count">合作项目数</text>
             </view>
-            <view class="stat-item">
-              <text class="label">自研项目数</text>
-              <text class="value">{{ outsourceRate.noProjectNum }}</text>
+            <view class="table-body">
+              <view
+                class="table-row"
+                v-for="(item, index) in labList"
+                :key="index"
+                hover-class="row-hover"
+                @click="onLabClick(item)"
+              >
+                <text class="col-rank">{{ index + 1 }}</text>
+                <text class="col-name">{{ item.name }}</text>
+                <text class="col-count highlight">{{ item.count }}</text>
+              </view>
             </view>
-            <view class="stat-item">
-              <text class="label">总项目数</text>
-              <text class="value">{{ outsourceRate.totalProjectNum }}</text>
+
+            <!-- 加载状态提示 -->
+            <view class="load-status" v-if="labLoading">
+              <text>加载中...</text>
+            </view>
+            <view class="load-status" v-else-if="labNoMore && labList.length > 0">
+              <text>没有更多了</text>
+            </view>
+            <view class="load-status" v-if="!labLoading && !labList.length">
+              <text>暂无数据</text>
             </view>
           </view>
         </view>
 
-        <!-- LAB合作名单卡片 -->
-        <view class="card list-card">
-          <view class="card-title">Lab合作名单</view>
-          <view class="table-header">
-            <text class="col-rank">排序</text>
-            <text class="col-name">Lab公司</text>
-            <text class="col-count">合作项目数</text>
-          </view>
-          <view class="table-body">
-            <view
-              class="table-row"
-              v-for="(item, index) in labList"
-              :key="index"
-              hover-class="row-hover"
-              @click="onLabClick(item)"
-            >
-              <text class="col-rank">{{ index + 1 }}</text>
-              <text class="col-name">{{ item.name }}</text>
-              <text class="col-count highlight">{{ item.count }}</text>
+        <!-- 项目列表内容 -->
+        <view v-else class="project-list">
+          <view class="project-card" v-for="(item, index) in projectList" :key="index">
+            <view class="project-title">{{ item.title }}</view>
+            <view class="info-list">
+              <view class="info-item">
+                <view class="info-icon time">
+                  <image src="../../static/icons/time.png" mode="aspectFit" />
+                </view>
+                <text class="info-text">批入时间：{{ item.approveTime }}</text>
+              </view>
+              <view class="info-item">
+                <view class="info-icon sponsor">
+                  <image src="../../static/icons/sponsor.png" mode="aspectFit" />
+                </view>
+                <text class="info-text">申办方：{{ item.sponsor }}</text>
+              </view>
+              <view class="info-item">
+                <view class="info-icon no">
+                  <image src="../../static/icons/no.png" mode="aspectFit" />
+                </view>
+                <text class="info-text">审批号/备案号：{{ item.approveNo }}</text>
+              </view>
+              <view class="info-item">
+                <view class="info-icon cro">
+                  <image src="../../static/icons/cro.png" mode="aspectFit" />
+                </view>
+                <text class="info-text">合作Lab：{{ item.lab }}</text>
+              </view>
             </view>
+            <view class="action-btn">{{ item.tag }}</view>
           </view>
 
           <!-- 加载状态提示 -->
-          <view class="load-status" v-if="labLoading">
+          <view class="load-status" v-if="loading">
             <text>加载中...</text>
           </view>
-          <view class="load-status" v-else-if="labNoMore && labList.length > 0">
+          <view class="load-status" v-else-if="noMore && projectList.length > 0">
             <text>没有更多了</text>
           </view>
-          <view class="load-status" v-if="!labLoading && !labList.length">
+          <view class="load-status" v-if="!loading && !projectList.length">
             <text>暂无数据</text>
           </view>
         </view>
       </view>
-
-      <!-- 项目列表内容 -->
-      <view v-else class="project-list">
-        <view class="project-card" v-for="(item, index) in projectList" :key="index">
-          <view class="project-title">{{ item.title }}</view>
-          <view class="info-list">
-            <view class="info-item">
-              <view class="info-icon time">
-                <image src="../../static/icons/time.png" mode="aspectFit" />
-              </view>
-              <text class="info-text">批入时间：{{ item.approveTime }}</text>
-            </view>
-            <view class="info-item">
-              <view class="info-icon sponsor">
-                <image src="../../static/icons/sponsor.png" mode="aspectFit" />
-              </view>
-              <text class="info-text">申办方：{{ item.sponsor }}</text>
-            </view>
-            <view class="info-item">
-              <view class="info-icon no">
-                <image src="../../static/icons/no.png" mode="aspectFit" />
-              </view>
-              <text class="info-text">审批号/备案号：{{ item.approveNo }}</text>
-            </view>
-            <view class="info-item">
-              <view class="info-icon cro">
-                <image src="../../static/icons/cro.png" mode="aspectFit" />
-              </view>
-              <text class="info-text">合作Lab：{{ item.lab }}</text>
-            </view>
-          </view>
-          <view class="action-btn">{{ item.tag }}</view>
-        </view>
-
-        <!-- 加载状态提示 -->
-        <view class="load-status" v-if="loading">
-          <text>加载中...</text>
-        </view>
-        <view class="load-status" v-else-if="noMore && projectList.length > 0">
-          <text>没有更多了</text>
-        </view>
-        <view class="load-status" v-if="!loading && !projectList.length">
-          <text>暂无数据</text>
-        </view>
-      </view>
-    </view>
-  </scroll-view>
+    </scroll-view>
+  </view>
 
   <!-- 手机号绑定弹窗 -->
   <phone-bind-popup />
@@ -462,14 +470,22 @@
   }
   // #endregion
 
-  // #region 点击 LAB 合作名单行进入 LAB 主页
+  // #region 点击 LAB 合作名单行：设置筛选条件并切换到项目列表 tab
   const onLabClick = (item: any) => {
     if (!item.parentCompanyId) return
-    // 携带当前查询时间，进入后默认切换到项目列表 tab 并套用该年份；
-    // 同时带上当前申办方公司，用于 LAB 主页项目列表 tab 的申办方筛选默认选中
-    uni.navigateTo({
-      url: `/pages/lab-stat/index?partnerParentCompanyId=${item.parentCompanyId}&parentCompanyShortName=${encodeURIComponent(item.name)}&sponsorParentCompanyId=${sponsorParentCompanyId.value}&companyName=${encodeURIComponent(companyName.value)}&activeTab=list&timeFilter=${currentTimeFilter.value || ''}`
-    })
+    const labId = String(item.parentCompanyId)
+    // 同步统计 tab 的时间筛选，保证项目列表与当前统计年份一致
+    currentTimeFilterObj.value = currentTimeFilter.value
+    // 重置项目列表分页（watch 触发时会重新请求）
+    projectPage.value = 1
+    noMore.value = false
+    // 选中的 LAB 与当前筛选值相同时 watch 不会触发，需手动请求
+    if (currentLabCompany.value === labId) {
+      fetchProjectList()
+    } else {
+      currentLabCompany.value = labId
+    }
+    activeTab.value = 'list'
   }
   // #endregion
 
@@ -666,6 +682,29 @@
 </script>
 
 <style lang="scss" scoped>
+  // 页面主体：固定高度的纵向 flex 容器，头部固定、内容区滚动
+  .page-body {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  // 固定头部（筛选栏 + 选项卡），不参与滚动
+  .fixed-head {
+    position: relative;
+    // 保证下拉面板浮在滚动内容之上
+    z-index: 10;
+    flex-shrink: 0;
+    padding: 30rpx 30rpx 0;
+  }
+
+  // 滚动内容区：配合 flex:1 必须设置高度 0 才能正确滚动
+  .container-scroll-view {
+    flex: 1;
+    height: 0;
+    min-height: 0;
+  }
+
   .container {
     padding: 30rpx;
   }
@@ -784,7 +823,8 @@
   .tabs {
     display: flex;
     justify-content: space-around;
-    margin-bottom: 30rpx;
+    // 与下方滚动内容区留白由 .container 的 padding 提供
+    margin-bottom: 0;
 
     .tab-item {
       position: relative;
