@@ -38,6 +38,36 @@
           flexDirection: 'column'
         }"
       >
+        <!-- #region 顶部相关公司筛选（多选） -->
+        <view class="top-filter-bar">
+          <view class="filter-input-card">
+            <text class="label">相关公司</text>
+            <view class="divider"></view>
+            <view class="value-wrapper">
+              <uni-data-select
+                v-model="currentCompany"
+                :localdata="companyOptions"
+                multiple
+                :clear="true"
+                placeholder="全部"
+              >
+                <template #selected="{ selectedItems }">
+                  <view class="selected-companies">
+                    <text v-if="selectedItems.length === 0" class="placeholder-text">全部</text>
+                    <template v-else>
+                      <text class="selected-text">{{ selectedItems[0].text }}</text>
+                      <text v-if="selectedItems.length > 1" class="selected-more">
+                        +{{ selectedItems.length - 1 }}
+                      </text>
+                    </template>
+                  </view>
+                </template>
+              </uni-data-select>
+            </view>
+          </view>
+        </view>
+        <!-- #endregion -->
+
         <!-- 统计内容 -->
         <view v-if="activeTab === 'stat'" class="stat-content">
           <!-- 近五年NDA申请与获批 -->
@@ -212,6 +242,7 @@
           <NdaList
             class="trial-list-comp"
             :company-parent-id="companyParentId"
+            :standard-company-id-list="sponsorStandardCompanyIdList"
             v-model:product-name="listProductName"
             v-model:year="listYear"
           />
@@ -230,6 +261,7 @@
   import PhoneBindPopup from '@/components/phone-bind-popup/phone-bind-popup.vue'
   import NdaList from '@/components/nda-list/nda-list.vue'
   import {
+    getRelatedCompanyList,
     queryDrugTypeStatistics,
     queryNdaLastYearApplyAndApprove,
     queryNdaLastYearRegisterCategory,
@@ -242,7 +274,7 @@
     NdaProductRankVo,
     NdaProjectSumVo
   } from '@/types/api'
-  import { DRUG_TYPE_VALUES_INT, createEnumsToOptions } from '@/utils/enums'
+  import { DRUG_TYPE_VALUES, createEnumsToOptions } from '@/utils/enums'
   import { renderLineChart, renderBarChart, shortYearLabel } from '@/utils/canvas-chart'
   // #endregion
 
@@ -265,6 +297,7 @@
     if (options?.companyId) {
       companyParentId.value = Number(options.companyId)
     }
+    fetchRelatedCompanyList()
     fetchApplyAndApprove()
     fetchRegisterCategory()
     fetchDrugType()
@@ -295,7 +328,39 @@
     return {
       pageNum: 1,
       pageSize: 10,
-      parentCompanyId: companyParentId.value || undefined
+      parentCompanyId: companyParentId.value || undefined,
+      standardCompanyIdList: sponsorStandardCompanyIdList.value
+    }
+  }
+  // #endregion
+
+  // #region 相关公司筛选（多选）
+  const companyOptions = ref<{ value: string; text: string }[]>([])
+  const currentCompany = ref<string[]>([])
+  // 相关公司筛选值（标准公司ID集合），未选择时返回 undefined 表示全部
+  const sponsorStandardCompanyIdList = computed(() =>
+    currentCompany.value.length > 0 ? currentCompany.value.map(Number) : undefined
+  )
+
+  /** 获取相关公司下拉选项 */
+  async function fetchRelatedCompanyList() {
+    const parentId = companyParentId.value
+    if (!parentId) return
+    try {
+      const res = await getRelatedCompanyList({
+        companyType: 'sponsor',
+        pageNum: 1,
+        pageSize: 50,
+        parentCompanyId: parentId
+      })
+      if (res.data?.list) {
+        companyOptions.value = res.data.list.map((item) => ({
+          value: String(item.standardCompanyId),
+          text: item.companyStandardName
+        }))
+      }
+    } catch {
+      // 静默处理
     }
   }
   // #endregion
@@ -325,6 +390,7 @@
     try {
       const res = await queryNdaLastYearApplyAndApprove({
         parentCompanyId: companyParentId.value || undefined,
+        standardCompanyIdList: sponsorStandardCompanyIdList.value,
         queryType: queryType.value
       })
       projectSumList.value = res.data?.projectSumList || []
@@ -345,7 +411,7 @@
 
   // #region 注册分类统计
   // drugTypeCode 接口要求数字编码（1-化药 2-疫苗 3-治疗生物药 4-中药），故用 INT 版枚举
-  const drugTypeOptions = computed(() => createEnumsToOptions(DRUG_TYPE_VALUES_INT))
+  const drugTypeOptions = computed(() => createEnumsToOptions(DRUG_TYPE_VALUES))
   const drugTypeCode = ref(drugTypeOptions.value[0].value)
   const drugTypeText = computed(
     () => drugTypeOptions.value.find((o) => o.value === drugTypeCode.value)?.text || '药品类型'
@@ -355,7 +421,7 @@
   async function fetchRegisterCategory() {
     const res = await queryNdaLastYearRegisterCategory({
       parentCompanyId: companyParentId.value || undefined,
-      drugTypeCode: drugTypeCode.value,
+      standardCompanyIdList: sponsorStandardCompanyIdList.value,
       // 清洗后药品类型（枚举文案），如：化药、疫苗、治疗生物药、中药
       cleanedDrugType: drugTypeOptions.value.find((o) => o.value === drugTypeCode.value)?.text
     })
@@ -531,6 +597,25 @@
     )
   }
   // #endregion
+
+  // #region 相关公司筛选联动
+  // 相关公司变化时，重置产品榜单分页并刷新全部统计数据
+  watch(currentCompany, () => {
+    fetchApplyAndApprove()
+    fetchRegisterCategory()
+    fetchDrugType()
+    fetchProductRank(true)
+  })
+  // #endregion
+</script>
+
+<script lang="ts">
+  export default {
+    options: {
+      // 微信小程序默认样式隔离，需设为 shared 才能让 :deep() 样式穿透到 uni-data-select 等子组件内部
+      styleIsolation: 'shared'
+    }
+  }
 </script>
 
 <style lang="scss" scoped src="./index.scss"></style>

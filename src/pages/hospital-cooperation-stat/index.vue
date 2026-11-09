@@ -191,14 +191,23 @@
   })
 
   // #region 辅助函数
-  /** 点击医院行，跳转到合作情况统计页的「试验列表」tab */
+  /** 点击医院行，跳转到合作情况统计页的「试验列表」tab，并带上当前筛选条件 */
   function onHospitalClick(item: HospitalTrialStatisticItem) {
+    // 未选择（空值）时不传，避免把「全部」写进 URL
+    const filterQuery = [
+      currentTimeFilter.value ? `year=${encodeURIComponent(currentTimeFilter.value)}` : '',
+      statusFilter.value ? `trialStatus=${encodeURIComponent(statusFilter.value)}` : '',
+      stageFilter.value ? `trialStage=${encodeURIComponent(stageFilter.value)}` : ''
+    ]
+      .filter(Boolean)
+      .join('&')
+
     uni.navigateTo({
       url: `/pages/hospital-stat/index?companyParentId=${
         companyParentId.value || ''
       }&companyName=${encodeURIComponent(companyName.value)}&hospitalName=${encodeURIComponent(
         item.hosStandardName || ''
-      )}&hosStandardId=${item.hosStandardId}&tab=list`
+      )}&hosStandardId=${item.hosStandardId}&tab=list${filterQuery ? `&${filterQuery}` : ''}`
     })
   }
 

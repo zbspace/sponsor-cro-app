@@ -303,6 +303,25 @@ export function shortYearLabel(year?: string | number | null): string {
   return value.length >= 4 ? `${value.slice(2)}年` : value
 }
 
+/**
+ * 计算 y 轴刻度：返回轴最大值、刻度段数与每段步长
+ * - 数值较小时按 1 递增，刻度数量随最大值收敛，避免出现多个 0、1 重复刻度
+ * - 数值较大时按 1/2/5 × 10^n 取整步长，保证刻度为整数且分布均匀
+ */
+function buildYAxis(rawMax: number, segments = 4) {
+  const safeMax = Math.max(rawMax, 1)
+  if (safeMax <= segments) {
+    const max = Math.ceil(safeMax)
+    return { max, tickCount: max, step: 1 }
+  }
+  const rough = safeMax / segments
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rough)))
+  const candidates = [1, 2, 5, 10].map((n) => n * magnitude)
+  const step = candidates.find((c) => c >= rough) ?? candidates[candidates.length - 1]
+  const max = Math.ceil(safeMax / step) * step
+  return { max, tickCount: max / step, step }
+}
+
 // #endregion
 
 // #region 折线图
@@ -332,25 +351,26 @@ export async function renderLineChart(
     return
   }
 
-  const maxVal = Math.max(...values, 1)
+  const axis = buildYAxis(Math.max(...values))
+  const axisMax = axis.max
   const stepX = values.length > 1 ? (width - 2 * padding) / (values.length - 1) : 0
   const pointAt = (i: number) => ({
     x: padding + i * stepX,
-    y: height - padding - (values[i] / maxVal) * (height - 2 * padding)
+    y: height - padding - (values[i] / axisMax) * (height - 2 * padding)
   })
 
   // 网格线与 y 轴刻度
   pen.setStroke('#eeeeee')
   pen.setLineWidth(0.5)
-  for (let i = 0; i <= 4; i++) {
-    const y = height - padding - (i / 4) * (height - 2 * padding)
+  for (let i = 0; i <= axis.tickCount; i++) {
+    const y = height - padding - (i / axis.tickCount) * (height - 2 * padding)
     pen.begin()
     pen.move(padding, y)
     pen.line(width - padding, y)
     pen.stroke()
     pen.setFill('#999999')
     pen.setFont(9)
-    pen.text(String(Math.round((maxVal * i) / 4)), 4, y + 3)
+    pen.text(String(Math.round(axis.step * i)), 4, y + 3)
   }
 
   // 渐变填充区域

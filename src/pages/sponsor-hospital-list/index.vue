@@ -16,7 +16,7 @@
   <view
     class="container"
     :style="{ height: `calc(100vh - ${menu.top}px - ${menu.height}px)` }"
-    @click="activeField = ''"
+    @click="closePopups"
   >
     <!-- 药企信息条 -->
     <view class="hd-drug">
@@ -57,21 +57,45 @@
         </view>
       </view>
 
-      <!-- 医院名称搜索 -->
-      <view class="hd-search">
+      <!-- 医院名称输入查询：输入联想 → 选择医院 → 按医院ID重新查询列表 -->
+      <view class="hd-search" v-if="!selectedHospital">
         <view class="hd-search-ico"></view>
         <input
           type="text"
           v-model="hospitalKeyword"
-          placeholder="搜索医院名称"
+          placeholder="输入医院名称查询"
           placeholder-style="color: #9ca3af"
+          confirm-type="search"
+          @input="onHospitalInput"
+          @focus="showHospitalSuggest = !!hospitalKeyword.trim()"
         />
         <text class="clear-icon" v-if="hospitalKeyword" @click="clearHospitalKeyword">×</text>
+
+        <!-- 医院联想下拉 -->
+        <view class="hd-suggest" v-if="showHospitalSuggest && hospitalKeyword.trim()">
+          <view
+            class="hd-suggest-item"
+            v-for="item in hospitalSuggestions"
+            :key="item.hosStandardId"
+            @click.stop="selectHospital(item)"
+          >
+            <text>{{ item.hosStandardName }}</text>
+          </view>
+          <view class="hd-suggest-empty" v-if="!hospitalSuggestions.length && !hospitalSearching">
+            未找到相关医院
+          </view>
+        </view>
+      </view>
+
+      <!-- 已选医院：可清除后重新查询 -->
+      <view class="hd-search hd-search-selected" v-else>
+        <text class="hd-selected-name">{{ selectedHospital.hosStandardName }}</text>
+        <text class="clear-icon" @click="clearSelectedHospital">×</text>
       </view>
     </view>
 
     <!-- 结果统计 -->
-    <view class="hd-note">共 {{ noteCount }} 家医院</view>
+    <view class="hd-note">共 {{ total }} 家医院</view>
 
     <!-- 医院列表：序号 / 医院名称 / 临床试验数 -->
     <scroll-view
@@ -90,7 +114,7 @@
 
         <view
           class="cd-tr"
-          v-for="(item, index) in displayList"
+          v-for="(item, index) in list"
           :key="item.hosStandardId"
           hover-class="row-hover"
           @click="onHospitalClick(item)"
@@ -100,7 +124,7 @@
           <text class="cd-td cd-c3 cd-td-num">{{ item.trialCnt ?? '--' }}</text>
         </view>
 
-        <view class="hd-empty" v-if="!loading && displayList.length === 0">暂无符合条件的医院</view>
+        <view class="hd-empty" v-if="!loading && list.length === 0">暂无符合条件的医院</view>
 
         <view class="load-status" v-if="loading && list.length > 0">
           <text>加载中...</text>
@@ -115,8 +139,12 @@
 
 <script setup lang="ts">
   import { ref, reactive, computed, onMounted } from 'vue'
-  import { hospitalTrialStatistic } from '@/api'
-  import type { HospitalTrialStatisticItem, HospitalTrialStatisticParam } from '@/types/api'
+  import { hospitalTrialStatistic, queryHospitalData } from '@/api'
+  import type {
+    HospitalItem,
+    HospitalTrialStatisticItem,
+    HospitalTrialStatisticParam
+  } from '@/types/api'
   import { onLoad } from '@dcloudio/uni-app'
   import { TRIAL_STATUS_VALUES, TRIAL_PHASE_VALUES, createEnumsToOptions } from '@/utils/enums'
 
@@ -186,20 +214,67 @@
   const loading = ref(false)
   const hasMore = computed(() => list.value.length < total.value)
 
-  // 医院名称前端过滤（接口未提供名称查询参数）
+  // 医院名称输入查询：输入联想 → 选择医院 → 按医院ID重新查询列表
   const hospitalKeyword = ref('')
-  const displayList = computed(() => {
-    const kw = hospitalKeyword.value.trim()
-    if (!kw) return list.value
-    return list.value.filter((item) => (item.hosStandardName || '').includes(kw))
-  })
-  const noteCount = computed(() =>
-    hospitalKeyword.value.trim() ? displayList.value.length : total.value
-  )
+  const hospitalSuggestions = ref<HospitalItem[]>([])
+  const hospitalSearching = ref(false)
+  const showHospitalSuggest = ref(false)
+  const selectedHospital = ref<HospitalItem | null>(null)
+  let suggestTimer: ReturnType<typeof setTimeout> | null = null
 
-  /** 清空医院名称搜索关键字（列表由前端 computed 过滤，无需刷新） */
+  /** 输入关键字：防抖后请求医院联想列表 */
+  function onHospitalInput(e?: any) {
+    // 优先取事件值，避免 v-model 与事件触发顺序差异导致读到旧值
+    const keyword = String(e?.detail?.value ?? hospitalKeyword.value).trim()
+    showHospitalSuggest.value = true
+    if (suggestTimer) clearTimeout(suggestTimer)
+    if (!keyword) {
+      hospitalSuggestions.value = []
+      return
+    }
+    suggestTimer = setTimeout(() => fetchHospitalSuggest(keyword), 300)
+  }
+
+  async function fetchHospitalSuggest(searchKey: string) {
+    hospitalSearching.value = true
+    try {
+      const res = await queryHospitalData({ searchKey, pageNum: 1, pageSize: 20 })
+      // 输入已变化时丢弃过期响应
+      if (hospitalKeyword.value.trim() !== searchKey) return
+      hospitalSuggestions.value = res.data?.list || []
+    } catch {
+      hospitalSuggestions.value = []
+    } finally {
+      hospitalSearching.value = false
+    }
+  }
+
+  /** 选择医院：用选中的医院ID重新查询列表 */
+  function selectHospital(item: HospitalItem) {
+    selectedHospital.value = item
+    hospitalKeyword.value = ''
+    hospitalSuggestions.value = []
+    showHospitalSuggest.value = false
+    fetchList(true)
+  }
+
+  /** 清除已选医院，恢复全部医院的列表 */
+  function clearSelectedHospital() {
+    selectedHospital.value = null
+    fetchList(true)
+  }
+
+  /** 清空输入关键字（仅清空联想，不改变查询条件） */
   function clearHospitalKeyword() {
     hospitalKeyword.value = ''
+    hospitalSuggestions.value = []
+    showHospitalSuggest.value = false
+  }
+
+  /** 点击页面空白处收起所有下拉 */
+  function closePopups() {
+    activeField.value = ''
+    showHospitalSuggest.value = false
   }
 
   async function fetchList(refresh = false) {
@@ -211,6 +286,8 @@
 
     const params: HospitalTrialStatisticParam = {
       parentCompanyId: companyParentId.value || undefined,
+      // 已选医院时按医院ID查询，未选择时查询全部医院
+      hosStandardId: selectedHospital.value?.hosStandardId,
       year: filters.year || undefined,
       trialStatus: filters.status || undefined,
       trialStage: filters.phase || undefined,
@@ -438,6 +515,7 @@
   }
 
   .hd-search {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 16rpx;
@@ -462,6 +540,58 @@
       color: #cccccc;
     }
   }
+
+  /* #region 医院联想下拉 */
+  .hd-suggest {
+    position: absolute;
+    top: calc(100% + 8rpx);
+    left: 0;
+    right: 0;
+    z-index: 70;
+    max-height: 520rpx;
+    padding: 12rpx;
+    overflow-y: auto;
+    background: #ffffff;
+    border-radius: 20rpx;
+    box-shadow: 0 12rpx 32rpx rgba(15, 23, 42, 0.16);
+  }
+
+  .hd-suggest-item {
+    padding: 18rpx 22rpx;
+    border-radius: 12rpx;
+
+    text {
+      font-size: 26rpx;
+      color: #1f2329;
+    }
+
+    &:active {
+      background: #f7f8fa;
+    }
+  }
+
+  .hd-suggest-empty {
+    padding: 24rpx;
+    text-align: center;
+    font-size: 24rpx;
+    color: #9ca3af;
+  }
+  /* #endregion */
+
+  /* #region 已选医院 */
+  .hd-search-selected {
+    .hd-selected-name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      font-size: 26rpx;
+      font-weight: 600;
+      color: #1e6fff;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+  /* #endregion */
 
   // 放大镜图标（纯 CSS 绘制）
   .hd-search-ico {

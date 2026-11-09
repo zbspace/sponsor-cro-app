@@ -1132,6 +1132,8 @@ export interface CdeCenterAndResearcherReq {
 export interface NdaDataStatisticsParam {
   /** 药企母公司ID */
   parentCompanyId?: number
+  /** 子公司ID集合 */
+  standardCompanyIdList?: number[]
   /** �洗后的药品名称 */
   productName?: string
   /** 当前页数 */

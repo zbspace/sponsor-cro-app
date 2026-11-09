@@ -23,6 +23,93 @@
   box-sizing: border-box;
 }
 
+/* #region 顶部相关公司筛选（多选） */
+.top-filter-bar {
+  flex-shrink: 0;
+  margin-bottom: 30rpx;
+
+  // 下拉面板加宽，避免多选内容换行错位
+  :deep(.uni-select__selector) {
+    width: 700rpx;
+    left: -180rpx;
+  }
+
+  .filter-input-card {
+    flex: 1;
+    background: #ffffff;
+    height: 100rpx;
+    border-radius: 20rpx;
+    display: flex;
+    align-items: center;
+    padding: 0 30rpx;
+    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.02);
+    border: 2rpx solid #eeeeee;
+
+    .label {
+      font-size: 28rpx;
+      color: #999;
+    }
+
+    .divider {
+      width: 2rpx;
+      height: 30rpx;
+      background-color: #eee;
+      margin: 0 20rpx;
+    }
+
+    .value-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-width: 0;
+
+      :deep(.uni-select) {
+        border: none;
+        padding: 0;
+
+        .uni-select__input-text {
+          font-weight: 400;
+          font-size: 28rpx;
+          color: #999999;
+          line-height: 52rpx;
+        }
+      }
+
+      :deep(.slot-content) {
+        display: flex;
+        align-items: center;
+      }
+
+      .selected-companies {
+        display: flex;
+        align-items: center;
+        font-size: 28rpx;
+
+        .placeholder-text {
+          color: #c0c4cc;
+        }
+
+        .selected-text {
+          color: #333;
+          max-width: 240rpx;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .selected-more {
+          margin-left: 8rpx;
+          color: #499ae6;
+          font-size: 24rpx;
+          flex-shrink: 0;
+        }
+      }
+    }
+  }
+}
+/* #endregion */
+
 .detail-content {
   flex: 1;
   display: flex;

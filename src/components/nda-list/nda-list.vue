@@ -117,6 +117,8 @@
   const props = defineProps<{
     /** 母公司ID */
     companyParentId?: number
+    /** 子公司ID集合（相关公司筛选），未传表示全部 */
+    standardCompanyIdList?: number[]
     /** 药品名称（榜单点击带入，支持 v-model:product-name） */
     productName?: string
     /** 年份，空值表示全部年份（榜单点击带入，支持 v-model:year） */
@@ -209,6 +211,7 @@
 
     const params: NdaDataStatisticsParam = {
       parentCompanyId: props.companyParentId || undefined,
+      standardCompanyIdList: props.standardCompanyIdList,
       productName: props.productName || undefined,
       cleanedDrugType: drugTypeFilter.value || undefined,
       cleanedClassification: cleanedClassification.value || undefined,
@@ -251,9 +254,18 @@
 
   // 筛选变化时自动重新请求列表数据
   // 合并监听：榜单点击会同时带入药品名与年份，分开监听会连发两次请求（fetchList 会丢弃进行中的重复调用）
-  watch([currentYearFilter, drugTypeFilter, cleanedClassification, productFilter], () => {
-    fetchList(true)
-  })
+  watch(
+    [
+      currentYearFilter,
+      drugTypeFilter,
+      cleanedClassification,
+      productFilter,
+      () => props.standardCompanyIdList
+    ],
+    () => {
+      fetchList(true)
+    }
+  )
 
   // #region 辅助函数
   function getRandomColorClass(index: number) {
