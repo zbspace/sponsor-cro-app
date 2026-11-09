@@ -35,9 +35,6 @@
       class="container-scroll-view"
       :show-scrollbar="false"
       enhanced
-      :style="{
-        height: `calc(100vh - ${menu.top}px - ${menu.height}px)`
-      }"
       @scrolltolower="onScrollToLower"
     >
       <!-- #region 顶部相关公司筛选（多选） -->
@@ -579,6 +576,7 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
+    overflow: hidden;
 
     .header {
       flex-shrink: 0;
@@ -586,8 +584,8 @@
 
     .tabs-wrapper {
       display: flex;
-      padding: 10px 0;
-      flex-shrink: 0;
+      justify-content: space-around;
+      margin-bottom: 30rpx;
       .tab-item {
         flex: 1;
         display: flex;
@@ -614,6 +612,15 @@
       }
     }
 
+    .container-scroll-view {
+      flex: 1;
+      height: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 0 30rpx;
+    }
+
     .content-scroll {
       flex: 1;
       overflow: hidden;
@@ -624,7 +631,6 @@
       display: flex;
       align-items: center;
       gap: 20rpx;
-      padding: 30rpx 30rpx 0;
       margin-bottom: 30rpx;
 
       // 下拉面板加宽，避免多选内容换行错位
@@ -864,7 +870,7 @@
 
       // #region 榜单独立滚动区域
       .table-body-scroll {
-        height: 520rpx;
+        max-height: 800rpx;
         min-height: 0;
       }
       // #endregion
